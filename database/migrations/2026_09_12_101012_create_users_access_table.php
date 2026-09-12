@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('users_access', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained('users', 'id_user')->onUpdate('restrict')->onDelete('cascade');
+            $table->foreignId('user_id')->constrained('users')->onUpdate('restrict')->onDelete('cascade');
             $table->string("menu_access");
             $table->string("index_acs");
             $table->string("show_acs");
