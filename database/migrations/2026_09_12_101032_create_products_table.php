@@ -22,7 +22,7 @@ return new class extends Migration
             $table->enum("hpp_method", ['manual', 'calculated']);
             $table->decimal("current_hpp", 15, 3);
             $table->integer("current_stock");
-            $table->integer("min_stok");
+            $table->integer("min_stock");
             $table->text("description");
             $table->string("thumbnail", 255);
             $table->timestamps();
