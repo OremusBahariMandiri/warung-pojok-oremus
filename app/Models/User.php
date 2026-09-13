@@ -46,6 +46,22 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_admin' => 'boolean',
         ];
+    }
+
+    public function accesses()
+    {
+        return $this->hasMany(UsersAccess::class, 'user_id');
+    }
+
+    public function activityLogs()
+    {
+        return $this->hasMany(ActivityLogs::class, 'user_id');
+    }
+
+    public function restocks()
+    {
+        return $this->hasMany(Restock::class, 'created_by');
     }
 }

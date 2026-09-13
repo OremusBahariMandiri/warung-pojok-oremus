@@ -18,10 +18,10 @@ return new class extends Migration
             $table->string("module", 150);
             $table->string("entity_type", 180);
             $table->integer("entity_id");
-            $table->text("decription");
-            $table->mediumText("old_values");
-            $table->mediumText("new_values");
-            $table->ipAddress("ip_address");
+            $table->text("description")->nullable();
+            $table->mediumText("old_values")->nullable();
+            $table->mediumText("new_values")->nullable();
+            $table->ipAddress("ip_address")->nullable();
             $table->timestamps();
         });
     }

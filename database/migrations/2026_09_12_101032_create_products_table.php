@@ -21,10 +21,10 @@ return new class extends Migration
             $table->decimal("unit_price", 15, 3);
             $table->enum("hpp_method", ['manual', 'calculated']);
             $table->decimal("current_hpp", 15, 3);
-            $table->integer("current_stock");
+            $table->integer("current_stock")->default(0);
             $table->integer("min_stock");
-            $table->text("description");
-            $table->string("thumbnail", 255);
+            $table->text("description")->nullable();
+            $table->string("thumbnail", 255)->default('products/default.png');
             $table->timestamps();
         });
     }

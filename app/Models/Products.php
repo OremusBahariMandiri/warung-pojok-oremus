@@ -11,6 +11,8 @@ class Products extends Model
 {
     use HasFactory, HasApiTokens, Notifiable;
 
+    protected $table = 'products';
+
     protected $fillable = [
         'prod_name',
         'slug',
@@ -25,4 +27,37 @@ class Products extends Model
         'description',
         'thumbnail'
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'selling_price' => 'decimal:3',
+            'unit_price' => 'decimal:3',
+            'current_hpp' => 'decimal:3',
+            'current_stock' => 'integer',
+            'min_stock' => 'integer',
+        ];
+    }
+
+    public function productHpps()
+    {
+        return $this->hasMany(ProductHpp::class, 'product_id');
+    }
+
+    public function hpps()
+    {
+        return $this->belongsToMany(Hpp::class, 'product_hpp', 'product_id', 'hpp_id')
+            ->withPivot('cost')
+            ->withTimestamps();
+    }
+
+    public function restockItems()
+    {
+        return $this->hasMany(RestockItems::class, 'product_id');
+    }
+
+    public function reportDetails()
+    {
+        return $this->hasMany(ReportDetails::class, 'product_id');
+    }
 }
