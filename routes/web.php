@@ -4,6 +4,7 @@ use App\Http\Controllers\ActivityLogController;
 use App\Http\Controllers\HppController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProductHppController;
+use App\Http\Controllers\ReportController;
 use App\Http\Controllers\RestockController;
 use App\Http\Controllers\UserAccessController;
 use App\Http\Controllers\UserController;
@@ -29,6 +30,10 @@ Route::resource('users', UserController::class);
 
 // Transaksi: Restock
 Route::resource('restock', RestockController::class);
+
+// Transaksi & Monitoring: Laporan Penjualan & Margin
+Route::get('reports/summary', [ReportController::class, 'summary'])->name('reports.summary');
+Route::resource('reports', ReportController::class);
 
 // Activity Logs
 Route::get('activity-logs', [ActivityLogController::class, 'index'])->name('activity_logs.index');
