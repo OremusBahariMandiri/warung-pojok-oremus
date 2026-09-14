@@ -4,6 +4,7 @@ use App\Http\Controllers\ActivityLogController;
 use App\Http\Controllers\HppController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProductHppController;
+use App\Http\Controllers\RestockController;
 use App\Http\Controllers\UserAccessController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
@@ -25,6 +26,9 @@ Route::resource('products', ProductController::class);
 Route::get('users/{user}/access', [UserAccessController::class, 'show'])->name('users.access.show');
 Route::put('users/{user}/access', [UserAccessController::class, 'update'])->name('users.access.update');
 Route::resource('users', UserController::class);
+
+// Transaksi: Restock
+Route::resource('restock', RestockController::class);
 
 // Activity Logs
 Route::get('activity-logs', [ActivityLogController::class, 'index'])->name('activity_logs.index');
