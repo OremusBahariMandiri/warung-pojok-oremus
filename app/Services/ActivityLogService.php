@@ -33,7 +33,7 @@ class ActivityLogService
         ?int $userId = null,
         ?string $ipAddress = null
     ): ActivityLogs {
-        $resolvedUserId = $userId ?? Auth::id() ?? 1; // Fallback to 1 if unauthenticated (e.g. seeder/cron)
+        $resolvedUserId = $userId ?? Auth::id() ?? null; // Fallback to 1 if unauthenticated (e.g. seeder/cron)
         $resolvedIpAddress = $ipAddress ?? Request::ip() ?? '127.0.0.1';
 
         return ActivityLogs::create([
