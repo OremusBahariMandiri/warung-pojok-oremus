@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('activity_logs', function (Blueprint $table) {
             $table->id();
-            $table->foreignId("user_id")->constrained("users")->onUpdate("restrict")->onDelete("cascade");
+            $table->foreignId("user_id")->nullable()->constrained("users")->onUpdate("restrict")->onDelete("cascade");
             $table->string("action", 150);
             $table->string("module", 150);
             $table->string("entity_type", 180);
