@@ -64,4 +64,30 @@ class User extends Authenticatable
     {
         return $this->hasMany(Restock::class, 'created_by');
     }
+
+    /**
+     * Check if user has permission for a specific module and action.
+     *
+     * @param string $module (e.g. 'dashboard', 'products', 'hpp', 'restock', 'reports', 'users', 'activity_logs')
+     * @param string $action ('index', 'show', 'create', 'edit', 'delete')
+     * @return bool
+     */
+    public function hasAccess(string $module, string $action): bool
+    {
+        // Super Admin has unrestricted access to everything
+        if ($this->is_admin) {
+            return true;
+        }
+
+        $column = strtolower($action) . '_acs';
+
+        // Find permission record for module
+        $access = $this->accesses->firstWhere('menu_access', $module);
+
+        if (!$access || !isset($access->{$column})) {
+            return false;
+        }
+
+        return (string)$access->{$column} === '1';
+    }
 }

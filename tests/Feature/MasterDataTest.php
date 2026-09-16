@@ -2,11 +2,10 @@
 
 namespace Tests\Feature;
 
-use App\Models\ActivityLogs;
+
 use App\Models\Hpp;
 use App\Models\Products;
 use App\Models\User;
-use App\Services\ProductService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -161,6 +160,8 @@ class MasterDataTest extends TestCase
      */
     public function test_live_calculate_hpp_endpoint(): void
     {
+        $this->actingAs($this->adminUser);
+
         $hppAir = Hpp::create(['name' => 'Air', 'unit' => 'Porsi', 'unit_cost' => 500]);
         $hppGula = Hpp::create(['name' => 'Gula', 'unit' => 'Porsi', 'unit_cost' => 300]);
         $hppKemasan = Hpp::create(['name' => 'Kemasan', 'unit' => 'Pcs', 'unit_cost' => 350]);
