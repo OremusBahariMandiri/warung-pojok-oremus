@@ -127,9 +127,9 @@ class ProductService
                 $processedComponents = [];
             }
 
-            $thumbnailPath = 'products/default.png';
+            $thumbnailPath = 'thumbnail/default.png';
             if ($thumbnail) {
-                $thumbnailPath = $thumbnail->store('products', 'public');
+                $thumbnailPath = $thumbnail->store('thumbnail', 'public');
             } elseif (!empty($data['thumbnail'])) {
                 $thumbnailPath = $data['thumbnail'];
             }
@@ -219,10 +219,10 @@ class ProductService
 
             $thumbnailPath = $product->thumbnail;
             if ($thumbnail) {
-                if ($product->thumbnail && $product->thumbnail !== 'products/default.png' && Storage::disk('public')->exists($product->thumbnail)) {
+                if ($product->thumbnail && !in_array($product->thumbnail, ['thumbnail/default.png', 'products/default.png']) && Storage::disk('public')->exists($product->thumbnail)) {
                     Storage::disk('public')->delete($product->thumbnail);
                 }
-                $thumbnailPath = $thumbnail->store('products', 'public');
+                $thumbnailPath = $thumbnail->store('thumbnail', 'public');
             }
 
             $product->update([
@@ -264,7 +264,7 @@ class ProductService
             $id = $product->id;
             $name = $product->prod_name;
 
-            if ($product->thumbnail && $product->thumbnail !== 'products/default.png' && Storage::disk('public')->exists($product->thumbnail)) {
+            if ($product->thumbnail && !in_array($product->thumbnail, ['thumbnail/default.png', 'products/default.png']) && Storage::disk('public')->exists($product->thumbnail)) {
                 Storage::disk('public')->delete($product->thumbnail);
             }
 
