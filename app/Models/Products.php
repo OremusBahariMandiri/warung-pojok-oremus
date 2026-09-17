@@ -14,10 +14,10 @@ class Products extends Model
     protected $table = 'products';
 
     protected $fillable = [
+        'unit_id',
         'prod_name',
         'slug',
         'sku',
-        'satuan',
         'selling_price',
         'unit_price',
         'hpp_method',
@@ -31,12 +31,18 @@ class Products extends Model
     protected function casts(): array
     {
         return [
+            'unit_id' => 'integer',
             'selling_price' => 'decimal:3',
             'unit_price' => 'decimal:3',
             'current_hpp' => 'decimal:3',
             'current_stock' => 'integer',
             'min_stock' => 'integer',
         ];
+    }
+
+    public function unit()
+    {
+        return $this->belongsTo(Unit::class, 'unit_id');
     }
 
     public function productHpps()

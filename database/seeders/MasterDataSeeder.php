@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\Hpp;
 use App\Models\Products;
+use App\Models\Unit;
 use App\Models\User;
 use App\Services\ProductService;
 use App\Services\UserService;
@@ -49,14 +50,24 @@ class MasterDataSeeder extends Seeder
             ],
         ]);
 
-        // 2. Seed Master Komponen HPP
+        // 2. Seed Units (Satuan)
+        $unitSachet = Unit::create(['unit_name' => 'Sachet', 'type' => 'Kemasan Minuman', 'short_name' => 'sct']);
+        $unitGelas = Unit::create(['unit_name' => 'Gelas', 'type' => 'Porsi Minuman', 'short_name' => 'gls']);
+        $unitPorsi = Unit::create(['unit_name' => 'Porsi', 'type' => 'Porsi Makanan', 'short_name' => 'prs']);
+        $unitBotol = Unit::create(['unit_name' => 'Botol', 'type' => 'Kemasan Minuman', 'short_name' => 'btl']);
+        $unitBungkus = Unit::create(['unit_name' => 'Bungkus', 'type' => 'Kemasan Makanan', 'short_name' => 'bgk']);
+        $unitPcs = Unit::create(['unit_name' => 'Pcs', 'type' => 'Satuan Item', 'short_name' => 'pcs']);
+        $unitKg = Unit::create(['unit_name' => 'Kilogram', 'type' => 'Berat', 'short_name' => 'kg']);
+        $unitLiter = Unit::create(['unit_name' => 'Liter', 'type' => 'Volume', 'short_name' => 'ltr']);
+
+        // 3. Seed Master Komponen HPP
         $hppAirEs = Hpp::create(['name' => 'Air dan Es', 'unit' => 'Porsi', 'unit_cost' => 900]);
         $hppAir = Hpp::create(['name' => 'Air', 'unit' => 'Porsi', 'unit_cost' => 500]);
         $hppGula = Hpp::create(['name' => 'Gula', 'unit' => 'Porsi', 'unit_cost' => 300]);
         $hppKemasan = Hpp::create(['name' => 'Kemasan', 'unit' => 'Pcs', 'unit_cost' => 350]);
         $hppGas = Hpp::create(['name' => 'Gas', 'unit' => 'Porsi', 'unit_cost' => 200]);
 
-        // 3. Seed Products (Calculated & Manual)
+        // 4. Seed Products (Calculated & Manual)
         // Minuman Ice (Calculated)
         $iceComponents = [
             ['hpp_id' => $hppAirEs->id, 'cost' => 900],
@@ -66,7 +77,7 @@ class MasterDataSeeder extends Seeder
 
         $productService->createProduct([
             'prod_name' => 'Nutrisari Florida Orange',
-            'satuan' => 'Sachet',
+            'unit_id' => $unitSachet->id,
             'selling_price' => 5000,
             'unit_price' => 1400,
             'hpp_method' => 'calculated',
@@ -78,7 +89,7 @@ class MasterDataSeeder extends Seeder
 
         $productService->createProduct([
             'prod_name' => 'Good Day Freeze',
-            'satuan' => 'Sachet',
+            'unit_id' => $unitSachet->id,
             'selling_price' => 6000,
             'unit_price' => 2400,
             'hpp_method' => 'calculated',
@@ -90,7 +101,7 @@ class MasterDataSeeder extends Seeder
 
         $productService->createProduct([
             'prod_name' => 'Good Day Cappucino',
-            'satuan' => 'Sachet',
+            'unit_id' => $unitSachet->id,
             'selling_price' => 6000,
             'unit_price' => 2150,
             'hpp_method' => 'calculated',
@@ -102,7 +113,7 @@ class MasterDataSeeder extends Seeder
 
         $productService->createProduct([
             'prod_name' => 'Milo',
-            'satuan' => 'Sachet',
+            'unit_id' => $unitSachet->id,
             'selling_price' => 6000,
             'unit_price' => 1950,
             'hpp_method' => 'calculated',
@@ -122,7 +133,7 @@ class MasterDataSeeder extends Seeder
 
         $productService->createProduct([
             'prod_name' => 'Energen Kacang Ijo',
-            'satuan' => 'Sachet',
+            'unit_id' => $unitSachet->id,
             'selling_price' => 5000,
             'unit_price' => 2050,
             'hpp_method' => 'calculated',
@@ -134,7 +145,7 @@ class MasterDataSeeder extends Seeder
 
         $productService->createProduct([
             'prod_name' => 'White Coffee',
-            'satuan' => 'Sachet',
+            'unit_id' => $unitSachet->id,
             'selling_price' => 5000,
             'unit_price' => 1500,
             'hpp_method' => 'calculated',
@@ -147,7 +158,7 @@ class MasterDataSeeder extends Seeder
         // Produk Manual HPP
         $productService->createProduct([
             'prod_name' => 'Aqua Botol 600ml',
-            'satuan' => 'Botol',
+            'unit_id' => $unitBotol->id,
             'selling_price' => 5000,
             'unit_price' => 2084,
             'hpp_method' => 'manual',
@@ -159,7 +170,7 @@ class MasterDataSeeder extends Seeder
 
         $productService->createProduct([
             'prod_name' => 'Beng Beng',
-            'satuan' => 'Pcs',
+            'unit_id' => $unitPcs->id,
             'selling_price' => 3000,
             'unit_price' => 2206,
             'hpp_method' => 'manual',
@@ -171,7 +182,7 @@ class MasterDataSeeder extends Seeder
 
         $productService->createProduct([
             'prod_name' => 'Nasi Bungkus Pak Ali',
-            'satuan' => 'Bungkus',
+            'unit_id' => $unitBungkus->id,
             'selling_price' => 8000,
             'unit_price' => 6000,
             'hpp_method' => 'manual',
@@ -183,7 +194,7 @@ class MasterDataSeeder extends Seeder
 
         $productService->createProduct([
             'prod_name' => 'Gorengan Ote-ote',
-            'satuan' => 'Porsi',
+            'unit_id' => $unitPorsi->id,
             'selling_price' => 101500,
             'unit_price' => 53000,
             'hpp_method' => 'manual',

@@ -55,7 +55,7 @@
 
             <h5 class="fw-bold text-dark mb-1">{{ $productObj->prod_name }}</h5>
             <div class="mb-3">
-                <span class="badge badge-soft-info px-2 py-1">{{ strtoupper($productObj->satuan ?? 'PORSI') }}</span>
+                <span class="badge badge-soft-info px-2 py-1">{{ strtoupper($productObj->unit->unit_name ?? $productObj->unit->short_name ?? 'PORSI') }}</span>
                 @if ($productObj->hpp_method === 'calculated')
                     <span class="badge badge-soft-success px-2 py-1">Hitung Komposisi HPP</span>
                 @else
@@ -152,14 +152,14 @@
                 <div class="col-6">
                     <div class="p-3 bg-light rounded-3">
                         <div class="small text-muted">Stok Tersedia</div>
-                        <div class="h4 fw-bold text-dark mb-0">{{ $productObj->current_stock }} {{ $productObj->satuan }}</div>
+                        <div class="h4 fw-bold text-dark mb-0">{{ $productObj->current_stock }} {{ $productObj->unit->short_name ?? $productObj->unit->unit_name ?? '' }}</div>
                     </div>
                 </div>
                 <div class="col-6">
                     <div class="p-3 bg-light rounded-3">
                         <div class="small text-muted">Batas Minimal Alert</div>
                         <div class="h4 fw-bold {{ (int)$productObj->current_stock <= (int)$productObj->min_stock ? 'text-danger' : 'text-muted' }} mb-0">
-                            {{ $productObj->min_stock }} {{ $productObj->satuan }}
+                            {{ $productObj->min_stock }} {{ $productObj->unit->short_name ?? $productObj->unit->unit_name ?? '' }}
                         </div>
                     </div>
                 </div>
