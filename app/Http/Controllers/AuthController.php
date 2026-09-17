@@ -16,7 +16,7 @@ class AuthController extends Controller
     public function showLoginForm()
     {
         if (Auth::check()) {
-            return redirect()->route('products.index');
+            return redirect()->route('admin.dashboard');
         }
 
         return view('pages.auth.login');
@@ -63,7 +63,7 @@ class AuthController extends Controller
                 ]);
             }
 
-            return redirect()->intended(route('products.index'))->with('success', "Selamat datang kembali, {$user->employee_name}!");
+            return redirect()->intended(route('admin.dashboard'))->with('success', "Selamat datang kembali, {$user->employee_name}!");
         }
 
         ActivityLogService::log(
