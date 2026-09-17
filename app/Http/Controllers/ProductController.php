@@ -6,6 +6,7 @@ use App\Http\Requests\StoreProductRequest;
 use App\Http\Requests\UpdateProductRequest;
 use App\Models\Hpp;
 use App\Models\Products;
+use App\Models\Unit;
 use App\Services\ProductService;
 use Illuminate\Http\Request;
 
@@ -41,8 +42,9 @@ class ProductController extends Controller
      */
     public function create()
     {
+        $units = Unit::orderBy('unit_name', 'asc')->get();
         $hppComponents = Hpp::orderBy('name', 'asc')->get();
-        return view('pages.products.create', compact('hppComponents'));
+        return view('pages.products.create', compact('units', 'hppComponents'));
     }
 
     /**
@@ -69,7 +71,7 @@ class ProductController extends Controller
      */
     public function show(Request $request, Products $product)
     {
-        $product->load(['productHpps.hpp', 'hpps']);
+        $product->load(['unit', 'productHpps.hpp', 'hpps']);
 
         if ($request->wantsJson()) {
             return response()->json([
@@ -86,10 +88,11 @@ class ProductController extends Controller
      */
     public function edit(Products $product)
     {
-        $product->load(['productHpps.hpp']);
+        $product->load(['unit', 'productHpps.hpp']);
+        $units = Unit::orderBy('unit_name', 'asc')->get();
         $hppComponents = Hpp::orderBy('name', 'asc')->get();
 
-        return view('pages.products.edit', compact('product', 'hppComponents'));
+        return view('pages.products.edit', compact('product', 'units', 'hppComponents'));
     }
 
     /**

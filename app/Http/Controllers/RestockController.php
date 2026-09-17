@@ -41,8 +41,8 @@ class RestockController extends Controller
      */
     public function create()
     {
-        $products = Products::select([
-            'id', 'prod_name', 'sku', 'satuan', 'hpp_method', 'unit_price', 'current_hpp', 'current_stock'
+        $products = Products::with('unit')->select([
+            'id', 'unit_id', 'prod_name', 'sku', 'hpp_method', 'unit_price', 'current_hpp', 'current_stock'
         ])->orderBy('prod_name', 'asc')->get();
 
         return view('pages.restock.create', compact('products'));

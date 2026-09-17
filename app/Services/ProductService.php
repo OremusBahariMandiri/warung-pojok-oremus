@@ -17,7 +17,7 @@ class ProductService
      */
     public function getAllProducts(array $filters = [])
     {
-        $query = Products::with(['productHpps.hpp', 'hpps']);
+        $query = Products::with(['unit', 'productHpps.hpp', 'hpps']);
 
         if (!empty($filters['search'])) {
             $search = $filters['search'];
@@ -49,7 +49,7 @@ class ProductService
      */
     public function getProductById(int $id): Products
     {
-        return Products::with(['productHpps.hpp', 'hpps'])->findOrFail($id);
+        return Products::with(['unit', 'productHpps.hpp', 'hpps'])->findOrFail($id);
     }
 
     /**
@@ -135,10 +135,10 @@ class ProductService
             }
 
             $product = Products::create([
+                'unit_id' => $data['unit_id'],
                 'prod_name' => $prodName,
                 'slug' => $slug,
                 'sku' => $sku,
-                'satuan' => $data['satuan'] ?? 'Pcs',
                 'selling_price' => $sellingPrice,
                 'unit_price' => $unitPrice,
                 'hpp_method' => $hppMethod,
@@ -170,7 +170,7 @@ class ProductService
                 newValues: $product->load('productHpps')->toArray()
             );
 
-            return $product->load(['productHpps.hpp', 'hpps']);
+            return $product->load(['unit', 'productHpps.hpp', 'hpps']);
         });
     }
 
@@ -226,10 +226,10 @@ class ProductService
             }
 
             $product->update([
+                'unit_id' => $data['unit_id'] ?? $product->unit_id,
                 'prod_name' => $prodName,
                 'slug' => $slug,
                 'sku' => $sku,
-                'satuan' => $data['satuan'] ?? $product->satuan,
                 'selling_price' => $sellingPrice,
                 'unit_price' => $unitPrice,
                 'hpp_method' => $hppMethod,
@@ -250,7 +250,7 @@ class ProductService
                 newValues: $product->fresh()->load('productHpps')->toArray()
             );
 
-            return $product->fresh()->load(['productHpps.hpp', 'hpps']);
+            return $product->fresh()->load(['unit', 'productHpps.hpp', 'hpps']);
         });
     }
 

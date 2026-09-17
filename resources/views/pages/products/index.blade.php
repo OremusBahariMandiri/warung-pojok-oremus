@@ -204,7 +204,7 @@
                             </div>
                         </td>
                         <td>
-                            <span class="badge badge-soft-secondary font-monospace">{{ strtoupper($item->satuan ?? 'PORSI') }}</span>
+                            <span class="badge badge-soft-secondary font-monospace">{{ strtoupper($item->unit->short_name ?? $item->unit->unit_name ?? 'PORSI') }}</span>
                         </td>
                         <td class="text-end fw-bold text-dark">
                             Rp {{ number_format($item->selling_price, 0, ',', '.') }}
@@ -234,7 +234,7 @@
                                 </span>
                             @else
                                 <span class="badge badge-soft-success px-2 py-1 rounded-pill">
-                                    <i class="bi bi-check-circle-fill me-1"></i>{{ $item->current_stock }} {{ $item->satuan }}
+                                    <i class="bi bi-check-circle-fill me-1"></i>{{ $item->current_stock }} {{ $item->unit->short_name ?? $item->unit->unit_name ?? '' }}
                                 </span>
                             @endif
                         </td>
