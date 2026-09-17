@@ -69,7 +69,7 @@
                 <li class="nav-item">
                     <a href="{{ Route::has('hpp.index') ? route('hpp.index') : '#' }}" class="nav-link {{ request()->routeIs('hpp.*') ? 'active' : '' }}">
                         <i class="bi bi-calculator"></i>
-                        <span class="nav-text">Kalkulasi HPP</span>
+                        <span class="nav-text">Management HPP</span>
                     </a>
                 </li>
                 <li class="nav-item">

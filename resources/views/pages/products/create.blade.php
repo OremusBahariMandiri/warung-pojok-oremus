@@ -58,14 +58,14 @@
 
                 <div class="mb-3">
                     <label for="prod_name" class="form-label small fw-semibold text-dark">Nama Produk <span class="text-danger">*</span></label>
-                    <input type="text" class="form-control rounded-3" id="prod_name" name="prod_name" value="{{ old('prod_name') }}" placeholder="Contoh: Nutrisari Florida Orange / Es Teh Manis" required autofocus>
+                    <input type="text" class="form-control rounded-3" id="prod_name" name="prod_name" value="{{ old('prod_name') }}" required autofocus>
                 </div>
 
                 <div class="row g-3 mb-3">
                     <div class="col-md-7">
-                        <label for="sku" class="form-label small fw-semibold text-dark">Kode SKU / Barcode</label>
+                        <label for="sku" class="form-label small fw-semibold text-dark">Kode SKU</label>
                         <div class="input-group">
-                            <input type="text" class="form-control font-monospace rounded-start-3" id="sku" name="sku" value="{{ old('sku') }}" placeholder="PRD-001">
+                            <input type="text" class="form-control font-monospace rounded-start-3" id="sku" name="sku" value="{{ old('sku') }}">
                             <button class="btn btn-outline-secondary rounded-end-3" type="button" onclick="generateRandomSKU()" title="Generate Random SKU">
                                 <i class="bi bi-magic me-1"></i> Auto SKU
                             </button>
@@ -87,8 +87,8 @@
                 </div>
 
                 <div class="mb-3">
-                    <label for="description" class="form-label small fw-semibold text-dark">Deskripsi / Catatan Porsi</label>
-                    <textarea class="form-control rounded-3" id="description" name="description" rows="3" placeholder="Contoh: 1 sachet Nutrisari + air es + gula + kemasan sedotan.">{{ old('description') }}</textarea>
+                    <label for="description" class="form-label small fw-semibold text-dark">Deskripsi Produk</label>
+                    <textarea class="form-control rounded-3" id="description" name="description" rows="3" >{{ old('description') }}</textarea>
                 </div>
 
                 <div class="mb-2">
@@ -113,13 +113,13 @@
                 </h6>
                 <div class="row g-3">
                     <div class="col-md-6">
-                        <label for="current_stock" class="form-label small fw-semibold text-dark">Stok Awal Saat Ini</label>
-                        <input type="number" class="form-control rounded-3" id="current_stock" name="current_stock" value="{{ old('current_stock', 0) }}" min="0">
+                        <label for="current_stock" class="form-label small fw-semibold text-dark">Stok Produk</label>
+                        <input type="number" class="form-control rounded-3" id="current_stock" name="current_stock" value="{{ old('current_stock') }}" min="0">
                         <div class="form-text text-muted small">Jumlah stok produk yang siap dijual saat ini.</div>
                     </div>
                     <div class="col-md-6">
-                        <label for="min_stock" class="form-label small fw-semibold text-dark">Batas Minimal Stok Alert <span class="text-danger">*</span></label>
-                        <input type="number" class="form-control rounded-3" id="min_stock" name="min_stock" value="{{ old('min_stock', 10) }}" min="0" required>
+                        <label for="min_stock" class="form-label small fw-semibold text-dark">Minimal Stok Produk <span class="text-danger">*</span></label>
+                        <input type="number" class="form-control rounded-3" id="min_stock" name="min_stock" value="{{ old('min_stock') }}" min="0" required>
                         <div class="form-text text-muted small">Peringatan otomatis jika stok di bawah angka ini.</div>
                     </div>
                 </div>
@@ -136,8 +136,8 @@
                 <div class="mb-3">
                     <label for="hpp_method" class="form-label small fw-semibold text-dark">Metode Perhitungan HPP <span class="text-danger">*</span></label>
                     <select class="form-select rounded-3" id="hpp_method" name="hpp_method" onchange="toggleHppSection()" required>
-                        <option value="calculated" {{ old('hpp_method', 'calculated') == 'calculated' ? 'selected' : '' }}>Otomatik (Bahan Utama + Komponen HPP)</option>
-                        <option value="manual" {{ old('hpp_method') == 'manual' ? 'selected' : '' }}>Manual Fixed Cost</option>
+                        <option value="calculated" {{ old('hpp_method', 'calculated') == 'calculated' ? 'selected' : '' }}>Otomatis (Bahan Utama + Komponen HPP)</option>
+                        <option value="manual" {{ old('hpp_method') == 'manual' ? 'selected' : '' }}>Manual</option>
                     </select>
                 </div>
 
@@ -145,7 +145,7 @@
                     <label for="unit_price" class="form-label small fw-semibold text-dark">Harga Bahan Utama (Rp) <span class="text-danger">*</span></label>
                     <div class="input-group">
                         <span class="input-group-text bg-light border-end-0">Rp</span>
-                        <input type="number" class="form-control font-monospace fw-semibold text-end" id="unit_price" name="unit_price" value="{{ old('unit_price', 0) }}" placeholder="0" min="0" oninput="calculateTotalHpp()" required>
+                        <input type="number" class="form-control font-monospace fw-semibold text-end" id="unit_price" name="unit_price" value="{{ old('unit_price') }}"  min="0" oninput="calculateTotalHpp()" required>
                     </div>
                     <div class="form-text text-muted small">Biaya modal awal bahan dasar produk (Misal: 1 sachet = Rp 1.400).</div>
                 </div>
@@ -183,34 +183,14 @@
                                                 </select>
                                             </td>
                                             <td>
-                                                <input type="number" name="components[{{ $idx }}][cost]" class="form-control form-control-sm font-monospace text-end rounded-2 component-cost" value="{{ $comp['cost'] ?? 0 }}" placeholder="0" min="0" oninput="calculateTotalHpp()">
+                                                <input type="number" name="components[{{ $idx }}][cost]" class="form-control form-control-sm font-monospace text-end rounded-2 component-cost" value="{{ $comp['cost'] ?? 0 }}" min="0" oninput="calculateTotalHpp()">
                                             </td>
                                             <td class="text-center">
                                                 <button type="button" class="btn btn-link text-danger p-0 border-0" onclick="removeHppComponentRow(this)" title="Hapus"><i class="bi bi-x-circle-fill"></i></button>
                                             </td>
                                         </tr>
                                     @endforeach
-                                @elseif ($hppList->count() > 0)
-                                    @foreach ($hppList as $idx => $hpp)
-                                        <tr class="component-row">
-                                            <td>
-                                                <select name="components[{{ $idx }}][hpp_id]" class="form-select form-select-sm rounded-2 component-select" onchange="onComponentSelectChange(this)">
-                                                    <option value="">Pilih Komponen</option>
-                                                    @foreach ($hppList as $subHpp)
-                                                        <option value="{{ $subHpp->id }}" data-cost="{{ $subHpp->unit_cost }}" {{ $subHpp->id == $hpp->id ? 'selected' : '' }}>
-                                                            {{ $subHpp->name }} (Rp {{ number_format($subHpp->unit_cost, 0, ',', '.') }})
-                                                        </option>
-                                                    @endforeach
-                                                </select>
-                                            </td>
-                                            <td>
-                                                <input type="number" name="components[{{ $idx }}][cost]" class="form-control form-control-sm font-monospace text-end rounded-2 component-cost" value="{{ (int)$hpp->unit_cost }}" placeholder="0" min="0" oninput="calculateTotalHpp()">
-                                            </td>
-                                            <td class="text-center">
-                                                <button type="button" class="btn btn-link text-danger p-0 border-0" onclick="removeHppComponentRow(this)" title="Hapus"><i class="bi bi-x-circle-fill"></i></button>
-                                            </td>
-                                        </tr>
-                                    @endforeach
+                                
                                 @else
                                     <tr class="component-row">
                                         <td colspan="3" class="text-center text-muted small py-2">
@@ -228,7 +208,7 @@
                     <label for="current_hpp" class="form-label small fw-semibold text-dark">HPP Fixed Manual (Rp)</label>
                     <div class="input-group">
                         <span class="input-group-text bg-light border-end-0">Rp</span>
-                        <input type="number" class="form-control font-monospace text-end" id="current_hpp" name="current_hpp" value="{{ old('current_hpp', 0) }}" placeholder="0" min="0" oninput="calculateTotalHpp()">
+                        <input type="number" class="form-control font-monospace text-end" id="current_hpp" name="current_hpp" value="{{ old('current_hpp', 0) }}"  min="0" oninput="calculateTotalHpp()">
                     </div>
                 </div>
 
@@ -236,7 +216,7 @@
                     <label for="selling_price" class="form-label small fw-semibold text-dark">Harga Jual Konsumen (Rp) <span class="text-danger">*</span></label>
                     <div class="input-group">
                         <span class="input-group-text bg-light border-end-0">Rp</span>
-                        <input type="number" class="form-control font-monospace fw-bold text-end text-dark" id="selling_price" name="selling_price" value="{{ old('selling_price', 0) }}" placeholder="0" min="0" oninput="calculateTotalHpp()" required>
+                        <input type="number" class="form-control font-monospace fw-bold text-end text-dark" id="selling_price" name="selling_price" value="{{ old('selling_price') }}"  min="0" oninput="calculateTotalHpp()" required>
                     </div>
                 </div>
 
