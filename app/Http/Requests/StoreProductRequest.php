@@ -11,6 +11,16 @@ class StoreProductRequest extends FormRequest
         return true;
     }
 
+    protected function prepareForValidation(): void
+    {
+        if ($this->has('components') && is_array($this->components)) {
+            $filtered = array_values(array_filter($this->components, function ($comp) {
+                return !empty($comp['hpp_id']);
+            }));
+            $this->merge(['components' => $filtered]);
+        }
+    }
+
     public function rules(): array
     {
         return [

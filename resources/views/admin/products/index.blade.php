@@ -1,0 +1,1 @@
+@extends('pages.products.index')

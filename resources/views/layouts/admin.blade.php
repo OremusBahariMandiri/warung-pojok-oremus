@@ -18,6 +18,7 @@
     
     <!-- Custom CSS -->
     <link rel="stylesheet" href="{{ asset('css/admin.css') }}">
+    @stack('styles')
 </head>
 <body>
 
@@ -42,31 +43,31 @@
         <div class="sidebar-menu">
             <ul class="nav flex-column">
                 <li class="nav-item">
-                    <a href="javascript:void(0)" class="nav-link active">
+                    <a href="{{ Route::has('admin.dashboard') ? route('admin.dashboard') : '#' }}" class="nav-link {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
                         <i class="bi bi-grid-1x2-fill"></i>
                         <span class="nav-text">Dashboard</span>
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a href="javascript:void(0)" class="nav-link">
+                    <a href="{{ Route::has('products.index') ? route('products.index') : '#' }}" class="nav-link {{ request()->routeIs('products.*') ? 'active' : '' }}">
                         <i class="bi bi-box-seam"></i>
                         <span class="nav-text">Manajemen Produk</span>
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a href="javascript:void(0)" class="nav-link">
+                    <a href="javascript:void(0)" class="nav-link {{ request()->routeIs('inventory.*') ? 'active' : '' }}">
                         <i class="bi bi-boxes"></i>
                         <span class="nav-text">Stok & Inventori</span>
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a href="javascript:void(0)" class="nav-link">
+                    <a href="{{ Route::has('restock.index') ? route('restock.index') : '#' }}" class="nav-link {{ request()->routeIs('restock.*') ? 'active' : '' }}">
                         <i class="bi bi-arrow-repeat"></i>
                         <span class="nav-text">Restock Barang</span>
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a href="javascript:void(0)" class="nav-link">
+                    <a href="{{ Route::has('hpp.index') ? route('hpp.index') : '#' }}" class="nav-link {{ request()->routeIs('hpp.*') ? 'active' : '' }}">
                         <i class="bi bi-calculator"></i>
                         <span class="nav-text">Kalkulasi HPP</span>
                     </a>
@@ -78,7 +79,7 @@
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a href="javascript:void(0)" class="nav-link">
+                    <a href="{{ Route::has('reports.index') ? route('reports.index') : '#' }}" class="nav-link {{ request()->routeIs('reports.*') ? 'active' : '' }}">
                         <i class="bi bi-graph-up-arrow"></i>
                         <span class="nav-text">Laporan & Analitik</span>
                     </a>
@@ -89,7 +90,7 @@
                 </li>
 
                 <li class="nav-item">
-                    <a href="javascript:void(0)" class="nav-link">
+                    <a href="{{ Route::has('users.index') ? route('users.index') : '#' }}" class="nav-link {{ request()->routeIs('users.*') ? 'active' : '' }}">
                         <i class="bi bi-people"></i>
                         <span class="nav-text">Kelola Pengguna</span>
                     </a>

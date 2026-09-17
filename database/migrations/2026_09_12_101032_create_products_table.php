@@ -24,7 +24,7 @@ return new class extends Migration
             $table->integer("current_stock")->default(0);
             $table->integer("min_stock");
             $table->text("description")->nullable();
-            $table->string("thumbnail", 255)->default('products/default.png');
+            $table->string("thumbnail", 255)->default('thumbnail/default.png');
             $table->timestamps();
         });
     }
