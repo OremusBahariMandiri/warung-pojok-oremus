@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\ActivityLogController;
+use App\Http\Controllers\AdminDashboardController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\HppController;
 use App\Http\Controllers\ProductController;
@@ -19,12 +20,11 @@ Route::middleware('guest')->group(function () {
 
 // Authenticated Application Routes
 Route::middleware('auth')->group(function () {
+    /* HOMEPAGE */
+    Route::get('/', [AdminDashboardController::class, 'index'])->name('admin.dashboard');
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
     Route::get('/me', [AuthController::class, 'me'])->name('me');
 
-    Route::get('/', function () {
-        return redirect()->route('products.index');
-    });
 
     // Master Data: Komponen HPP
     Route::resource('hpp', HppController::class)->middleware('user.access:hpp');
