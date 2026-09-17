@@ -75,17 +75,18 @@
                         </div>
                     </div>
                     <div class="col-md-5">
-                        <label for="satuan" class="form-label small fw-semibold text-dark">Satuan Jual <span class="text-danger">*</span></label>
-                        <select class="form-select rounded-3" id="satuan" name="satuan" required>
-                            <option value="Sachet" {{ old('satuan', $productObj->satuan) == 'Sachet' ? 'selected' : '' }}>Sachet</option>
-                            <option value="Gelas" {{ old('satuan', $productObj->satuan) == 'Gelas' ? 'selected' : '' }}>Gelas</option>
-                            <option value="Porsi" {{ old('satuan', $productObj->satuan) == 'Porsi' ? 'selected' : '' }}>Porsi</option>
-                            <option value="Botol" {{ old('satuan', $productObj->satuan) == 'Botol' ? 'selected' : '' }}>Botol</option>
-                            <option value="Bungkus" {{ old('satuan', $productObj->satuan) == 'Bungkus' ? 'selected' : '' }}>Bungkus</option>
-                            <option value="Pcs" {{ old('satuan', $productObj->satuan) == 'Pcs' ? 'selected' : '' }}>Pcs</option>
-                            <option value="Kg" {{ old('satuan', $productObj->satuan) == 'Kg' ? 'selected' : '' }}>Kg</option>
-                            <option value="Liter" {{ old('satuan', $productObj->satuan) == 'Liter' ? 'selected' : '' }}>Liter</option>
+                        <label for="unit_id" class="form-label small fw-semibold text-dark">Satuan Jual <span class="text-danger">*</span></label>
+                        <select class="form-select rounded-3 @error('unit_id') is-invalid @enderror" id="unit_id" name="unit_id" required>
+                            <option value="" disabled {{ old('unit_id', $productObj->unit_id) ? '' : 'selected' }}>Pilih Satuan...</option>
+                            @foreach($units as $unit)
+                                <option value="{{ $unit->id }}" {{ old('unit_id', $productObj->unit_id) == $unit->id ? 'selected' : '' }}>
+                                    {{ $unit->unit_name }} ({{ $unit->short_name }})
+                                </option>
+                            @endforeach
                         </select>
+                        @error('unit_id')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
                     </div>
                 </div>
 

@@ -40,7 +40,7 @@ class UpdateProductRequest extends FormRequest
                 'max:100',
                 Rule::unique('products', 'sku')->ignore($productId),
             ],
-            'satuan' => 'required|string|max:50',
+            'unit_id' => 'required|integer|exists:units,id',
             'selling_price' => 'required|numeric|min:0',
             'unit_price' => 'required|numeric|min:0',
             'hpp_method' => 'required|in:manual,calculated',
@@ -59,7 +59,8 @@ class UpdateProductRequest extends FormRequest
     {
         return [
             'prod_name.required' => 'Nama produk wajib diisi.',
-            'satuan.required' => 'Satuan produk wajib diisi.',
+            'unit_id.required' => 'Satuan produk wajib dipilih.',
+            'unit_id.exists' => 'Satuan produk yang dipilih tidak valid.',
             'selling_price.required' => 'Harga jual wajib diisi.',
             'selling_price.numeric' => 'Harga jual harus berupa angka.',
             'unit_price.required' => 'Harga bahan utama wajib diisi.',

@@ -146,7 +146,7 @@ class AuthTest extends TestCase
         // 2. Forbidden (403) to create products
         $this->postJson(route('products.store'), [
             'prod_name' => 'Produk Ilegal',
-            'satuan' => 'Pcs',
+            'unit_id' => 1,
             'selling_price' => 5000,
             'unit_price' => 2000,
             'hpp_method' => 'manual',

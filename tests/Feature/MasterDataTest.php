@@ -5,6 +5,7 @@ namespace Tests\Feature;
 
 use App\Models\Hpp;
 use App\Models\Products;
+use App\Models\Unit;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -14,6 +15,7 @@ class MasterDataTest extends TestCase
     use RefreshDatabase;
 
     protected User $adminUser;
+    protected Unit $defaultUnit;
 
     protected function setUp(): void
     {
@@ -25,6 +27,12 @@ class MasterDataTest extends TestCase
             'employee_name' => 'Admin Warjok',
             'password' => 'secret123',
             'is_admin' => true,
+        ]);
+
+        $this->defaultUnit = Unit::create([
+            'unit_name' => 'Sachet',
+            'type' => 'Kemasan',
+            'short_name' => 'sct',
         ]);
     }
 
@@ -95,7 +103,7 @@ class MasterDataTest extends TestCase
 
         $payload = [
             'prod_name' => 'Nutrisari Florida Orange',
-            'satuan' => 'Sachet',
+            'unit_id' => $this->defaultUnit->id,
             'selling_price' => 5000,
             'unit_price' => 1400,
             'hpp_method' => 'calculated',
@@ -136,7 +144,7 @@ class MasterDataTest extends TestCase
 
         $payload = [
             'prod_name' => 'Gorengan Ote-ote',
-            'satuan' => 'Porsi',
+            'unit_id' => $this->defaultUnit->id,
             'selling_price' => 101500,
             'unit_price' => 53000,
             'hpp_method' => 'manual',
