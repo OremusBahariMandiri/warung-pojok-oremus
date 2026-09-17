@@ -12,6 +12,16 @@ class UpdateProductRequest extends FormRequest
         return true;
     }
 
+    protected function prepareForValidation(): void
+    {
+        if ($this->has('components') && is_array($this->components)) {
+            $filtered = array_values(array_filter($this->components, function ($comp) {
+                return !empty($comp['hpp_id']);
+            }));
+            $this->merge(['components' => $filtered]);
+        }
+    }
+
     public function rules(): array
     {
         $productId = $this->route('product') ? ($this->route('product') instanceof \App\Models\Products ? $this->route('product')->id : $this->route('product')) : null;
