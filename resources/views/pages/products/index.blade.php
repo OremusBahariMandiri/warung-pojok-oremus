@@ -58,10 +58,10 @@
 @endif
 
 <!-- Main Section: Toolbar & DataTables Container -->
-<div class="card-box p-0 border rounded-3 overflow-hidden shadow-sm bg-white mb-4">
+<div class="card-box px-3 border rounded-3 overflow-hidden shadow-sm bg-white mb-4">
     <!-- Action & Filter Header -->
-    <div class="p-3 border-bottom d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-3">
-        <!-- Left: Search Box (Responsive) -->
+    <div class="py-3 d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-3">
+        <!-- Left: Search Box -->
         <div class="position-relative product-search-box">
             <i class="bi bi-search position-absolute top-50 start-0 translate-middle-y ms-3 text-muted"></i>
             <input type="text" id="dtSearchInput" class="form-control form-control-sm ps-5 pe-3 rounded-2" placeholder="Cari nama produk / SKU...">
@@ -81,7 +81,7 @@
         </div>
     </div>
 
-    <!-- DataTables Table Container (Table only scrolls horizontally via DataTables DOM) -->
+    <!-- DataTables Table -->
     <table class="table table-bordered table-hover align-middle mb-0 w-100 text-nowrap" id="productsDataTable">
         <thead>
             <tr>
@@ -109,64 +109,104 @@
                     $unitName = $item->unit->short_name ?? $item->unit->unit_name ?? 'PORSI';
                 @endphp
                 <tr data-stock="{{ $stockStatus }}" data-hpp="{{ $item->hpp_method }}">
-                    <td class="text-center text-muted fw-medium">
+
+                    {{-- #1 Nomor --}}
+                    <td class="text-center text-muted fw-medium"
+                        data-label="No">
                         {{ $loop->iteration }}
                     </td>
-                    <td>
-                        <div class="fw-semibold text-dark">{{ $item->prod_name }}</div>
+
+                    {{-- #2 Nama Produk --}}
+                    <td data-label="Nama Produk">
+                        <div class="text-dark text-center">{{ $item->prod_name }}</div>
                     </td>
-                    <td>
-                        <div class="text-dark">
-                                {{ $item->sku ?? 'PRD-' . sprintf('%03d', $item->id) }}
+
+                    {{-- #3 SKU --}}
+                    <td data-label="SKU">
+                        <div class="text-dark text-center">
+                            {{ $item->sku ?? 'PRD-' . sprintf('%03d', $item->id) }}
                         </div>
                     </td>
-                    <td>
-                        {{ strtoupper($unitName) }}
+
+                    {{-- #4 Satuan --}}
+                    <td data-label="Satuan">
+                        <div class="text-dark text-center">
+                            {{ strtoupper($unitName) }}
+                        </div>
                     </td>
-                    <td class="text-end fw-bold text-dark">
+
+                    {{-- #5 Harga Jual --}}
+                    <td class="text-dark text-center"
+                        data-label="Harga Jual">
                         Rp {{ number_format($item->selling_price, 0, ',', '.') }}
                     </td>
-                    <td class="text-end font-monospace text-secondary">
+
+                    {{-- #6 HPP Total --}}
+                    <td class="text-center text-secondary"
+                        data-label="HPP">
                         Rp {{ number_format($hpp, 0, ',', '.') }}
                     </td>
-                    <td class="text-center fw-semibold {{ $marginPercent >= 30 ? 'text-success' : ($marginPercent >= 15 ? 'text-warning' : 'text-danger') }}">
+
+                    {{-- #7 Margin % --}}
+                    <td class="text-center {{ $marginPercent >= 30 ? 'text-success' : ($marginPercent >= 15 ? 'text-warning' : 'text-danger') }}"
+                        data-label="Margin">
                         {{ $marginPercent }}%
                     </td>
-                    <td class="text-center">
+
+                    {{-- #8 Stok --}}
+                    <td class="text-center  text-dark"
+                        data-label="Stok">
                         <span class="{{ (int)$item->current_stock <= (int)$item->min_stock ? 'text-danger fw-bold' : 'text-dark' }}">
                             {{ $item->current_stock }} {{ $unitName }}
                         </span>
                     </td>
-                    <td class="text-center">
+
+                    {{-- #9 Metode HPP (tersembunyi di mobile via CSS) --}}
+                    <td class="text-center text-dark"
+                        data-label="Metode HPP">
                         {{ $item->hpp_method === 'calculated' ? 'Otomatis' : 'Manual' }}
                     </td>
+
+                    {{-- #10 Gambar (tersembunyi di mobile via CSS) --}}
                     <td class="text-center">
                         @if ($item->thumbnail)
-                            <img src="{{ asset('storage/' . $item->thumbnail) }}" 
-                                alt="{{ $item->prod_name }}" 
-                                style="width: 42px; height: 42px;">
+                            <img src="{{ asset('storage/' . $item->thumbnail) }}"
+                                alt="{{ $item->prod_name }}"
+                                style="width: 42px; height: 42px; object-fit: cover; border-radius: 6px; border: 1px solid #dee2e6;">
                         @else
-                            <div class="bg-light text-muted rounded-2 border d-inline-flex align-items-center justify-content-center" 
+                            <div class="bg-light text-muted rounded-2 border d-inline-flex align-items-center justify-content-center"
                                 style="width: 42px; height: 42px;">
                                 <i class="bi bi-image text-secondary"></i>
                             </div>
                         @endif
                     </td>
+
+                    {{-- #11 Aksi --}}
                     <td class="text-center">
-                        <!-- Desktop Action Buttons -->
+                        <!-- Desktop Action Buttons (juga dipakai di mobile card) -->
                         <div class="d-none d-md-inline-flex gap-1 justify-content-center">
-                            <a href="{{ route('products.show', $item->id) }}" class="btn btn-sm btn-info text-white px-2 py-1 rounded-2 shadow-none" title="Detail" style="background-color: #0ea5e9; border-color: #0ea5e9;">
+                            <a href="{{ route('products.show', $item->id) }}"
+                               class="btn btn-sm btn-info text-white px-2 py-1 rounded-2 shadow-none"
+                               title="Detail"
+                               style="background-color: #0ea5e9; border-color: #0ea5e9;">
                                 <i class="bi bi-eye"></i>
                             </a>
-                            <a href="{{ route('products.edit', $item->id) }}" class="btn btn-sm btn-warning text-white px-2 py-1 rounded-2 shadow-none" title="Edit" style="background-color: #f59e0b; border-color: #f59e0b;">
+                            <a href="{{ route('products.edit', $item->id) }}"
+                               class="btn btn-sm btn-warning text-white px-2 py-1 rounded-2 shadow-none"
+                               title="Edit"
+                               style="background-color: #f59e0b; border-color: #f59e0b;">
                                 <i class="bi bi-pencil"></i>
                             </a>
-                            <button type="button" class="btn btn-sm btn-danger text-white px-2 py-1 rounded-2 shadow-none" title="Hapus" style="background-color: #ef4444; border-color: #ef4444;" onclick="openDeleteModal({{ $item->id }}, '{{ addslashes($item->prod_name) }}')">
+                            <button type="button"
+                                    class="btn btn-sm btn-danger text-white px-2 py-1 rounded-2 shadow-none"
+                                    title="Hapus"
+                                    style="background-color: #ef4444; border-color: #ef4444;"
+                                    onclick="openDeleteModal({{ $item->id }}, '{{ addslashes($item->prod_name) }}')">
                                 <i class="bi bi-trash"></i>
                             </button>
                         </div>
 
-                        <!-- Mobile Action Dropdown -->
+                        <!-- Mobile Dropdown (disembunyikan CSS di mobile) -->
                         <div class="dropdown d-inline-block d-md-none">
                             <button class="btn btn-sm btn-light border dropdown-toggle shadow-none" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                                 Aksi
@@ -184,7 +224,8 @@
                                 </li>
                                 <li><hr class="dropdown-divider my-1"></li>
                                 <li>
-                                    <button type="button" class="dropdown-item py-2 small text-danger" onclick="openDeleteModal({{ $item->id }}, '{{ addslashes($item->prod_name) }}')">
+                                    <button type="button" class="dropdown-item py-2 small text-danger"
+                                            onclick="openDeleteModal({{ $item->id }}, '{{ addslashes($item->prod_name) }}')">
                                         <i class="bi bi-trash me-2"></i> Hapus Produk
                                     </button>
                                 </li>
@@ -258,7 +299,7 @@
                 </div>
                 <h6 class="fw-bold text-dark mb-1">Hapus Produk Ini?</h6>
                 <p class="text-muted small mb-3">Produk "<span id="deleteProductName" class="fw-semibold text-dark"></span>" akan dihapus permanen dari inventori.</p>
-                
+
                 <form id="deleteProductForm" method="POST" action="">
                     @csrf
                     @method('DELETE')
@@ -275,7 +316,7 @@
 @endsection
 
 @push('scripts')
-<!-- jQuery & DataTables JS BSD CDN -->
+<!-- jQuery & DataTables JS -->
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>

@@ -7,7 +7,7 @@
 #unitsDataTable.table-bordered {
     border: 1px solid #dee2e6;
 }
-#unitsDataTable.table-bordered th, 
+#unitsDataTable.table-bordered th,
 #unitsDataTable.table-bordered td {
     border: 1px solid #dee2e6;
     padding: 0.65rem 0.85rem;
@@ -100,17 +100,157 @@ table.dataTable thead > tr > th.no-sort {
     padding: 0;
 }
 
-/* ── Mobile Layout Optimization ──────────────── */
-@media (max-width: 575.98px) {
+/* ═══════════════════════════════════════════════════════════
+   MOBILE CARD LAYOUT  (< 768px)
+   Setiap <tr> berubah menjadi card terpisah.
+   Kolom ditampilkan sebagai baris label : value.
+   ═══════════════════════════════════════════════════════════ */
+@media (max-width: 767.98px) {
+    /* Hilangkan border tabel utama */
+    #unitsDataTable.table-bordered {
+        border: none !important;
+        background: transparent !important;
+    }
+
+    /* Sembunyikan header kolom */
+    #unitsDataTable thead {
+        display: none !important;
+    }
+
+    /* Setiap baris tabel → card */
+    #unitsDataTable tbody tr {
+        display: block !important;
+        background: #ffffff;
+        border: 1px solid #e2e8f0 !important;
+        border-radius: 10px !important;
+        margin-bottom: 0.75rem !important;
+        padding: 0 !important;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+        overflow: hidden;
+    }
+
+    /* Hover state card */
+    #unitsDataTable tbody tr:hover {
+        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1) !important;
+        border-color: #cbd5e1 !important;
+    }
+
+    /* Setiap cell → baris label:value */
+    #unitsDataTable tbody td {
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        padding: 0.5rem 0.85rem !important;
+        border: none !important;
+        border-bottom: 1px solid #f1f5f9 !important;
+        font-size: 0.85rem;
+        white-space: normal !important;
+        text-align: right !important;
+    }
+
+    /* Label pseudo sebelum value */
+    #unitsDataTable tbody td::before {
+        content: attr(data-label);
+        font-size: 0.73rem;
+        font-weight: 600;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.045em;
+        text-align: left !important;
+        flex-shrink: 0;
+        margin-right: 0.75rem;
+        white-space: nowrap;
+    }
+
+    /* ── Cell #1: Nomor — header strip kecil ── */
+    #unitsDataTable tbody td:nth-child(1) {
+        background: #f8fafc;
+        border-bottom: 1px solid #e2e8f0 !important;
+        font-size: 0.72rem;
+        color: #94a3b8;
+        font-weight: 500;
+        justify-content: flex-start !important;
+        text-align: left !important;
+        padding: 0.35rem 0.85rem !important;
+    }
+    #unitsDataTable tbody td:nth-child(1)::before {
+        content: "No. ";
+        font-weight: 700;
+        color: #cbd5e1;
+        text-transform: none;
+        letter-spacing: 0;
+        margin-right: 0.2rem;
+        font-size: 0.72rem;
+    }
+
+    /* ── Cell #2: Nama Satuan — nama utama bold ── */
+    #unitsDataTable tbody td:nth-child(2) {
+        font-size: 0.95rem !important;
+        font-weight: 600 !important;
+        color: #0f172a !important;
+        padding-top: 0.7rem !important;
+        padding-bottom: 0.7rem !important;
+    }
+
+    /* ── Cell terakhir: Aksi — footer strip ── */
+    #unitsDataTable tbody td:last-child {
+        background: #f8fafc;
+        border-bottom: none !important;
+        border-top: 1px solid #e2e8f0 !important;
+        padding: 0.55rem 0.85rem !important;
+        justify-content: flex-end !important;
+        gap: 0.4rem;
+    }
+    #unitsDataTable tbody td:last-child::before {
+        display: none !important;
+    }
+
+    /* Di mobile, paksa tampil tombol desktop (bukan dropdown) */
+    #unitsDataTable tbody td:last-child .d-none.d-md-inline-flex {
+        display: inline-flex !important;
+    }
+    #unitsDataTable tbody td:last-child .d-inline-block.d-md-none {
+        display: none !important;
+    }
+
+    /* Nonaktifkan overflow scroll bawaan DataTables */
+    .dataTables_wrapper .dataTables_scroll,
+    .dataTables_scrollBody {
+        overflow-x: visible !important;
+    }
+    #unitsDataTable {
+        width: 100% !important;
+    }
+
+    /* Toolbar: search full width */
     .units-search-box {
         max-width: 100% !important;
         width: 100%;
+        min-width: unset;
     }
+
+    /* Info & pagination tengah */
     .dataTables_wrapper .dataTables_info,
     .dataTables_wrapper .dataTables_paginate {
         width: 100%;
         text-align: center;
         display: flex;
         justify-content: center;
+    }
+    .dataTables_wrapper .dataTables_paginate .pagination {
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 3px;
+    }
+    .dataTables_wrapper .dataTables_paginate .page-item .page-link {
+        border-radius: 5px !important;
+        margin-left: 0 !important;
+    }
+}
+
+/* ── Tablet: search bar full width ─────────────── */
+@media (min-width: 768px) and (max-width: 991.98px) {
+    .units-search-box {
+        max-width: 100%;
     }
 }
