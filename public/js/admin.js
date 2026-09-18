@@ -2,94 +2,97 @@
  * WARJOK Admin Dashboard — JavaScript
  * Warung Pojok Oremus | PT Oremus Bahari Mandiri
  */
-document.addEventListener('DOMContentLoaded', function () {
-
+document.addEventListener("DOMContentLoaded", function () {
     // ── Element References ──────────────────────
-    const sidebar         = document.getElementById('sidebar');
-    const mainWrapper     = document.getElementById('mainWrapper');
-    const desktopToggle   = document.getElementById('desktopToggleBtn');
-    const mobileToggle    = document.getElementById('mobileToggleBtn');
-    const closeSidebar    = document.getElementById('closeSidebarBtn');
-    const overlay         = document.getElementById('sidebarOverlay');
-    const navLinks        = document.querySelectorAll('.sidebar .nav-link:not(.nav-category .nav-link)');
+    const sidebar = document.getElementById("sidebar");
+    const mainWrapper = document.getElementById("mainWrapper");
+    const desktopToggle = document.getElementById("desktopToggleBtn");
+    const mobileToggle = document.getElementById("mobileToggleBtn");
+    const closeSidebar = document.getElementById("closeSidebarBtn");
+    const overlay = document.getElementById("sidebarOverlay");
+    const navLinks = document.querySelectorAll(
+        ".sidebar .nav-link:not(.nav-category .nav-link)",
+    );
 
-    const STORAGE_KEY     = 'warjok_sidebar_minimized';
-    const BREAKPOINT      = 992; // lg breakpoint
+    const STORAGE_KEY = "warjok_sidebar_minimized";
+    const BREAKPOINT = 992; // lg breakpoint
 
     // ── 1. Desktop: Minimize / Expand ───────────
     function applyDesktopState(minimized) {
         if (!sidebar) return;
         if (minimized) {
-            sidebar.classList.add('minimized');
+            sidebar.classList.add("minimized");
+            if (mainWrapper) mainWrapper.classList.add("sidebar-minimized");
+            document.body.classList.add("sidebar-minimized");
         } else {
-            sidebar.classList.remove('minimized');
-        }
-        // Update toggle icon
-        if (desktopToggle) {
-            const icon = desktopToggle.querySelector('i');
-            if (icon) {
-                icon.className = minimized
-                    ? 'bi bi-layout-sidebar-inset-reverse fs-4'
-                    : 'bi bi-layout-sidebar-inset fs-4';
-            }
+            sidebar.classList.remove("minimized");
+            if (mainWrapper) mainWrapper.classList.remove("sidebar-minimized");
+            document.body.classList.remove("sidebar-minimized");
         }
     }
 
     // Restore from localStorage on load (desktop only)
     if (window.innerWidth >= BREAKPOINT) {
         const saved = localStorage.getItem(STORAGE_KEY);
-        if (saved === 'true') {
+        if (saved === "true") {
             applyDesktopState(true);
         }
     }
 
     if (desktopToggle) {
-        desktopToggle.addEventListener('click', function () {
-            const isMinimized = sidebar.classList.contains('minimized');
-            applyDesktopState(!isMinimized);
-            localStorage.setItem(STORAGE_KEY, (!isMinimized).toString());
+        desktopToggle.addEventListener("click", function (e) {
+            e.preventDefault();
+            const isCurrentlyMinimized = sidebar.classList.contains("minimized") || document.body.classList.contains("sidebar-minimized");
+            applyDesktopState(!isCurrentlyMinimized);
+            localStorage.setItem(STORAGE_KEY, (!isCurrentlyMinimized).toString());
         });
     }
 
     // ── 2. Mobile: Off-canvas Sidebar ───────────
     function openMobileSidebar() {
         if (!sidebar || !overlay) return;
-        sidebar.classList.add('show');
-        overlay.classList.add('show');
-        document.body.style.overflow = 'hidden';
+        sidebar.classList.add("show");
+        overlay.classList.add("show");
+        document.body.style.overflow = "hidden";
     }
 
     function closeMobileSidebar() {
         if (!sidebar || !overlay) return;
-        sidebar.classList.remove('show');
-        overlay.classList.remove('show');
-        document.body.style.overflow = '';
+        sidebar.classList.remove("show");
+        overlay.classList.remove("show");
+        document.body.style.overflow = "";
     }
 
     if (mobileToggle) {
-        mobileToggle.addEventListener('click', openMobileSidebar);
+        mobileToggle.addEventListener("click", openMobileSidebar);
     }
     if (closeSidebar) {
-        closeSidebar.addEventListener('click', closeMobileSidebar);
+        closeSidebar.addEventListener("click", closeMobileSidebar);
     }
     if (overlay) {
-        overlay.addEventListener('click', closeMobileSidebar);
+        overlay.addEventListener("click", closeMobileSidebar);
     }
 
     // Close mobile sidebar on Escape
-    document.addEventListener('keydown', function (e) {
-        if (e.key === 'Escape' && sidebar && sidebar.classList.contains('show')) {
+    document.addEventListener("keydown", function (e) {
+        if (
+            e.key === "Escape" &&
+            sidebar &&
+            sidebar.classList.contains("show")
+        ) {
             closeMobileSidebar();
         }
     });
 
     // ── 3. Nav Item Active State ────────────────
     navLinks.forEach(function (link) {
-        link.addEventListener('click', function (e) {
+        link.addEventListener("click", function (e) {
             // Remove active from all
-            navLinks.forEach(function (l) { l.classList.remove('active'); });
+            navLinks.forEach(function (l) {
+                l.classList.remove("active");
+            });
             // Set active on clicked
-            this.classList.add('active');
+            this.classList.add("active");
 
             // On mobile, close sidebar after selection
             if (window.innerWidth < BREAKPOINT) {
@@ -100,7 +103,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // ── 4. Window Resize Handler ────────────────
     let resizeTimer;
-    window.addEventListener('resize', function () {
+    window.addEventListener("resize", function () {
         clearTimeout(resizeTimer);
         resizeTimer = setTimeout(function () {
             if (window.innerWidth >= BREAKPOINT) {
@@ -108,12 +111,11 @@ document.addEventListener('DOMContentLoaded', function () {
                 closeMobileSidebar();
                 // Re-apply desktop minimized state from storage
                 const saved = localStorage.getItem(STORAGE_KEY);
-                applyDesktopState(saved === 'true');
+                applyDesktopState(saved === "true");
             } else {
                 // Switched to mobile: remove desktop minimized class
-                if (sidebar) sidebar.classList.remove('minimized');
+                if (sidebar) sidebar.classList.remove("minimized");
             }
         }, 150);
     });
-
 });

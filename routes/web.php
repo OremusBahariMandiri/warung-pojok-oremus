@@ -8,6 +8,7 @@ use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProductHppController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\RestockController;
+use App\Http\Controllers\UnitController;
 use App\Http\Controllers\UserAccessController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
@@ -28,6 +29,9 @@ Route::middleware('auth')->group(function () {
 
     // Master Data: Komponen HPP
     Route::resource('hpp', HppController::class)->middleware('user.access:hpp');
+
+    // Master Data: Satuan / Unit
+    Route::resource('units', UnitController::class)->middleware('user.access:units');
 
     // Master Data: Produk & Komposisi HPP
     Route::post('products/calculate-hpp', [ProductController::class, 'calculateHpp'])

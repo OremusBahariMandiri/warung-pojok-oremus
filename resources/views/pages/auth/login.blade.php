@@ -52,12 +52,6 @@
                     </div>
                 </div>
             </div>
-
-            <!-- Left Footer -->
-            <div class="brand-footer d-flex justify-content-between align-items-center pt-4 border-top border-white border-opacity-10 text-white-50 small">
-                <span><i class="bi bi-lock-fill me-1 text-success"></i> Saluran Akses Khusus Internal Warjok</span>
-                <span>Versi 1.0.0</span>
-            </div>
         </div>
 
         <!-- Right Side: Login Form -->

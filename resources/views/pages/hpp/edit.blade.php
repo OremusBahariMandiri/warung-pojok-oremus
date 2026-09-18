@@ -22,11 +22,10 @@
 <!-- Header Back Bar -->
 <div class="d-flex align-items-center justify-content-between mb-4">
     <div>
-        <h4 class="fw-bold text-dark mb-1">Edit Komponen: {{ $hppObj->name }}</h4>
-        <p class="text-muted small mb-0">Perbarui rincian master komponen HPP atau biaya satuan bawaan.</p>
+        <h4 class="fw-bold text-dark mb-1">Edit Komponen</h4>
     </div>
     <a href="{{ route('hpp.index') }}" class="btn btn-sm btn-outline-secondary rounded-3 px-3 d-inline-flex align-items-center gap-2">
-        <i class="bi bi-arrow-left"></i> Kembali ke Daftar
+        <i class="bi bi-arrow-left"></i> Kembali
     </a>
 </div>
 
@@ -48,8 +47,7 @@
     @method('PUT')
 
     <div class="row g-4">
-        <!-- Left Column: Primary Form Fields -->
-        <div class="col-lg-7">
+        <div class="col-lg-12">
             <div class="card-box">
                 <h6 class="card-box-title mb-3 pb-2 border-bottom d-flex align-items-center gap-2">
                     <i class="bi bi-info-circle text-success"></i> Rincian Komponen HPP
@@ -82,15 +80,6 @@
                         </div>
                     </div>
                 </div>
-
-                <div class="p-3 rounded-3 bg-light border border-light-subtle">
-                    <div class="d-flex align-items-start gap-2">
-                        <i class="bi bi-info-circle text-primary fs-5 shrink-0 mt-0.5"></i>
-                        <div class="small text-muted">
-                            <span class="fw-bold text-dark">Informasi:</span> Mengubah biaya standar di sini akan memperbarui nilai acuan default untuk produk baru di masa mendatang tanpa mengubah biaya yang telah tersimpan khusus pada produk lama.
-                        </div>
-                    </div>
-                </div>
             </div>
 
             <!-- Submit Card -->
@@ -98,51 +87,9 @@
                 <div class="d-flex align-items-center justify-content-between">
                     <a href="{{ route('hpp.index') }}" class="btn btn-light border rounded-3 px-3">Batal</a>
                     <button type="submit" class="btn btn-success text-white fw-bold px-4 rounded-3 d-inline-flex align-items-center gap-2">
-                        <i class="bi bi-check-circle-fill"></i> Perbarui Komponen HPP
+                        <i class="bi bi-check-circle-fill"></i> Perbarui
                     </button>
                 </div>
-            </div>
-        </div>
-
-        <!-- Right Column: Status & Connected Products Summary -->
-        <div class="col-lg-5">
-            <div class="card-box">
-                <h6 class="card-box-title mb-3 pb-2 border-bottom d-flex align-items-center gap-2">
-                    <i class="bi bi-diagram-3 text-primary"></i> Penggunaan pada Produk
-                </h6>
-
-                <div class="p-3 rounded-3 bg-light text-center mb-3">
-                    <div class="text-muted small">Total Produk Terhubung</div>
-                    <div class="h3 fw-bold text-dark mb-0 font-monospace">
-                        {{ $hppObj->products ? $hppObj->products->count() : 0 }}
-                    </div>
-                    <div class="small text-muted mt-1">Produk menggunakan komponen ini</div>
-                </div>
-
-                @if ($hppObj->products && $hppObj->products->count() > 0)
-                    <div class="small fw-semibold text-dark mb-2">Daftar Produk Pengguna:</div>
-                    <ul class="list-group list-group-flush small">
-                        @foreach ($hppObj->products->take(5) as $prod)
-                            <li class="list-group-item d-flex justify-content-between align-items-center px-0 py-2">
-                                <span class="text-truncate" style="max-width: 200px;">{{ $prod->prod_name }}</span>
-                                <span class="badge badge-soft-secondary font-monospace">
-                                    Rp {{ number_format($prod->pivot->cost ?? $hppObj->unit_cost, 0, ',', '.') }}
-                                </span>
-                            </li>
-                        @endforeach
-                    </ul>
-                    @if ($hppObj->products->count() > 5)
-                        <div class="text-center mt-2">
-                            <a href="{{ route('hpp.show', $hppObj->id) }}" class="small text-success text-decoration-none">
-                                Lihat semua ({{ $hppObj->products->count() }} produk) →
-                            </a>
-                        </div>
-                    @endif
-                @else
-                    <div class="p-3 bg-light rounded-3 text-center text-muted small">
-                        <em>Belum ada produk yang terhubung dengan komponen ini.</em>
-                    </div>
-                @endif
             </div>
         </div>
     </div>

@@ -25,11 +25,10 @@
 <!-- Header Back Bar -->
 <div class="d-flex align-items-center justify-content-between mb-4">
     <div>
-        <h4 class="fw-bold text-dark mb-1">Edit Produk: {{ $productObj->prod_name }}</h4>
-        <p class="text-muted small mb-0">Perbarui rincian produk, harga jual, serta penyesuaian komponen HPP (`product_hpp`).</p>
+        <h4 class="fw-bold text-dark mb-1">Edit Produk</h4>
     </div>
     <a href="{{ route('products.index') }}" class="btn btn-sm btn-outline-secondary rounded-3 px-3 d-inline-flex align-items-center gap-2">
-        <i class="bi bi-arrow-left"></i> Kembali ke Daftar
+        <i class="bi bi-arrow-left"></i> Kembali
     </a>
 </div>
 
@@ -55,10 +54,6 @@
         <div class="col-lg-7">
             <!-- Card 1: Informasi Utama -->
             <div class="card-box">
-                <h6 class="card-box-title mb-3 pb-2 border-bottom d-flex align-items-center gap-2">
-                    <i class="bi bi-info-circle text-success"></i> Informasi Utama Produk
-                </h6>
-
                 <div class="mb-3">
                     <label for="prod_name" class="form-label small fw-semibold text-dark">Nama Produk <span class="text-danger">*</span></label>
                     <input type="text" class="form-control rounded-3" id="prod_name" name="prod_name" value="{{ old('prod_name', $productObj->prod_name) }}" required>
@@ -91,7 +86,7 @@
                 </div>
 
                 <div class="mb-3">
-                    <label for="description" class="form-label small fw-semibold text-dark">Deskripsi / Catatan Porsi</label>
+                    <label for="description" class="form-label small fw-semibold text-dark">Deskripsi Produk</label>
                     <textarea class="form-control rounded-3" id="description" name="description" rows="3">{{ old('description', $productObj->description) }}</textarea>
                 </div>
 
@@ -123,11 +118,11 @@
                 </h6>
                 <div class="row g-3">
                     <div class="col-md-6">
-                        <label for="current_stock" class="form-label small fw-semibold text-dark">Stok Saat Ini</label>
+                        <label for="current_stock" class="form-label small fw-semibold text-dark">Stok Produk</label>
                         <input type="number" class="form-control rounded-3" id="current_stock" name="current_stock" value="{{ old('current_stock', $productObj->current_stock) }}" min="0">
                     </div>
                     <div class="col-md-6">
-                        <label for="min_stock" class="form-label small fw-semibold text-dark">Batas Minimal Stok Alert <span class="text-danger">*</span></label>
+                        <label for="min_stock" class="form-label small fw-semibold text-dark">Minimal Stok Produk<span class="text-danger">*</span></label>
                         <input type="number" class="form-control rounded-3" id="min_stock" name="min_stock" value="{{ old('min_stock', $productObj->min_stock) }}" min="0" required>
                     </div>
                 </div>
@@ -270,7 +265,7 @@
                 <div class="d-flex align-items-center justify-content-between">
                     <a href="{{ route('products.index') }}" class="btn btn-light border rounded-3 px-3">Batal</a>
                     <button type="submit" class="btn btn-success text-white fw-bold px-4 rounded-3 d-inline-flex align-items-center gap-2">
-                        <i class="bi bi-check-circle-fill"></i> Perbarui Produk & HPP
+                        <i class="bi bi-check-circle-fill"></i> Perbarui
                     </button>
                 </div>
             </div>

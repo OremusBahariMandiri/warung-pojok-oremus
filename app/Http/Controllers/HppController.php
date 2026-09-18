@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreHppRequest;
 use App\Http\Requests\UpdateHppRequest;
 use App\Models\Hpp;
+use App\Models\Unit;
 use App\Services\HppService;
 use Illuminate\Http\Request;
 
@@ -39,7 +40,8 @@ class HppController extends Controller
      */
     public function create()
     {
-        return view('pages.hpp.create');
+        $units = Unit::orderBy('unit_name', 'asc')->get();
+        return view('pages.hpp.create', compact('units'));
     }
 
     /**

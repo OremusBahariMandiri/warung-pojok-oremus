@@ -67,6 +67,12 @@
                     </a>
                 </li>
                 <li class="nav-item">
+                    <a href="{{ Route::has('units.index') ? route('units.index') : '#' }}" class="nav-link {{ request()->routeIs('units.*') ? 'active' : '' }}">
+                        <i class="bi bi-tags"></i>
+                        <span class="nav-text">Management Satuan</span>
+                    </a>
+                </li>
+                <li class="nav-item">
                     <a href="{{ Route::has('hpp.index') ? route('hpp.index') : '#' }}" class="nav-link {{ request()->routeIs('hpp.*') ? 'active' : '' }}">
                         <i class="bi bi-calculator"></i>
                         <span class="nav-text">Management HPP</span>
@@ -125,16 +131,18 @@
             <div class="d-flex align-items-center">
                 <!-- Mobile Toggle -->
                 <button class="btn btn-toggle d-lg-none me-3 p-0 border-0 shadow-none text-slate" id="mobileToggleBtn">
-                    <i class="bi bi-list fs-3"></i>
+                    <i class="bi bi-list fs-4"></i>
                 </button>
                 
                 <!-- Desktop Minimize Toggle -->
-                <button class="btn btn-toggle d-none d-lg-block me-4 p-0 border-0 shadow-none text-slate" id="desktopToggleBtn">
-                    <i class="bi bi-layout-sidebar-inset fs-4"></i>
+                <button class="btn btn-toggle d-none d-lg-block me-3 p-0 border-0 shadow-none text-slate" id="desktopToggleBtn">
+                    <i class="bi bi-layout-sidebar fs-5"></i>
                 </button>
 
                 <div class="page-header d-none d-sm-block">
-                    <h5 class="page-title mb-0 fw-bold text-navy">@yield('page-title', 'Dashboard')</h5>
+                    @hasSection('page-title')
+                        <h5 class="page-title mb-0 fw-bold text-navy">@yield('page-title')</h5>
+                    @endif
                     <div class="breadcrumb-container small text-muted">
                         @yield('breadcrumb')
                     </div>
@@ -142,23 +150,25 @@
             </div>
 
             <div class="topbar-right d-flex align-items-center">
-                <button class="btn btn-icon position-relative me-3 border-0 p-2 shadow-none text-slate hover-bg-slate-50 rounded-circle">
-                    <i class="bi bi-bell fs-5"></i>
-                    <span class="position-absolute top-0 start-100 translate-middle p-1 bg-emerald border border-light rounded-circle">
-                        <span class="visually-hidden">New alerts</span>
-                    </span>
-                </button>
-
+                <!-- Profile Dropdown (Sleek & Elegant) -->
                 <div class="dropdown">
-                    <button class="btn btn-user border-0 p-0 shadow-none d-flex align-items-center" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                        <div class="avatar-circle-sm bg-navy text-white d-flex align-items-center justify-content-center rounded-circle me-md-2" style="width:36px; height:36px;">AD</div>
-                        <span class="d-none d-md-block text-slate fw-medium">Admin</span>
+                    <button class="btn btn-user border-0 p-1 pe-2 shadow-none d-flex align-items-center gap-2 rounded-pill hover-bg-slate-50" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <div class="avatar-circle-sm text-white d-flex align-items-center justify-content-center rounded-circle fw-bold" style="width:34px; height:34px; font-size: 0.8rem; background: #1e293b;">AD</div>
+                        <div class="d-none d-md-flex flex-column text-start">
+                            <span class="text-dark fw-semibold" style="font-size: 0.82rem; line-height: 1.15;">Administrator</span>
+                            <span class="text-muted" style="font-size: 0.7rem;">Super Admin</span>
+                        </div>
+                        <i class="bi bi-chevron-down text-muted small d-none d-md-block ms-1" style="font-size: 0.72rem;"></i>
                     </button>
-                    <ul class="dropdown-menu dropdown-menu-end shadow-sm border-slate-200 mt-2">
-                        <li><a class="dropdown-item py-2" href="#"><i class="bi bi-person me-2 text-slate-400"></i> Profil</a></li>
-                        <li><a class="dropdown-item py-2" href="#"><i class="bi bi-gear me-2 text-slate-400"></i> Pengaturan</a></li>
+                    <ul class="dropdown-menu dropdown-menu-end shadow-sm border mt-2 py-2" style="border-radius: 12px; min-width: 210px; border-color: var(--border);">
+                        <li class="px-3 py-2 border-bottom mb-1 bg-light bg-opacity-50">
+                            <div class="fw-bold text-dark small">Administrator</div>
+                            <div class="text-muted" style="font-size: 0.72rem;">admin@warjok.com</div>
+                        </li>
+                        <li><a class="dropdown-item py-2 px-3 small d-flex align-items-center gap-2 text-secondary" href="#"><i class="bi bi-person"></i> Profil Saya</a></li>
+                        <li><a class="dropdown-item py-2 px-3 small d-flex align-items-center gap-2 text-secondary" href="#"><i class="bi bi-gear"></i> Pengaturan Akun</a></li>
                         <li><hr class="dropdown-divider my-1 border-slate-200"></li>
-                        <li><a class="dropdown-item text-danger py-2" href="#"><i class="bi bi-box-arrow-right me-2"></i> Logout</a></li>
+                        <li><a class="dropdown-item text-danger py-2 px-3 small d-flex align-items-center gap-2" href="#"><i class="bi bi-box-arrow-right"></i> Logout</a></li>
                     </ul>
                 </div>
             </div>

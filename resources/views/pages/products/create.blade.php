@@ -24,10 +24,9 @@
 <div class="d-flex align-items-center justify-content-between mb-4">
     <div>
         <h4 class="fw-bold text-dark mb-1">Tambah Produk & Komposisi HPP</h4>
-        <p class="text-muted small mb-0">Isi rincian produk, harga bahan utama, serta komponen HPP (`product_hpp`).</p>
     </div>
     <a href="{{ route('products.index') }}" class="btn btn-sm btn-outline-secondary rounded-3 px-3 d-inline-flex align-items-center gap-2">
-        <i class="bi bi-arrow-left"></i> Kembali ke Daftar
+        <i class="bi bi-arrow-left"></i> Kembali
     </a>
 </div>
 
@@ -52,10 +51,6 @@
         <div class="col-lg-7">
             <!-- Card 1: Informasi Utama -->
             <div class="card-box">
-                <h6 class="card-box-title mb-3 pb-2 border-bottom d-flex align-items-center gap-2">
-                    <i class="bi bi-info-circle text-success"></i> Informasi Utama Produk
-                </h6>
-
                 <div class="mb-3">
                     <label for="prod_name" class="form-label small fw-semibold text-dark">Nama Produk <span class="text-danger">*</span></label>
                     <input type="text" class="form-control rounded-3" id="prod_name" name="prod_name" value="{{ old('prod_name') }}" required autofocus>
@@ -116,12 +111,10 @@
                     <div class="col-md-6">
                         <label for="current_stock" class="form-label small fw-semibold text-dark">Stok Produk</label>
                         <input type="number" class="form-control rounded-3" id="current_stock" name="current_stock" value="{{ old('current_stock') }}" min="0">
-                        <div class="form-text text-muted small">Jumlah stok produk yang siap dijual saat ini.</div>
                     </div>
                     <div class="col-md-6">
                         <label for="min_stock" class="form-label small fw-semibold text-dark">Minimal Stok Produk <span class="text-danger">*</span></label>
                         <input type="number" class="form-control rounded-3" id="min_stock" name="min_stock" value="{{ old('min_stock') }}" min="0" required>
-                        <div class="form-text text-muted small">Peringatan otomatis jika stok di bawah angka ini.</div>
                     </div>
                 </div>
             </div>
@@ -148,7 +141,6 @@
                         <span class="input-group-text bg-light border-end-0">Rp</span>
                         <input type="number" class="form-control font-monospace fw-semibold text-end" id="unit_price" name="unit_price" value="{{ old('unit_price') }}"  min="0" oninput="calculateTotalHpp()" required>
                     </div>
-                    <div class="form-text text-muted small">Biaya modal awal bahan dasar produk (Misal: 1 sachet = Rp 1.400).</div>
                 </div>
 
                 <!-- Section: Dynamic HPP Components Repeater (product_hpp) -->
@@ -244,7 +236,7 @@
                 <div class="d-flex align-items-center justify-content-between">
                     <a href="{{ route('products.index') }}" class="btn btn-light border rounded-3 px-3">Batal</a>
                     <button type="submit" class="btn btn-success text-white fw-bold px-4 rounded-3 d-inline-flex align-items-center gap-2">
-                        <i class="bi bi-check-circle-fill"></i> Simpan Produk & HPP
+                        <i class="bi bi-check-circle-fill"></i> Simpan
                     </button>
                 </div>
             </div>
