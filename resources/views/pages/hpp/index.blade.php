@@ -58,10 +58,10 @@
 @endif
 
 <!-- Main Section: Toolbar & DataTables Container -->
-<div class="card-box p-0 border rounded-3 overflow-hidden shadow-sm bg-white mb-4">
+<div class="card-box px-3 border rounded-3 overflow-hidden shadow-sm bg-white mb-4">
     <!-- Action & Filter Header -->
-    <div class="p-3 border-bottom d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-3">
-        <!-- Left: Search Box (Responsive) -->
+    <div class="py-3 d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-3">
+        <!-- Left: Search Box -->
         <div class="position-relative hpp-search-box">
             <i class="bi bi-search position-absolute top-50 start-0 translate-middle-y ms-3 text-muted"></i>
             <input type="text" id="dtSearchInput" class="form-control form-control-sm ps-5 pe-3 rounded-2" placeholder="Cari nama komponen / satuan...">
@@ -81,7 +81,7 @@
         </div>
     </div>
 
-    <!-- DataTables Table Container (Table only scrolls horizontally via DataTables DOM) -->
+    <!-- DataTables Table -->
     <table class="table table-bordered table-hover align-middle mb-0 w-100 text-nowrap" id="hppDataTable">
         <thead>
             <tr>
@@ -97,39 +97,69 @@
         <tbody>
             @foreach ($list as $item)
                 <tr>
-                    <td class="text-center text-muted fw-medium">
+                    {{-- Nomor --}}
+                    <td class="text-center text-muted fw-medium"
+                        data-label="No">
                         {{ $loop->iteration }}
                     </td>
-                    <td class="fw-semibold text-dark">
+
+                    {{-- Nama Komponen HPP --}}
+                    <td class="text-center text-dark"
+                        data-label="Nama Komponen">
                         {{ $item->name }}
                     </td>
-                    <td>
-                        {{ strtoupper($item->unit) }}
+
+                    {{-- Satuan Pemakaian --}}
+                    <td data-label="Satuan">
+                        <div class="text-center">
+                            {{ strtoupper($item->unit) }}
+                        </div>
                     </td>
-                    <td class="text-end font-monospace text-dark fw-bold">
+
+                    {{-- Biaya Standar --}}
+                    <td class="text-center text-dark"
+                        data-label="Unit Cost">
                         Rp {{ number_format($item->unit_cost, 0, ',', '.') }}
                     </td>
-                    <td class="text-center">
+
+                    {{-- Produk Terkait --}}
+                    <td class="text-center"
+                        data-label="Produk">
                         {{ (int)($item->products_count ?? 0) }} Produk
                     </td>
-                    <td class="text-center text-muted small">
+
+                    {{-- Tanggal Dibuat --}}
+                    <td class="text-center text-muted small"
+                        data-label="Dibuat">
                         {{ $item->created_at ? $item->created_at->format('d M Y') : '-' }}
                     </td>
+
+                    {{-- Aksi --}}
                     <td class="text-center">
-                        <!-- Desktop Action Buttons -->
+                        <!-- Desktop Action Buttons (juga dipakai di mobile card) -->
                         <div class="d-none d-md-inline-flex gap-1 justify-content-center">
-                            <a href="{{ route('hpp.show', $item->id) }}" class="btn btn-sm btn-info text-white px-2 py-1 rounded-2 shadow-none" title="Detail" style="background-color: #0ea5e9; border-color: #0ea5e9;">
+                            <a href="{{ route('hpp.show', $item->id) }}"
+                               class="btn btn-sm btn-info text-white px-2 py-1 rounded-2 shadow-none"
+                               title="Detail"
+                               style="background-color: #0ea5e9; border-color: #0ea5e9;">
                                 <i class="bi bi-eye"></i>
                             </a>
-                            <a href="{{ route('hpp.edit', $item->id) }}" class="btn btn-sm btn-warning text-white px-2 py-1 rounded-2 shadow-none" title="Edit" style="background-color: #f59e0b; border-color: #f59e0b;">
+                            <a href="{{ route('hpp.edit', $item->id) }}"
+                               class="btn btn-sm btn-warning text-white px-2 py-1 rounded-2 shadow-none"
+                               title="Edit"
+                               style="background-color: #f59e0b; border-color: #f59e0b;">
                                 <i class="bi bi-pencil"></i>
                             </a>
-                            <button type="button" class="btn btn-sm btn-danger text-white px-2 py-1 rounded-2 shadow-none" title="Hapus" style="background-color: #ef4444; border-color: #ef4444;" onclick="openDeleteModal({{ $item->id }}, '{{ addslashes($item->name) }}', {{ (int)($item->products_count ?? 0) }})">
+                            <button type="button"
+                                    class="btn btn-sm btn-danger text-white px-2 py-1 rounded-2 shadow-none"
+                                    title="Hapus"
+                                    style="background-color: #ef4444; border-color: #ef4444;"
+                                    onclick="openDeleteModal({{ $item->id }}, '{{ addslashes($item->name) }}', {{ (int)($item->products_count ?? 0) }})">
                                 <i class="bi bi-trash"></i>
                             </button>
                         </div>
 
-                        <!-- Mobile Action Dropdown -->
+                        <!-- Mobile Dropdown (disembunyikan CSS di mobile) -->
                         <div class="dropdown d-inline-block d-md-none">
                             <button class="btn btn-sm btn-light border dropdown-toggle shadow-none" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                                 Aksi
@@ -147,7 +177,8 @@
                                 </li>
                                 <li><hr class="dropdown-divider my-1"></li>
                                 <li>
-                                    <button type="button" class="dropdown-item py-2 small text-danger" onclick="openDeleteModal({{ $item->id }}, '{{ addslashes($item->name) }}', {{ (int)($item->products_count ?? 0) }})">
+                                    <button type="button" class="dropdown-item py-2 small text-danger"
+                                            onclick="openDeleteModal({{ $item->id }}, '{{ addslashes($item->name) }}', {{ (int)($item->products_count ?? 0) }})">
                                         <i class="bi bi-trash me-2"></i> Hapus Komponen
                                     </button>
                                 </li>
@@ -215,7 +246,7 @@
                 <div id="deleteWarningProductCount" class="alert alert-warning py-1 px-2 small mb-3 d-none">
                     <i class="bi bi-exclamation-triangle-fill me-1"></i> Digunakan oleh <span id="warningProductCount" class="fw-bold"></span> produk.
                 </div>
-                
+
                 <form id="deleteHppForm" method="POST" action="">
                     @csrf
                     @method('DELETE')
@@ -232,7 +263,7 @@
 @endsection
 
 @push('scripts')
-<!-- jQuery & DataTables JS BSD CDN -->
+<!-- jQuery & DataTables JS -->
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>

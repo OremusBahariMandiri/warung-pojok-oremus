@@ -84,19 +84,27 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     });
 
-    // ── 3. Nav Item Active State ────────────────
-    navLinks.forEach(function (link) {
-        link.addEventListener("click", function (e) {
-            // Remove active from all
-            navLinks.forEach(function (l) {
-                l.classList.remove("active");
-            });
-            // Set active on clicked
-            this.classList.add("active");
+    // ── 3. Submenu & Navigation Behavior ────────
+    const directLinks = document.querySelectorAll(
+        ".sidebar .nav-link:not(.nav-toggle), .sidebar .submenu-link",
+    );
 
-            // On mobile, close sidebar after selection
+    directLinks.forEach(function (link) {
+        link.addEventListener("click", function () {
+            // On mobile, close sidebar after clicking destination link
             if (window.innerWidth < BREAKPOINT) {
                 closeMobileSidebar();
+            }
+        });
+    });
+
+    // When clicking a nav-toggle while desktop sidebar is minimized, auto-expand sidebar
+    const navToggles = document.querySelectorAll(".sidebar .nav-toggle");
+    navToggles.forEach(function (toggle) {
+        toggle.addEventListener("click", function () {
+            if (sidebar && sidebar.classList.contains("minimized")) {
+                applyDesktopState(false);
+                localStorage.setItem(STORAGE_KEY, "false");
             }
         });
     });

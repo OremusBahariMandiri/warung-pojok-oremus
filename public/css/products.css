@@ -146,21 +146,6 @@ table.dataTable thead > tr > th.no-sort {
     padding: 0;
 }
 
-/* ── Mobile Layout Optimization ──────────────── */
-@media (max-width: 575.98px) {
-    .product-search-box {
-        max-width: 100% !important;
-        width: 100%;
-    }
-    .dataTables_wrapper .dataTables_info,
-    .dataTables_wrapper .dataTables_paginate {
-        width: 100%;
-        text-align: center;
-        display: flex;
-        justify-content: center;
-    }
-}
-
 /* Product Image Detail Page */
 .product-thumbnail-wrapper {
     position: absolute;
@@ -169,17 +154,14 @@ table.dataTable thead > tr > th.no-sort {
     width: 100px;
     height: 100px;
 }
-
 .product-thumbnail-label {
     white-space: nowrap;
 }
-
 .product-thumbnail-img {
     width: 100%;
     height: 100%;
     object-fit: cover;
 }
-
 .product-thumbnail-placeholder {
     width: 100%;
     height: 100%;
@@ -190,4 +172,219 @@ table.dataTable thead > tr > th.no-sort {
     color: #6c757d;
     border-radius: 0.5rem;
     border: 1px solid #dee2e6;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   MOBILE CARD LAYOUT  (< 768px)
+   11 kolom → card per produk dengan gambar sebagai avatar,
+   kolom sekunder disembunyikan agar card tidak terlalu panjang.
+   ═══════════════════════════════════════════════════════════ */
+@media (max-width: 767.98px) {
+    /* Hilangkan border tabel utama */
+    #productsDataTable.table-bordered {
+        border: none !important;
+        background: transparent !important;
+    }
+
+    /* Sembunyikan header kolom */
+    #productsDataTable thead {
+        display: none !important;
+    }
+
+    /* Setiap baris tabel → card */
+    #productsDataTable tbody tr {
+        display: block !important;
+        background: #ffffff;
+        border: 1px solid #e2e8f0 !important;
+        border-radius: 10px !important;
+        margin-bottom: 0.75rem !important;
+        padding: 0 !important;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+        overflow: hidden;
+    }
+
+    #productsDataTable tbody tr:hover {
+        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1) !important;
+        border-color: #cbd5e1 !important;
+    }
+
+    /* Semua cell: flex label:value */
+    #productsDataTable tbody td {
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        padding: 0.5rem 0.85rem !important;
+        border: none !important;
+        border-bottom: 1px solid #f1f5f9 !important;
+        font-size: 0.85rem;
+        white-space: normal !important;
+        text-align: right !important;
+    }
+
+    /* Label pseudo */
+    #productsDataTable tbody td::before {
+        content: attr(data-label);
+        font-size: 0.73rem;
+        font-weight: 600;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.045em;
+        text-align: left !important;
+        flex-shrink: 0;
+        margin-right: 0.75rem;
+        white-space: nowrap;
+    }
+
+    /* ── Cell #1: Nomor — strip nomor kecil ── */
+    #productsDataTable tbody td:nth-child(1) {
+        background: #f8fafc;
+        border-bottom: 1px solid #e2e8f0 !important;
+        font-size: 0.72rem;
+        color: #94a3b8;
+        font-weight: 500;
+        justify-content: flex-start !important;
+        text-align: left !important;
+        padding: 0.35rem 0.85rem !important;
+    }
+    #productsDataTable tbody td:nth-child(1)::before {
+        content: "No. ";
+        font-weight: 700;
+        color: #cbd5e1;
+        text-transform: none;
+        letter-spacing: 0;
+        margin-right: 0.2rem;
+        font-size: 0.72rem;
+    }
+
+    /* ── Cell #2: Nama Produk — judul card ── */
+    #productsDataTable tbody td:nth-child(2) {
+        font-size: 0.95rem !important;
+        font-weight: 600 !important;
+        color: #0f172a !important;
+        padding-top: 0.75rem !important;
+        padding-bottom: 0.75rem !important;
+        border-bottom: 1px solid #e2e8f0 !important;
+    }
+    #productsDataTable tbody td:nth-child(2)::before {
+        display: none !important;
+    }
+    /* Nama produk: rata kiri, tidak pakai space-between */
+    #productsDataTable tbody td:nth-child(2) {
+        justify-content: flex-start !important;
+        text-align: left !important;
+    }
+
+    /* ── Cell #3: SKU — tampilkan sebagai badge kecil ── */
+    #productsDataTable tbody td:nth-child(3) {
+        font-family:
+            ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        font-size: 0.78rem;
+        color: #475569;
+        background: #f8fafc;
+        border-bottom: 1px solid #e2e8f0 !important;
+    }
+
+    /* ── Cell #4: Satuan ── */
+    #productsDataTable tbody td:nth-child(4) {
+        font-size: 0.82rem;
+        color: #64748b;
+    }
+
+    /* ── Cell #5: Harga Jual — highlight utama ── */
+    #productsDataTable tbody td:nth-child(5) {
+        font-size: 0.92rem !important;
+        font-weight: 700 !important;
+        color: #0f172a !important;
+    }
+
+    /* ── Cell #6: HPP Total ── */
+    #productsDataTable tbody td:nth-child(6) {
+        font-family:
+            ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        font-size: 0.82rem;
+        color: #64748b;
+    }
+
+    /* ── Cell #7: Margin % — warna dinamis tetap via class Blade ── */
+    #productsDataTable tbody td:nth-child(7) {
+        font-weight: 700 !important;
+        font-size: 0.88rem;
+    }
+
+    /* ── Cell #8: Stok ── */
+    #productsDataTable tbody td:nth-child(8) {
+        font-size: 0.85rem;
+    }
+
+    /* ── Cell #9: Metode HPP — sembunyikan di mobile ── */
+    #productsDataTable tbody td:nth-child(9) {
+        display: none !important;
+    }
+
+    /* ── Cell #10: Gambar — jadikan avatar di pojok kanan nama ── */
+    #productsDataTable tbody td:nth-child(10) {
+        display: none !important;
+    }
+
+    /* ── Cell #11: Aksi — footer strip ── */
+    #productsDataTable tbody td:last-child {
+        background: #f8fafc;
+        border-bottom: none !important;
+        border-top: 1px solid #e2e8f0 !important;
+        padding: 0.55rem 0.85rem !important;
+        justify-content: flex-end !important;
+        gap: 0.4rem;
+    }
+    #productsDataTable tbody td:last-child::before {
+        display: none !important;
+    }
+
+    /* Paksa tombol desktop tampil, sembunyikan dropdown mobile */
+    #productsDataTable tbody td:last-child .d-none.d-md-inline-flex {
+        display: inline-flex !important;
+    }
+    #productsDataTable tbody td:last-child .d-inline-block.d-md-none {
+        display: none !important;
+    }
+
+    /* Nonaktifkan overflow scroll DataTables */
+    .dataTables_wrapper .dataTables_scroll,
+    .dataTables_scrollBody {
+        overflow-x: visible !important;
+    }
+    #productsDataTable {
+        width: 100% !important;
+    }
+
+    /* Toolbar: search full width */
+    .product-search-box {
+        max-width: 100% !important;
+        width: 100%;
+        min-width: unset;
+    }
+
+    /* Info & pagination tengah */
+    .dataTables_wrapper .dataTables_info,
+    .dataTables_wrapper .dataTables_paginate {
+        width: 100%;
+        text-align: center;
+        display: flex;
+        justify-content: center;
+    }
+    .dataTables_wrapper .dataTables_paginate .pagination {
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 3px;
+    }
+    .dataTables_wrapper .dataTables_paginate .page-item .page-link {
+        border-radius: 5px !important;
+        margin-left: 0 !important;
+    }
+}
+
+/* ── Tablet: search bar full width ─────────────── */
+@media (min-width: 768px) and (max-width: 991.98px) {
+    .product-search-box {
+        max-width: 100%;
+    }
 }
