@@ -76,7 +76,7 @@
                 </span>
             </button>
             <a href="{{ route('units.create') }}" class="btn btn-sm btn-success rounded-2 text-white fw-semibold d-inline-flex align-items-center gap-2 px-3">
-                <i class="bi bi-plus-lg"></i> Tambah Satuan
+                <i class="bi bi-plus-lg"></i> Tambah
             </a>
         </div>
     </div>
@@ -118,13 +118,13 @@
                     <td class="text-center">
                         <!-- Desktop Action Buttons -->
                         <div class="d-none d-md-inline-flex gap-1 justify-content-center">
-                            <a href="{{ route('units.show', $item->id) }}" class="btn btn-sm btn-info text-white px-2 py-1 rounded-2 shadow-none" title="Detail Satuan" style="background-color: #0ea5e9; border-color: #0ea5e9;">
+                            <a href="{{ route('units.show', $item->id) }}" class="btn btn-sm btn-info text-white px-2 py-1 rounded-2 shadow-none" title="Detail" style="background-color: #0ea5e9; border-color: #0ea5e9;">
                                 <i class="bi bi-eye"></i>
                             </a>
-                            <a href="{{ route('units.edit', $item->id) }}" class="btn btn-sm btn-warning text-white px-2 py-1 rounded-2 shadow-none" title="Edit Satuan" style="background-color: #f59e0b; border-color: #f59e0b;">
+                            <a href="{{ route('units.edit', $item->id) }}" class="btn btn-sm btn-warning text-white px-2 py-1 rounded-2 shadow-none" title="Edit" style="background-color: #f59e0b; border-color: #f59e0b;">
                                 <i class="bi bi-pencil"></i>
                             </a>
-                            <button type="button" class="btn btn-sm btn-danger text-white px-2 py-1 rounded-2 shadow-none" title="Hapus Satuan" style="background-color: #ef4444; border-color: #ef4444;" onclick="openDeleteModal({{ $item->id }}, '{{ addslashes($item->unit_name) }}', {{ (int)($item->products_count ?? 0) }})">
+                            <button type="button" class="btn btn-sm btn-danger text-white px-2 py-1 rounded-2 shadow-none" title="Hapus" style="background-color: #ef4444; border-color: #ef4444;" onclick="openDeleteModal({{ $item->id }}, '{{ addslashes($item->unit_name) }}', {{ (int)($item->products_count ?? 0) }})">
                                 <i class="bi bi-trash"></i>
                             </button>
                         </div>
