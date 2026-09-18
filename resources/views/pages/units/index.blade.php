@@ -1,0 +1,243 @@
+@extends('layouts.admin')
+
+@section('title', 'Master Satuan Produk — Warung Pojok Oremus')
+
+@push('styles')
+<!-- DataTables BSD & Bootstrap 5 CSS -->
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css">
+<link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.bootstrap5.min.css">
+<link rel="stylesheet" href="{{ asset('css/units.css') }}">
+@endpush
+
+@section('breadcrumb')
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb mb-0">
+        <li class="breadcrumb-item"><a href="{{ route('admin.dashboard') }}" class="text-decoration-none text-muted">warjok</a></li>
+        <li class="breadcrumb-item active text-dark" aria-current="page">management satuan produk</li>
+    </ol>
+</nav>
+@endsection
+
+@section('content')
+
+@php
+    $list = $units ?? collect();
+@endphp
+
+<!-- Header Title di atas DataTable -->
+<div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-2 mb-3">
+    <div>
+        <h4 class="fw-bold text-dark mb-1">Master Satuan Produk</h4>
+        <p class="text-muted small mb-0">Kelola dan atur daftar satuan atau unit barang untuk produk dan komposisi HPP.</p>
+    </div>
+</div>
+
+<!-- Session Alert Messages -->
+@if (session('success'))
+<div class="alert alert-success alert-dismissible fade show d-flex align-items-center gap-2 py-2 px-3 mb-3 rounded-3 border-0 shadow-sm" role="alert" style="background-color: var(--green-50); color: var(--green-600);">
+    <i class="bi bi-check-circle-fill fs-5"></i>
+    <div class="fw-medium fs-sm">{{ session('success') }}</div>
+    <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
+</div>
+@endif
+
+@if (session('error'))
+<div class="alert alert-danger alert-dismissible fade show d-flex align-items-center gap-2 py-2 px-3 mb-3 rounded-3 border-0 shadow-sm" role="alert">
+    <i class="bi bi-exclamation-triangle-fill fs-5"></i>
+    <div class="fw-medium fs-sm">{{ session('error') }}</div>
+    <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
+</div>
+@endif
+
+@if (session('warning'))
+<div class="alert alert-warning alert-dismissible fade show d-flex align-items-center gap-2 py-2 px-3 mb-3 rounded-3 border-0 shadow-sm" role="alert">
+    <i class="bi bi-exclamation-triangle-fill fs-5"></i>
+    <div class="fw-medium fs-sm">{{ session('warning') }}</div>
+    <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
+</div>
+@endif
+
+<!-- Main Section: Toolbar & DataTables Container -->
+<div class="card-box p-0 border rounded-3 overflow-hidden shadow-sm bg-white mb-4">
+    <!-- Action & Filter Header -->
+    <div class="p-3 border-bottom d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-3">
+        <!-- Left: Search Box (Responsive) -->
+        <div class="position-relative units-search-box">
+            <i class="bi bi-search position-absolute top-50 start-0 translate-middle-y ms-3 text-muted"></i>
+            <input type="text" id="dtSearchInput" class="form-control form-control-sm ps-5 pe-3 rounded-2" placeholder="Cari nama satuan / singkatan...">
+        </div>
+
+        <!-- Right: Action & Filter Buttons -->
+        <div class="d-flex align-items-center gap-2">
+            <button type="button" class="btn btn-sm btn-outline-secondary rounded-2 d-inline-flex align-items-center gap-2 px-3 position-relative" data-bs-toggle="modal" data-bs-target="#modalFilterUnit">
+                <i class="bi bi-funnel"></i> Filter
+                <span id="activeFilterBadge" class="position-absolute top-0 start-100 translate-middle p-1 bg-primary border border-light rounded-circle d-none">
+                    <span class="visually-hidden">Filter Aktif</span>
+                </span>
+            </button>
+            <a href="{{ route('units.create') }}" class="btn btn-sm btn-success rounded-2 text-white fw-semibold d-inline-flex align-items-center gap-2 px-3">
+                <i class="bi bi-plus-lg"></i> Tambah Satuan
+            </a>
+        </div>
+    </div>
+
+    <!-- DataTables Table Container (Table only scrolls horizontally via DataTables DOM) -->
+    <table class="table table-bordered table-hover align-middle mb-0 w-100 text-nowrap" id="unitsDataTable">
+        <thead>
+            <tr>
+                <th style="width: 50px;" class="text-center">No</th>
+                <th>Nama Satuan</th>
+                <th style="width: 120px;">Singkatan</th>
+                <th>Kategori / Tipe</th>
+                <th class="text-center" style="width: 160px;">Produk Terkait</th>
+                <th class="text-center" style="width: 150px;">Tanggal Dibuat</th>
+                <th class="text-center no-sort" style="width: 130px;">Aksi</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach ($list as $item)
+                <tr>
+                    <td class="text-center text-muted fw-medium">
+                        {{ $loop->iteration }}
+                    </td>
+                    <td class="fw-semibold text-dark">
+                        {{ $item->unit_name }}
+                    </td>
+                    <td>
+                        {{ $item->short_name }}
+                    </td>
+                    <td>
+                        <span class="text-secondary">{{ $item->type ?: '-' }}</span>
+                    </td>
+                    <td class="text-center">
+                        {{ (int)($item->products_count ?? 0) }} Produk
+                    </td>
+                    <td class="text-center text-muted small">
+                        {{ $item->created_at ? $item->created_at->format('d M Y') : '-' }}
+                    </td>
+                    <td class="text-center">
+                        <!-- Desktop Action Buttons -->
+                        <div class="d-none d-md-inline-flex gap-1 justify-content-center">
+                            <a href="{{ route('units.show', $item->id) }}" class="btn btn-sm btn-info text-white px-2 py-1 rounded-2 shadow-none" title="Detail Satuan" style="background-color: #0ea5e9; border-color: #0ea5e9;">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                            <a href="{{ route('units.edit', $item->id) }}" class="btn btn-sm btn-warning text-white px-2 py-1 rounded-2 shadow-none" title="Edit Satuan" style="background-color: #f59e0b; border-color: #f59e0b;">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                            <button type="button" class="btn btn-sm btn-danger text-white px-2 py-1 rounded-2 shadow-none" title="Hapus Satuan" style="background-color: #ef4444; border-color: #ef4444;" onclick="openDeleteModal({{ $item->id }}, '{{ addslashes($item->unit_name) }}', {{ (int)($item->products_count ?? 0) }})">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+
+                        <!-- Mobile Action Dropdown -->
+                        <div class="dropdown d-inline-block d-md-none">
+                            <button class="btn btn-sm btn-light border dropdown-toggle shadow-none" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                Aksi
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end shadow-sm rounded-3 py-1">
+                                <li>
+                                    <a class="dropdown-item py-2 small" href="{{ route('units.show', $item->id) }}">
+                                        <i class="bi bi-eye text-info me-2"></i> Rincian Satuan
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item py-2 small" href="{{ route('units.edit', $item->id) }}">
+                                        <i class="bi bi-pencil text-warning me-2"></i> Edit Satuan
+                                    </a>
+                                </li>
+                                <li><hr class="dropdown-divider my-1"></li>
+                                <li>
+                                    <button type="button" class="dropdown-item py-2 small text-danger" onclick="openDeleteModal({{ $item->id }}, '{{ addslashes($item->unit_name) }}', {{ (int)($item->products_count ?? 0) }})">
+                                        <i class="bi bi-trash me-2"></i> Hapus Satuan
+                                    </button>
+                                </li>
+                            </ul>
+                        </div>
+                    </td>
+                </tr>
+            @endforeach
+        </tbody>
+    </table>
+</div>
+
+<!-- MODAL FILTER SATUAN -->
+<div class="modal fade" id="modalFilterUnit" tabindex="-1" aria-labelledby="modalFilterUnitLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content modal-content-minimal">
+            <div class="modal-header modal-header-minimal d-flex align-items-center justify-content-between">
+                <div class="d-flex align-items-center gap-2">
+                    <div class="d-flex align-items-center justify-content-center rounded-2"
+                        style="width:30px;height:30px;background-color:var(--accent-light,#f0fdf4);flex-shrink:0;">
+                        <i class="bi bi-funnel text-success" style="font-size:14px;"></i>
+                    </div>
+                    <div class="fw-semibold text-dark" style="font-size:0.85rem;" id="modalFilterUnitLabel">Filter Data Satuan</div>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body modal-body-minimal d-flex flex-column gap-3">
+                <div>
+                    <label for="modalFilterCategory" class="form-label small fw-semibold text-muted mb-1">Kategori / Tipe</label>
+                    <select id="modalFilterCategory" class="form-select form-select-sm rounded-2">
+                        <option value="">Semua Kategori</option>
+                        @foreach ($list->pluck('type')->unique()->filter() as $cat)
+                            <option value="{{ $cat }}">{{ $cat }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div>
+                    <label for="modalFilterUsage" class="form-label small fw-semibold text-muted mb-1">Status Penggunaan</label>
+                    <select id="modalFilterUsage" class="form-select form-select-sm rounded-2">
+                        <option value="">Semua Status Penggunaan</option>
+                        <option value="used">Sudah Digunakan Produk</option>
+                        <option value="unused">Belum Digunakan</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer modal-footer-minimal d-flex justify-content-between">
+                <button type="button" id="btnResetFilter" class="btn btn-sm btn-light border px-3 rounded-2">Reset</button>
+                <button type="button" id="btnApplyFilter" class="btn btn-sm btn-success px-3 rounded-2 text-white" data-bs-dismiss="modal">Terapkan Filter</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL CONFIRM DELETE UNIT -->
+<div class="modal fade" id="modalDeleteUnit" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content modal-content-minimal">
+            <div class="modal-body modal-body-minimal text-center py-4">
+                <div class="avatar-circle mx-auto mb-3 bg-danger bg-opacity-10 text-danger" style="width: 54px; height: 54px; font-size: 1.5rem;">
+                    <i class="bi bi-trash"></i>
+                </div>
+                <h6 class="fw-bold text-dark mb-1">Hapus Master Satuan?</h6>
+                <p class="text-muted small mb-2">Satuan "<span id="deleteUnitName" class="fw-semibold text-dark"></span>" akan dihapus dari master data.</p>
+                <div id="deleteWarningProductCount" class="alert alert-warning py-1 px-2 small mb-3 d-none">
+                    <i class="bi bi-exclamation-triangle-fill me-1"></i> Digunakan oleh <span id="warningProductCount" class="fw-bold"></span> produk.
+                </div>
+                
+                <form id="deleteUnitForm" method="POST" action="">
+                    @csrf
+                    @method('DELETE')
+                    <div class="d-flex gap-2 justify-content-center">
+                        <button type="button" class="btn btn-sm btn-light border px-3 rounded-2" data-bs-dismiss="modal">Batal</button>
+                        <button type="submit" class="btn btn-sm btn-danger px-3 rounded-2">Ya, Hapus</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@endsection
+
+@push('scripts')
+<!-- jQuery & DataTables JS BSD CDN -->
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
+<script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
+<script src="https://cdn.datatables.net/responsive/2.5.0/js/responsive.bootstrap5.min.js"></script>
+<script src="{{ asset('js/units.js') }}"></script>
+@endpush
+

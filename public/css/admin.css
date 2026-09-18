@@ -270,58 +270,73 @@ body {
 /* =============================================================
    SIDEBAR — MINIMIZED
    ============================================================= */
-.sidebar.minimized {
-    width: var(--sidebar-w-min);
+.sidebar.minimized,
+body.sidebar-minimized .sidebar {
+    width: var(--sidebar-w-min) !important;
 }
 
 .sidebar.minimized .brand-text,
 .sidebar.minimized .nav-text,
 .sidebar.minimized .user-details,
-.sidebar.minimized .btn-logout {
+.sidebar.minimized .btn-logout,
+body.sidebar-minimized .brand-text,
+body.sidebar-minimized .nav-text,
+body.sidebar-minimized .user-details,
+body.sidebar-minimized .btn-logout {
     opacity: 0;
     width: 0;
     overflow: hidden;
     pointer-events: none;
 }
-.sidebar.minimized .sidebar-header {
+.sidebar.minimized .sidebar-header,
+body.sidebar-minimized .sidebar-header {
     padding: 0;
     justify-content: center;
 }
-.sidebar.minimized .brand-link {
+.sidebar.minimized .brand-link,
+body.sidebar-minimized .brand-link {
     justify-content: center;
 }
 
-.sidebar.minimized .sidebar-menu {
+.sidebar.minimized .sidebar-menu,
+body.sidebar-minimized .sidebar-menu {
     padding: 12px 8px;
 }
 
-.sidebar.minimized .nav-link {
+.sidebar.minimized .nav-link,
+body.sidebar-minimized .nav-link {
     padding: 10px 0;
     justify-content: center;
     border-radius: 8px;
 }
-.sidebar.minimized .nav-link i {
+.sidebar.minimized .nav-link i,
+body.sidebar-minimized .nav-link i {
     font-size: 1.15rem;
     margin: 0;
 }
-.sidebar.minimized .nav-category {
+.sidebar.minimized .nav-category,
+body.sidebar-minimized .nav-category {
     display: none;
 }
 
-.sidebar.minimized .sidebar-footer {
+.sidebar.minimized .sidebar-footer,
+body.sidebar-minimized .sidebar-footer {
     padding: 12px 0;
     display: flex;
     justify-content: center;
 }
-.sidebar.minimized .user-info {
+.sidebar.minimized .user-info,
+body.sidebar-minimized .user-info {
     justify-content: center;
 }
 
 /* Tooltip */
-.sidebar.minimized .nav-link {
+.sidebar.minimized .nav-link,
+body.sidebar-minimized .nav-link {
     position: relative;
 }
-.sidebar.minimized .nav-link:hover::after {
+.sidebar.minimized .nav-link:hover::after,
+body.sidebar-minimized .nav-link:hover::after {
     content: attr(data-title);
     position: absolute;
     left: calc(var(--sidebar-w-min) - 4px);
@@ -350,8 +365,10 @@ body {
     transition: margin-left var(--transition);
     background: var(--bg-body);
 }
-.sidebar.minimized ~ .main-wrapper {
-    margin-left: var(--sidebar-w-min);
+.sidebar.minimized ~ .main-wrapper,
+body.sidebar-minimized .main-wrapper,
+.main-wrapper.sidebar-minimized {
+    margin-left: var(--sidebar-w-min) !important;
 }
 
 .topbar {
@@ -381,10 +398,26 @@ body {
 
 .btn-toggle {
     color: var(--gray-500) !important;
+    background: transparent !important;
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     transition: color 0.15s ease;
 }
+
 .btn-toggle:hover {
     color: var(--gray-900) !important;
+}
+.btn-toggle:focus,
+.btn-toggle:active {
+    background: transparent !important;
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
 }
 
 /* Notification dot */
@@ -866,20 +899,73 @@ body {
 
 /* ── Form Controls & Modals ──────────────────── */
 .modal-content-minimal {
-    border-radius: 14px;
-    border: 1px solid var(--border);
-    box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.12);
+    border-radius: 16px !important;
+    border: 1px solid #e7e5e4;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1) !important;
 }
 .modal-header-minimal {
-    border-bottom: 1px solid var(--border);
-    padding: 1.25rem 1.5rem;
+    padding: 1.1rem 1.4rem !important;
+    border-bottom: 1px solid #e7e5e4;
 }
 .modal-body-minimal {
-    padding: 1.5rem;
+    padding: 1.2rem 1.4rem !important;
 }
 .modal-footer-minimal {
-    border-top: 1px solid var(--border);
-    padding: 1rem 1.5rem;
+    padding: 0.9rem 1.4rem !important;
+    border-top: 1px solid #e7e5e4;
+}
+
+/* Custom select dengan chevron icon */
+.filter-select-wrap {
+    position: relative;
+}
+.filter-select-wrap::after {
+    content: "\F282"; /* Bootstrap Icons chevron-down */
+    font-family: "bootstrap-icons";
+    position: absolute;
+    right: 11px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 13px;
+    color: #78716c;
+    pointer-events: none;
+    line-height: 1;
+}
+.filter-select {
+    width: 100%;
+    appearance: none;
+    -webkit-appearance: none;
+    font-size: 0.82rem;
+    padding: 8px 34px 8px 12px;
+    border-radius: 8px;
+    border: 1px solid #d6d3d1;
+    background-color: #fafafa;
+    color: #292524;
+    cursor: pointer;
+    transition:
+        border-color 0.15s ease,
+        box-shadow 0.15s ease;
+    outline: none;
+}
+.filter-select:hover {
+    border-color: #a8a29e;
+}
+.filter-select:focus {
+    border-color: #16a34a;
+    box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.12);
+}
+
+/* Filter label micro uppercase */
+.filter-label {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: #78716c;
+    margin-bottom: 7px;
 }
 
 .upload-dropzone {
@@ -953,4 +1039,3 @@ div.dataTables_wrapper div.dataTables_paginate .page-item.disabled .page-link {
     background: var(--gray-100);
     color: var(--gray-900);
 }
-
