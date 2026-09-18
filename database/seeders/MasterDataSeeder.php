@@ -27,6 +27,7 @@ class MasterDataSeeder extends Seeder
             'accesses' => [
                 'dashboard' => ['index' => 1, 'show' => 1, 'create' => 1, 'edit' => 1, 'delete' => 1],
                 'products' => ['index' => 1, 'show' => 1, 'create' => 1, 'edit' => 1, 'delete' => 1],
+                'units' => ['index' => 1, 'show' => 1, 'create' => 1, 'edit' => 1, 'delete' => 1],
                 'hpp' => ['index' => 1, 'show' => 1, 'create' => 1, 'edit' => 1, 'delete' => 1],
                 'restock' => ['index' => 1, 'show' => 1, 'create' => 1, 'edit' => 1, 'delete' => 1],
                 'reports' => ['index' => 1, 'show' => 1, 'create' => 1, 'edit' => 1, 'delete' => 1],
@@ -44,6 +45,7 @@ class MasterDataSeeder extends Seeder
             'accesses' => [
                 'dashboard' => ['index' => 1, 'show' => 1, 'create' => 0, 'edit' => 0, 'delete' => 0],
                 'products' => ['index' => 1, 'show' => 1, 'create' => 0, 'edit' => 0, 'delete' => 0],
+                'units' => ['index' => 1, 'show' => 1, 'create' => 0, 'edit' => 0, 'delete' => 0],
                 'hpp' => ['index' => 1, 'show' => 1, 'create' => 0, 'edit' => 0, 'delete' => 0],
                 'restock' => ['index' => 1, 'show' => 1, 'create' => 1, 'edit' => 0, 'delete' => 0],
                 'reports' => ['index' => 1, 'show' => 1, 'create' => 1, 'edit' => 0, 'delete' => 0],

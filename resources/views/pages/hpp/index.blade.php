@@ -47,78 +47,13 @@
 </div>
 @endif
 
-<!-- Top Summary Cards Bar (Master HPP Metrics) -->
-<div class="row g-3 mb-4">
-    <div class="col-xl-3 col-sm-6">
-        <div class="stat-card">
-            <div class="d-flex align-items-center justify-content-between mb-2">
-                <span class="stat-card-label">Total Komponen</span>
-                <div class="stat-card-icon stat-card-icon--emerald">
-                    <i class="bi bi-calculator"></i>
-                </div>
-            </div>
-            <div class="stat-card-value">{{ $totalCount }}</div>
-            <div class="stat-card-trend stat-card-trend--up mt-1">
-                <i class="bi bi-check2-circle"></i> Master komponen aktif
-            </div>
-        </div>
-    </div>
-    
-    <div class="col-xl-3 col-sm-6">
-        <div class="stat-card">
-            <div class="d-flex align-items-center justify-content-between mb-2">
-                <span class="stat-card-label">Rata-Rata Biaya Satuan</span>
-                <div class="stat-card-icon stat-card-icon--blue">
-                    <i class="bi bi-tag"></i>
-                </div>
-            </div>
-            <div class="stat-card-value">Rp {{ number_format($avgCost, 0, ',', '.') }}</div>
-            <div class="stat-card-trend stat-card-trend--up mt-1">
-                <i class="bi bi-graph-up-arrow"></i> Rata-rata acuan bawaan
-            </div>
-        </div>
-    </div>
-
-    <div class="col-xl-3 col-sm-6">
-        <div class="stat-card">
-            <div class="d-flex align-items-center justify-content-between mb-2">
-                <span class="stat-card-label">Paling Sering Digunakan</span>
-                <div class="stat-card-icon stat-card-icon--amber">
-                    <i class="bi bi-star"></i>
-                </div>
-            </div>
-            <div class="stat-card-value fs-5 text-truncate" title="{{ $mostUsed ? $mostUsed->name : '-' }}">
-                {{ $mostUsed ? $mostUsed->name : '-' }}
-            </div>
-            <div class="stat-card-trend stat-card-trend--up mt-1">
-                <i class="bi bi-link-45deg"></i> {{ $mostUsed ? $mostUsed->products_count : 0 }} Produk terkait
-            </div>
-        </div>
-    </div>
-
-    <div class="col-xl-3 col-sm-6">
-        <div class="stat-card">
-            <div class="d-flex align-items-center justify-content-between mb-2">
-                <span class="stat-card-label">Belum Digunakan</span>
-                <div class="stat-card-icon stat-card-icon--rose">
-                    <i class="bi bi-inbox"></i>
-                </div>
-            </div>
-            <div class="stat-card-value {{ $unusedCount > 0 ? 'text-secondary' : 'text-success' }}">{{ $unusedCount }}</div>
-            <div class="stat-card-trend {{ $unusedCount > 0 ? 'text-secondary' : 'stat-card-trend--up' }} mt-1">
-                <i class="bi bi-info-circle"></i> Komponen siap pakai
-            </div>
-        </div>
-    </div>
-</div>
-
 <!-- Main Section: Toolbar & DataTables Container -->
 <div class="card-box">
     <!-- Action & Filter Header -->
     <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3 mb-4">
         <!-- Left: Search Input -->
-        <div class="d-flex flex-wrap align-items-center gap-2 flex-grow-1">
-            <div class="position-relative flex-grow-1" style="max-width: 320px;">
+        <div class="d-flex flex-wrap align-items-center gap-2 grow">
+            <div class="position-relative grow" style="max-width: 320px;">
                 <i class="bi bi-search position-absolute top-50 start-0 translate-middle-y ms-3 text-muted"></i>
                 <input type="text" id="dtSearchInput" class="form-control form-control-sm ps-5 pe-3 rounded-3" placeholder="Cari nama komponen / satuan..." style="border-color: var(--border);">
             </div>
@@ -126,12 +61,8 @@
 
         <!-- Right: Action Buttons -->
         <div class="d-flex align-items-center gap-2">
-            <button type="button" class="btn btn-sm btn-outline-secondary rounded-3 d-inline-flex align-items-center gap-1" onclick="window.location.reload();">
-                <i class="bi bi-arrow-clockwise"></i> Refresh
-            </button>
-            
             <a href="{{ route('hpp.create') }}" class="btn btn-sm btn-success rounded-3 text-white fw-semibold d-inline-flex align-items-center gap-2 px-3">
-                <i class="bi bi-plus-circle-fill"></i> Tambah Komponen HPP
+                <i class="bi bi-plus-circle-fill"></i> Tambah
             </a>
         </div>
     </div>
@@ -141,8 +72,8 @@
         <table class="table table-products align-middle mb-0 w-100" id="hppDataTable">
             <thead>
                 <tr>
-                    <th style="width: 30px;" class="no-sort">
-                        <input class="form-check-input" type="checkbox" id="selectAll">
+                    <th style="width: 50px;">
+                        No
                     </th>
                     <th>Nama Komponen HPP</th>
                     <th>Satuan Pemakaian</th>
@@ -156,7 +87,7 @@
                 @foreach ($list as $item)
                     <tr>
                         <td>
-                            <input class="form-check-input row-checkbox" type="checkbox" value="{{ $item->id }}">
+                            {{ $loop->iteration }}
                         </td>
                         <td>
                             <div class="d-flex align-items-center gap-3">

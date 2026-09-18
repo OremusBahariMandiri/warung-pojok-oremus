@@ -54,73 +54,6 @@
 </div>
 @endif
 
-<!-- Top Summary Cards Bar (Dynamic from Backend) -->
-<div class="row g-3 mb-4">
-    <div class="col-xl-3 col-sm-6">
-        <div class="stat-card">
-            <div class="d-flex align-items-center justify-content-between mb-2">
-                <span class="stat-card-label">Total Produk</span>
-                <div class="stat-card-icon stat-card-icon--emerald">
-                    <i class="bi bi-box-seam"></i>
-                </div>
-            </div>
-            <div class="stat-card-value">{{ $totalCount }}</div>
-            <div class="stat-card-trend stat-card-trend--up mt-1">
-                <i class="bi bi-check2-circle"></i> Terdaftar di database
-            </div>
-        </div>
-    </div>
-    
-    <div class="col-xl-3 col-sm-6">
-        <div class="stat-card">
-            <div class="d-flex align-items-center justify-content-between mb-2">
-                <span class="stat-card-label">Stok Aman</span>
-                <div class="stat-card-icon stat-card-icon--blue">
-                    <i class="bi bi-boxes"></i>
-                </div>
-            </div>
-            <div class="stat-card-value">{{ $safeStockCount }}</div>
-            <div class="stat-card-trend stat-card-trend--up mt-1">
-                <i class="bi bi-shield-check"></i> > Batas minimal
-            </div>
-        </div>
-    </div>
-
-    <div class="col-xl-3 col-sm-6">
-        <div class="stat-card">
-            <div class="d-flex align-items-center justify-content-between mb-2">
-                <span class="stat-card-label">Stok Rendah / Kritis</span>
-                <div class="stat-card-icon stat-card-icon--amber">
-                    <i class="bi bi-exclamation-triangle"></i>
-                </div>
-            </div>
-            <div class="stat-card-value {{ $lowStockCount > 0 ? 'text-danger' : 'text-dark' }}">{{ $lowStockCount }}</div>
-            <div class="stat-card-trend {{ $lowStockCount > 0 ? 'stat-card-trend--warn' : 'stat-card-trend--up' }} mt-1">
-                @if ($lowStockCount > 0)
-                    <i class="bi bi-arrow-repeat"></i> Perlu restock
-                @else
-                    <i class="bi bi-check2-circle"></i> Semua stok aman
-                @endif
-            </div>
-        </div>
-    </div>
-
-    <div class="col-xl-3 col-sm-6">
-        <div class="stat-card">
-            <div class="d-flex align-items-center justify-content-between mb-2">
-                <span class="stat-card-label">Rata-Rata Margin</span>
-                <div class="stat-card-icon stat-card-icon--rose">
-                    <i class="bi bi-percent"></i>
-                </div>
-            </div>
-            <div class="stat-card-value">{{ $avgMargin }}%</div>
-            <div class="stat-card-trend stat-card-trend--up mt-1">
-                <i class="bi bi-graph-up-arrow"></i> Rata-rata margin produk
-            </div>
-        </div>
-    </div>
-</div>
-
 <!-- Main Section: Toolbar & DataTables Container -->
 <div class="card-box">
     <!-- Action & Filter Header -->
@@ -147,12 +80,8 @@
 
         <!-- Right: Action Buttons -->
         <div class="d-flex align-items-center gap-2">
-            <button type="button" class="btn btn-sm btn-outline-secondary rounded-3 d-inline-flex align-items-center gap-1" onclick="window.location.reload();">
-                <i class="bi bi-arrow-clockwise"></i> Refresh
-            </button>
-            
             <a href="{{ route('products.create') }}" class="btn btn-sm btn-success rounded-3 text-white fw-semibold d-inline-flex align-items-center gap-2 px-3">
-                <i class="bi bi-plus-circle-fill"></i> Tambah Produk
+                <i class="bi bi-plus-circle-fill"></i> Tambah
             </a>
         </div>
     </div>
