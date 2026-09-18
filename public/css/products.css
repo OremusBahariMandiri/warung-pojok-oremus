@@ -1,0 +1,193 @@
+﻿/* =============================================================
+   WARJOK — Manajemen Produk & HPP Stylesheet
+   Warung Pojok Oremus | PT Oremus Bahari Mandiri
+   ============================================================= */
+
+/* ── Table Bordered & Grid ───────────────────── */
+#productsDataTable.table-bordered {
+    border: 1px solid #dee2e6;
+}
+#productsDataTable.table-bordered th,
+#productsDataTable.table-bordered td {
+    border: 1px solid #dee2e6;
+    padding: 0.65rem 0.85rem;
+}
+#productsDataTable thead th {
+    background-color: #f8f9fa;
+    font-weight: 700 !important;
+    color: #334155;
+    font-size: 0.8rem;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    vertical-align: middle;
+}
+
+/* ── DataTables Sorting Arrows Spacing ───────── */
+table.dataTable thead > tr > th.sorting,
+table.dataTable thead > tr > th.sorting_asc,
+table.dataTable thead > tr > th.sorting_desc {
+    padding-right: 2rem !important;
+    cursor: pointer;
+    position: relative;
+    white-space: nowrap;
+}
+table.dataTable thead > tr > th.sorting::before,
+table.dataTable thead > tr > th.sorting::after,
+table.dataTable thead > tr > th.sorting_asc::before,
+table.dataTable thead > tr > th.sorting_asc::after,
+table.dataTable thead > tr > th.sorting_desc::before,
+table.dataTable thead > tr > th.sorting_desc::after {
+    right: 0.65rem !important;
+}
+table.dataTable thead > tr > th.no-sort {
+    padding-right: 0.85rem !important;
+}
+
+/* ── Search & Filter Toolbar ─────────────────── */
+.product-search-box {
+    flex-grow: 1;
+    min-width: 260px;
+    max-width: 480px;
+}
+.product-search-box .form-control {
+    font-size: 0.85rem;
+    border-color: #e2e8f0;
+}
+.product-search-box .form-control:focus {
+    border-color: #22c55e;
+    box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.15);
+}
+
+/* ── Product Thumbnail & Avatar ──────────────── */
+.product-thumb {
+    width: 44px;
+    height: 44px;
+    border-radius: 8px;
+    object-fit: cover;
+    border: 1px solid #dee2e6;
+    flex-shrink: 0;
+}
+.product-thumb-placeholder {
+    width: 44px;
+    height: 44px;
+    border-radius: 8px;
+    background: #f8f9fa;
+    color: #64748b;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    border: 1px solid #dee2e6;
+    flex-shrink: 0;
+}
+
+/* ── Upload Dropzone ─────────────────────────── */
+.upload-dropzone {
+    border: 2px dashed #cbd5e1;
+    border-radius: 10px;
+    padding: 1.25rem;
+    text-align: center;
+    background: #f8f9fa;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+.upload-dropzone:hover {
+    border-color: #22c55e;
+    background: #f0fdf4;
+}
+
+/* ── Calc Preview Card ───────────────────────── */
+.calc-preview-card {
+    background: #f8f9fa;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 1rem;
+}
+
+/* ── AdminLTE Styled Pagination ───────────────── */
+.dataTables_wrapper .dataTables_paginate .pagination {
+    margin: 0;
+    gap: 0;
+    flex-wrap: wrap;
+}
+.dataTables_wrapper .dataTables_paginate .page-item .page-link {
+    font-size: 0.82rem;
+    padding: 0.35rem 0.65rem;
+    color: #495057;
+    background-color: #fff;
+    border: 1px solid #dee2e6;
+    margin-left: -1px;
+    border-radius: 0;
+}
+.dataTables_wrapper .dataTables_paginate .page-item:first-child .page-link {
+    border-top-left-radius: 4px;
+    border-bottom-left-radius: 4px;
+    margin-left: 0;
+}
+.dataTables_wrapper .dataTables_paginate .page-item:last-child .page-link {
+    border-top-right-radius: 4px;
+    border-bottom-right-radius: 4px;
+}
+.dataTables_wrapper .dataTables_paginate .page-item.active .page-link {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+    color: #fff;
+    font-weight: 600;
+    z-index: 3;
+}
+.dataTables_wrapper .dataTables_paginate .page-item.disabled .page-link {
+    color: #6c757d;
+    background-color: #f8f9fa;
+    border-color: #dee2e6;
+}
+.dataTables_wrapper .dataTables_info {
+    font-size: 0.82rem;
+    color: #6c757d;
+    padding: 0;
+}
+
+/* ── Mobile Layout Optimization ──────────────── */
+@media (max-width: 575.98px) {
+    .product-search-box {
+        max-width: 100% !important;
+        width: 100%;
+    }
+    .dataTables_wrapper .dataTables_info,
+    .dataTables_wrapper .dataTables_paginate {
+        width: 100%;
+        text-align: center;
+        display: flex;
+        justify-content: center;
+    }
+}
+
+/* Product Image Detail Page */
+.product-thumbnail-wrapper {
+    position: absolute;
+    top: 4.2rem;
+    right: 1.5rem;
+    width: 100px;
+    height: 100px;
+}
+
+.product-thumbnail-label {
+    white-space: nowrap;
+}
+
+.product-thumbnail-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.product-thumbnail-placeholder {
+    width: 100%;
+    height: 100%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #f8f9fa;
+    color: #6c757d;
+    border-radius: 0.5rem;
+    border: 1px solid #dee2e6;
+}

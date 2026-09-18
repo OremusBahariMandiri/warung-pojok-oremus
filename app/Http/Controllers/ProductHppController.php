@@ -31,7 +31,7 @@ class ProductHppController extends Controller
             ]);
         }
 
-        return view('pages.products.components', compact('product', 'components'));
+        return redirect()->route('products.show', $product->id);
     }
 
     /**

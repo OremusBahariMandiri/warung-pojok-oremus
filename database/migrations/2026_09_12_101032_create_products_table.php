@@ -17,7 +17,6 @@ return new class extends Migration
             $table->string("prod_name");
             $table->string("slug");
             $table->string("sku");
-            $table->string("satuan");
             $table->decimal("selling_price", 15, 3);
             $table->decimal("unit_price", 15, 3);
             $table->enum("hpp_method", ['manual', 'calculated']);
