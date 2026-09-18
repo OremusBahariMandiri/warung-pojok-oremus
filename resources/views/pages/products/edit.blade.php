@@ -1,14 +1,17 @@
 @extends('layouts.admin')
 
 @section('title', 'Edit Produk — Warung Pojok Oremus')
-@section('page-title', 'Edit Produk & HPP')
+
+@push('styles')
+<link rel="stylesheet" href="{{ asset('css/products.css') }}">
+@endpush
 
 @section('breadcrumb')
 <nav aria-label="breadcrumb">
     <ol class="breadcrumb mb-0">
-        <li class="breadcrumb-item"><a href="{{ route('admin.dashboard') }}">Home</a></li>
-        <li class="breadcrumb-item"><a href="{{ route('products.index') }}">Manajemen Produk</a></li>
-        <li class="breadcrumb-item active" aria-current="page">Edit Produk</li>
+        <li class="breadcrumb-item"><a href="{{ route('admin.dashboard') }}" class="text-decoration-none text-muted">warjok</a></li>
+        <li class="breadcrumb-item"><a href="{{ route('products.index') }}" class="text-decoration-none text-muted">management produk</a></li>
+        <li class="breadcrumb-item active text-dark" aria-current="page">edit produk</li>
     </ol>
 </nav>
 @endsection
@@ -25,9 +28,10 @@
 <!-- Header Back Bar -->
 <div class="d-flex align-items-center justify-content-between mb-4">
     <div>
-        <h4 class="fw-bold text-dark mb-1">Edit Produk</h4>
+        <h4 class="fw-bold text-dark mb-1">Edit Produk & Komposisi HPP</h4>
+        <p class="text-muted small mb-0">Perbarui data produk "{{ $productObj->prod_name }}" dan kalkulasi HPP.</p>
     </div>
-    <a href="{{ route('products.index') }}" class="btn btn-sm btn-outline-secondary rounded-3 px-3 d-inline-flex align-items-center gap-2">
+    <a href="{{ route('products.index') }}" class="btn btn-sm btn-outline-secondary rounded-2 px-3 d-inline-flex align-items-center gap-2">
         <i class="bi bi-arrow-left"></i> Kembali
     </a>
 </div>
@@ -258,11 +262,9 @@
                         Estimasi Laba per Satuan: <span class="fw-bold text-dark font-monospace" id="displayProfitAmount">Rp 0</span>
                     </div>
                 </div>
-            </div>
 
-            <!-- Submit Action Card -->
-            <div class="card-box bg-white">
-                <div class="d-flex align-items-center justify-content-between">
+                <!-- Submit Action Card -->
+                <div class="d-flex align-items-center justify-content-between mt-5">
                     <a href="{{ route('products.index') }}" class="btn btn-light border rounded-3 px-3">Batal</a>
                     <button type="submit" class="btn btn-success text-white fw-bold px-4 rounded-3 d-inline-flex align-items-center gap-2">
                         <i class="bi bi-check-circle-fill"></i> Perbarui

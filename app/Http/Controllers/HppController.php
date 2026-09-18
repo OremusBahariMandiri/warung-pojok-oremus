@@ -84,7 +84,8 @@ class HppController extends Controller
      */
     public function edit(Hpp $hpp)
     {
-        return view('pages.hpp.edit', compact('hpp'));
+        $units = Unit::orderBy('unit_name', 'asc')->get();
+        return view('pages.hpp.edit', compact('hpp', 'units'));
     }
 
     /**
