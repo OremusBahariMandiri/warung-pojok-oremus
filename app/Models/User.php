@@ -65,6 +65,11 @@ class User extends Authenticatable
         return $this->hasMany(Restock::class, 'created_by');
     }
 
+    public function reports()
+    {
+        return $this->hasMany(Reports::class, 'created_by');
+    }
+
     /**
      * Check if user has permission for a specific module and action.
      *
