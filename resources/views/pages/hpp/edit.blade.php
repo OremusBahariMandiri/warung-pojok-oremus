@@ -2,6 +2,10 @@
 
 @section('title', 'Edit Komponen HPP — Warung Pojok Oremus')
 
+@push('styles')
+<link rel="stylesheet" href="{{ asset('css/hpp.css') }}">
+@endpush
+
 @section('breadcrumb')
 <nav aria-label="breadcrumb">
     <ol class="breadcrumb mb-0">
@@ -63,8 +67,10 @@
                 <div class="row g-3 mb-4">
                     <div class="col-md-6">
                         <label for="unit" class="form-label small fw-semibold text-dark">Satuan Pemakaian <span class="text-danger">*</span></label>
-                        <select class="form-select rounded-2 @error('unit') is-invalid @enderror" id="unit" name="unit" required>
-                            <option value="" disabled>Pilih Satuan...</option>
+                        
+                        {{-- Hidden select asli untuk submit form --}}
+                        <select name="unit" id="unit" class="d-none @error('unit') is-invalid @enderror">
+                            <option value="" {{ old('unit', $hppObj->unit) ? '' : 'selected' }}></option>
                             @if(isset($units) && $units->count() > 0)
                                 @foreach($units as $unitItem)
                                     <option value="{{ $unitItem->short_name }}" {{ old('unit', $hppObj->unit) == $unitItem->short_name ? 'selected' : '' }}>
@@ -78,8 +84,58 @@
                                 <option value="Liter" {{ old('unit', $hppObj->unit) == 'Liter' ? 'selected' : '' }}>Liter</option>
                             @endif
                         </select>
+
+                        {{-- Custom searchable dropdown --}}
+                        <div class="searchable-select-wrapper" id="unitDropdownWrapper">
+                            <div class="searchable-select-trigger @error('unit') is-invalid @enderror"
+                                id="unitTrigger" onclick="toggleSearchableSelect(this, event)" tabindex="0" role="combobox">
+                                @php
+                                    $selectedUnit = old('unit', $hppObj->unit);
+                                    $selectedLabel = '';
+                                    if ($selectedUnit) {
+                                        if (isset($units) && $units->count() > 0) {
+                                            $found = $units->firstWhere('short_name', $selectedUnit);
+                                            $selectedLabel = $found ? $found->unit_name . ' (' . $found->short_name . ')' : $selectedUnit;
+                                        } else {
+                                            $map = ['Pcs'=>'Pcs','Porsi'=>'Porsi','Gram'=>'Gram','Liter'=>'Liter'];
+                                            $selectedLabel = $map[$selectedUnit] ?? $selectedUnit;
+                                        }
+                                    }
+                                @endphp
+                                @if($selectedLabel)
+                                    <span class="selected-text">{{ $selectedLabel }}</span>
+                                @else
+                                    <span class="placeholder-text">Pilih Satuan...</span>
+                                @endif
+                            </div>
+
+                            <div class="searchable-select-dropdown" id="unitDropdown">
+                                <div class="searchable-select-search-wrap">
+                                    <input type="text" class="searchable-select-search"
+                                        id="unitSearch" oninput="filterSearchableOptions(this)" placeholder="Cari satuan..." autocomplete="off">
+                                </div>
+                                <div class="searchable-select-options" id="unitOptions">
+                                    @if(isset($units) && $units->count() > 0)
+                                        @foreach($units as $unitItem)
+                                            <div class="searchable-select-option {{ old('unit', $hppObj->unit) == $unitItem->short_name ? 'selected' : '' }}"
+                                                data-value="{{ $unitItem->short_name }}"
+                                                data-label="{{ $unitItem->unit_name }} ({{ $unitItem->short_name }})"
+                                                onclick="selectSearchableOption(this)">
+                                                {{ $unitItem->unit_name }} ({{ $unitItem->short_name }})
+                                            </div>
+                                        @endforeach
+                                    @else
+                                        <div class="searchable-select-option {{ old('unit', $hppObj->unit) == 'Pcs' ? 'selected' : '' }}" data-value="Pcs" data-label="Pcs" onclick="selectSearchableOption(this)">Pcs</div>
+                                        <div class="searchable-select-option {{ old('unit', $hppObj->unit) == 'Porsi' ? 'selected' : '' }}" data-value="Porsi" data-label="Porsi" onclick="selectSearchableOption(this)">Porsi</div>
+                                        <div class="searchable-select-option {{ old('unit', $hppObj->unit) == 'Gram' ? 'selected' : '' }}" data-value="Gram" data-label="Gram (gr)" onclick="selectSearchableOption(this)">Gram (gr)</div>
+                                        <div class="searchable-select-option {{ old('unit', $hppObj->unit) == 'Liter' ? 'selected' : '' }}" data-value="Liter" data-label="Liter (L)" onclick="selectSearchableOption(this)">Liter (L)</div>
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+
                         @error('unit')
-                            <div class="invalid-feedback">{{ $message }}</div>
+                            <div class="invalid-feedback d-block">{{ $message }}</div>
                         @enderror
                     </div>
                     <div class="col-md-6">
@@ -108,3 +164,8 @@
 </form>
 
 @endsection
+
+@push('scripts')
+<script src="{{ asset('js/hpp.js') }}"></script>
+@endpush
+
