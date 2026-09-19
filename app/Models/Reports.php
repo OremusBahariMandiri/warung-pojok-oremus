@@ -14,22 +14,30 @@ class Reports extends Model
     protected $table = 'reports';
 
     protected $fillable = [
+        'created_by',
         'total_quantity',
         'total_sales',
         'total_hpp',
         'total_margin',
-        'report_date'
+        'report_date',
+        'notes'
     ];
 
     protected function casts(): array
     {
         return [
+            'created_by' => 'integer',
             'total_quantity' => 'integer',
             'total_sales' => 'decimal:3',
             'total_hpp' => 'decimal:3',
             'total_margin' => 'decimal:3',
             'report_date' => 'datetime',
         ];
+    }
+
+    public function creator()
+    {
+        return $this->belongsTo(User::class, 'created_by');
     }
 
     public function details()
