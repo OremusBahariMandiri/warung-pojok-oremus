@@ -22,6 +22,16 @@
 </head>
 <body>
 
+    {{-- Fetch data user yang sedang login saat ini --}}
+    @php
+        $currentUser = auth()->user();
+
+        $employeeName = $currentUser->employee_name ?? 'Administrator';
+        $userRole = $currentUser->is_admin ? 'Super Admin' : 'Pengguna';
+        $userEmail = $currentUser->email ?? '';
+        $initials = strtoupper(substr(trim($employeeName), 0, 2));
+    @endphp
+
     <!-- Mobile Overlay -->
     <div class="sidebar-overlay d-lg-none" id="sidebarOverlay"></div>
 
@@ -182,12 +192,6 @@
 
         <div class="sidebar-footer">
             <div class="user-info">
-                @php
-                    $currentUser = auth()->user();
-                    $employeeName = $currentUser->employee_name ?? $currentUser->username ?? 'Administrator';
-                    $userRole = $currentUser->role ?? 'Super Admin';
-                    $initials = strtoupper(substr(trim($employeeName), 0, 2));
-                @endphp
                 <div class="avatar-circle">{{ $initials }}</div>
                 <div class="user-details ms-2">
                     <h6 class="mb-0 text-white fs-sm text-truncate" style="max-width: 125px;">{{ $employeeName }}</h6>
@@ -232,23 +236,28 @@
                 <!-- Profile Dropdown (Sleek & Elegant) -->
                 <div class="dropdown">
                     <button class="btn btn-user border-0 p-1 pe-2 shadow-none d-flex align-items-center gap-2 rounded-pill hover-bg-slate-50" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                        <div class="avatar-circle-sm text-white d-flex align-items-center justify-content-center rounded-circle fw-bold" style="width:34px; height:34px; font-size: 0.8rem; background: #1e293b;">AD</div>
+                        <div class="avatar-circle-sm text-white d-flex align-items-center justify-content-center rounded-circle fw-bold" style="width:34px; height:34px; font-size: 0.8rem; background: #1e293b;">{{ $initials }}</div>
                         <div class="d-none d-md-flex flex-column text-start">
-                            <span class="text-dark fw-semibold" style="font-size: 0.82rem; line-height: 1.15;">Administrator</span>
-                            <span class="text-muted" style="font-size: 0.7rem;">Super Admin</span>
+                            <span class="text-dark fw-semibold" style="font-size: 0.82rem; line-height: 1.15;">{{ $employeeName }}</span>
+                            <span class="text-muted" style="font-size: 0.7rem;">{{ $userRole }}</span>
                         </div>
                         <i class="bi bi-chevron-down text-muted small d-none d-md-block ms-1" style="font-size: 0.72rem;"></i>
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end shadow-sm border mt-2 py-2" style="border-radius: 12px; min-width: 210px; border-color: var(--border);">
                         <li class="px-3 py-2 border-bottom mb-1 bg-light bg-opacity-50">
-                            <div class="fw-bold text-dark small">Administrator</div>
-                            <div class="text-muted" style="font-size: 0.72rem;">admin@warjok.com</div>
+                            <div class="fw-bold text-dark small">{{ $employeeName }}</div>
+                            <div class="text-muted" style="font-size: 0.72rem;">{{ $userEmail }}</div>
                         </li>
                         <li><a class="dropdown-item py-2 px-3 small d-flex align-items-center gap-2 text-secondary" href="#"><i class="bi bi-person"></i> Profil Saya</a></li>
                         <li><a class="dropdown-item py-2 px-3 small d-flex align-items-center gap-2 text-secondary" href="#"><i class="bi bi-gear"></i> Pengaturan Akun</a></li>
                         <li><hr class="dropdown-divider my-1 border-slate-200"></li>
-                        <li><a class="dropdown-item text-danger py-2 px-3 small d-flex align-items-center gap-2" href="#"><i class="bi bi-box-arrow-right"></i> Logout</a></li>
-                    </ul>
+                        <li>
+                            <form action="{{ route('logout') }}" method="POST" id="logout-dropdown-head" style="display:none">
+                                @csrf
+                            </form>
+                                <a class="dropdown-item text-danger py-2 px-3 small d-flex align-items-center gap-2" href="{{ route('logout') }}" onclick="event.preventDefault(); document.getElementById('logout-dropdown-head').submit();"><i class="bi bi-box-arrow-right"></i> Logout</a>
+                            </li>
+                        </ul>
                 </div>
             </div>
         </header>

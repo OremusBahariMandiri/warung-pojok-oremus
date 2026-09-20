@@ -17,24 +17,24 @@ class AuthSeeder extends Seeder
         User::updateOrCreate(
             ['email' => 'admin@warjok.com'],
             [
-                'nrk'           => '0000',
+                'nrk'           => '1111',
                 'employee_name' => 'Super Admin',
                 'email'         => 'admin@warjok.com',
-                'password'      => Hash::make('00000000'),
+                'password'      => Hash::make('11111111'),
                 'is_admin'      => true,
             ]
         );
 
         // Regular User
-        // User::updateOrCreate(
-        //     ['email' => 'user@example.com'],
-        //     [
-        //         'nrk'           => 'USR001',
-        //         'employee_name' => 'Regular User',
-        //         'email'         => 'user@example.com',
-        //         'password'      => Hash::make('password'),
-        //         'is_admin'      => false,
-        //     ]
-        // );
+        User::updateOrCreate(
+            ['email' => 'afandi@warjok.com'],
+            [
+                'nrk'           => '0000',
+                'employee_name' => 'Afandi',
+                'email'         => 'afandi@warjok.com',
+                'password'      => Hash::make('00000000'),
+                'is_admin'      => false,
+            ]
+        );
     }
 }

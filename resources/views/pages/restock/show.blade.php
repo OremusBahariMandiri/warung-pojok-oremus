@@ -34,7 +34,7 @@
             <i class="bi bi-arrow-left"></i> Kembali
         </a>
         <button type="button" class="btn btn-sm btn-danger text-white rounded-2 px-3 d-inline-flex align-items-center gap-2" onclick="openDeleteModal({{ $restockObj->id }}, '{{ addslashes($restockObj->restock_code) }}', {{ (int)($restockObj->total_quantity ?? 0) }}, {{ (float)($restockObj->total_value ?? 0) }})">
-            <i class="bi bi-arrow-counterclockwise"></i> Batalkan & Rollback
+            <i class="bi bi-arrow-counterclockwise"></i> Batalkan
         </button>
     </div>
 </div>
@@ -97,7 +97,8 @@
                 <span class="text-muted small">{{ $itemsList->count() }} Produk Terdaftar</span>
             </div>
 
-            <div class="table-responsive">
+            {{-- ─── Desktop Table (hidden on mobile) ─── --}}
+            <div class="table-responsive d-none d-md-block">
                 <table class="table table-bordered table-hover align-middle mb-0 w-100 text-nowrap">
                     <thead class="table-light">
                         <tr>
@@ -113,10 +114,10 @@
                     <tbody>
                         @forelse ($itemsList as $item)
                             @php
-                                $product = $item->product;
-                                $unitName = $product && $product->unit ? ($product->unit->short_name ?: $product->unit->unit_name) : 'Pcs';
+                                $product   = $item->product;
+                                $unitName  = $product && $product->unit ? ($product->unit->short_name ?: $product->unit->unit_name) : 'Pcs';
                                 $priceUsed = (float)($item->price_used ?? ($product ? $product->current_hpp : 0));
-                                $subtotal = (float)($item->subtotal ?? ($item->quantity * $priceUsed));
+                                $subtotal  = (float)($item->subtotal ?? ($item->quantity * $priceUsed));
                             @endphp
                             <tr>
                                 <td class="text-center text-muted fw-medium">{{ $loop->iteration }}</td>
@@ -128,15 +129,9 @@
                                 <td class="text-center">
                                     {{ ($product && $product->hpp_method === 'calculated') ? 'Otomatis' : 'Manual' }}
                                 </td>
-                                <td class="text-center fw-bold text-dark font-monospace">
-                                    +{{ $item->quantity }}
-                                </td>
-                                <td class="text-end font-monospace text-dark">
-                                    Rp {{ number_format($priceUsed, 0, ',', '.') }}
-                                </td>
-                                <td class="text-end font-monospace fw-bold text-dark">
-                                    Rp {{ number_format($subtotal, 0, ',', '.') }}
-                                </td>
+                                <td class="text-center fw-bold text-dark font-monospace">+{{ $item->quantity }}</td>
+                                <td class="text-end font-monospace text-dark">Rp {{ number_format($priceUsed, 0, ',', '.') }}</td>
+                                <td class="text-end font-monospace fw-bold text-dark">Rp {{ number_format($subtotal, 0, ',', '.') }}</td>
                             </tr>
                         @empty
                             <tr>
@@ -158,6 +153,77 @@
                     </tfoot>
                 </table>
             </div>
+
+            {{-- ─── Mobile Card List (visible only on mobile) ─── --}}
+            <div class="d-block d-md-none rdm-wrap">
+                @forelse ($itemsList as $item)
+                    @php
+                        $product   = $item->product;
+                        $unitName  = $product && $product->unit ? ($product->unit->short_name ?: $product->unit->unit_name) : 'Pcs';
+                        $priceUsed = (float)($item->price_used ?? ($product ? $product->current_hpp : 0));
+                        $subtotal  = (float)($item->subtotal ?? ($item->quantity * $priceUsed));
+                        $isAuto    = $product && $product->hpp_method === 'calculated';
+                    @endphp
+                    <div class="rdm-card {{ !$loop->last ? 'rdm-card-border' : '' }}">
+                        {{-- Header: no + product name --}}
+                        <div class="rdm-card-header">
+                            <span class="rdm-no">{{ $loop->iteration }}</span>
+                            <div class="rdm-product">
+                                <div class="rdm-product-name">{{ $product->prod_name ?? 'Produk Dihapus' }}</div>
+                                <div class="rdm-product-sku">SKU: {{ $product->sku ?? '-' }}</div>
+                            </div>
+                        </div>
+                        {{-- Info row: satuan + hpp --}}
+                        <div class="rdm-info-row">
+                            <div class="rdm-info-item">
+                                <span class="rdm-info-label">Satuan</span>
+                                <span class="rdm-info-val">{{ strtoupper($unitName) }}</span>
+                            </div>
+                            <div class="rdm-info-divider"></div>
+                            <div class="rdm-info-item">
+                                <span class="rdm-info-label">Metode HPP</span>
+                                <span class="rdm-info-val {{ $isAuto ? 'rdm-hpp-auto' : '' }}">{{ $isAuto ? 'Otomatis' : 'Manual' }}</span>
+                            </div>
+                            <div class="rdm-info-divider"></div>
+                            <div class="rdm-info-item">
+                                <span class="rdm-info-label">Jumlah Masuk</span>
+                                <span class="rdm-info-val rdm-qty">+{{ $item->quantity }}</span>
+                            </div>
+                        </div>
+                        {{-- Price + Subtotal --}}
+                        <div class="rdm-amounts">
+                            <div class="rdm-amount-item">
+                                <span class="rdm-amount-label">Harga Modal / Unit</span>
+                                <span class="rdm-amount-val">Rp {{ number_format($priceUsed, 0, ',', '.') }}</span>
+                            </div>
+                            <div class="rdm-amount-item rdm-subtotal-item">
+                                <span class="rdm-amount-label">Subtotal Nilai</span>
+                                <span class="rdm-amount-val rdm-subtotal-val">Rp {{ number_format($subtotal, 0, ',', '.') }}</span>
+                            </div>
+                        </div>
+                    </div>
+                @empty
+                    <div class="rdm-empty">
+                        Tidak ada item produk dalam transaksi restock ini.
+                    </div>
+                @endforelse
+
+                {{-- Grand Total footer --}}
+                @if ($itemsList->count() > 0)
+                <div class="rdm-grand-total">
+                    <div class="rdm-gt-row">
+                        <span class="rdm-gt-label">Total Unit Masuk</span>
+                        <span class="rdm-gt-val font-monospace">{{ (int)($restockObj->total_quantity ?? 0) }} Unit</span>
+                    </div>
+                    <div class="rdm-gt-row">
+                        <span class="rdm-gt-label">Grand Total Nilai</span>
+                        <span class="rdm-gt-val rdm-gt-money font-monospace">Rp {{ number_format($restockObj->total_value ?? 0, 0, ',', '.') }}</span>
+                    </div>
+                </div>
+                @endif
+            </div>
+            {{-- /Mobile Card List --}}
+
         </div>
     </div>
 </div>
@@ -182,7 +248,6 @@
                         <span id="deleteRestockTotalValue" class="fw-bold text-dark font-monospace">Rp {{ number_format($restockObj->total_value ?? 0, 0, ',', '.') }}</span>
                     </div>
                 </div>
-                
                 <form id="deleteRestockForm" method="POST" action="{{ route('restock.destroy', $restockObj->id) }}">
                     @csrf
                     @method('DELETE')
