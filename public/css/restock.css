@@ -264,21 +264,12 @@ table.dataTable thead > tr > th.no-sort {
     overflow: visible !important;
 }
 
-/*
- * CRITICAL: overflow-x:auto + overflow-y:visible cannot coexist on the same
- * element — browsers force overflow-y to "auto" automatically.
- * Solution: NO overflow on the wrapper at all; instead the table itself
- * adapts to fit without a scrollbar (columns shrink naturally).
- * Horizontal scroll is only triggered when truly needed via min-width on cols.
- */
 .restock-table-responsive {
     width: 100%;
-    /* No overflow set here — avoids clipping the dropdown */
 }
 
 #restockItemsTable {
     width: 100% !important;
-    /* Remove fixed min-width so table fits container without scrollbar */
     min-width: 0;
     border-collapse: collapse;
     table-layout: fixed;
@@ -289,14 +280,13 @@ table.dataTable thead > tr > th.no-sort {
     vertical-align: middle;
 }
 
-/* ── Column Widths — percentage-based to avoid horizontal scroll ── */
+/* ── Column Widths ── */
 #restockItemsTable .col-no {
     width: 4%;
 }
 #restockItemsTable .col-product {
     width: 30%;
 }
-/* Merged info column */
 #restockItemsTable .col-info {
     width: 14%;
 }
@@ -313,7 +303,6 @@ table.dataTable thead > tr > th.no-sort {
     width: 6%;
 }
 
-/* Prevent text overflow in cells */
 #restockItemsTable td,
 #restockItemsTable th {
     overflow: hidden;
@@ -335,7 +324,6 @@ table.dataTable thead > tr > th.no-sort {
     margin-top: 2px;
     white-space: nowrap;
 }
-/* badge-hpp removed — HPP ditampilkan sebagai teks biasa */
 
 /* Form controls in table cells */
 #restockItemsTable .item-qty {
@@ -353,7 +341,6 @@ table.dataTable thead > tr > th.no-sort {
     white-space: nowrap;
 }
 
-/* Row z-index management — kept for reference but dropdown uses fixed now */
 #restockItemsTable tbody tr {
     position: relative;
     z-index: 1;
@@ -368,12 +355,6 @@ table.dataTable thead > tr > th.no-sort {
     padding: 0.35rem 0.65rem;
     font-size: 0.83rem;
 }
-
-/*
- * Dropdown uses position:fixed (set by JS on open) so it escapes
- * every overflow parent and never causes scrollbars.
- * The .searchable-select-dropdown base style keeps display:none / block.
- */
 #restockItemsTable .searchable-select-dropdown {
     min-width: 260px;
     z-index: 9999 !important;
@@ -411,20 +392,15 @@ table.dataTable thead > tr > th.no-sort {
 }
 
 /* ══════════════════════════════════════════════════
-   MOBILE RESPONSIVE — Card Layout
+   MOBILE RESPONSIVE — Card Layout (Create Form)
    ══════════════════════════════════════════════════ */
 @media (max-width: 767.98px) {
-    /* Hide desktop table */
     .restock-table-responsive {
         display: none !important;
     }
-
-    /* Show card list instead */
     .restock-cards-mobile {
         display: block !important;
     }
-
-    /* Each item = one card */
     .restock-item-card {
         background: #fff;
         border: 1px solid #e2e8f0;
@@ -434,8 +410,6 @@ table.dataTable thead > tr > th.no-sort {
         position: relative;
         box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
     }
-
-    /* Card header row: number badge + product selector + delete */
     .restock-item-card .card-header-row {
         display: flex;
         align-items: flex-start;
@@ -464,8 +438,6 @@ table.dataTable thead > tr > th.no-sort {
         flex-shrink: 0;
         margin-top: 4px;
     }
-
-    /* Info row: stok + hpp badge side by side */
     .restock-item-card .card-info-row {
         display: flex;
         align-items: center;
@@ -490,8 +462,6 @@ table.dataTable thead > tr > th.no-sort {
     .restock-item-card .card-info-hpp {
         font-size: 0.72rem;
     }
-
-    /* Input fields grid */
     .restock-item-card .card-fields-row {
         display: grid;
         grid-template-columns: 1fr 1fr;
@@ -506,8 +476,6 @@ table.dataTable thead > tr > th.no-sort {
         color: #94a3b8;
         margin-bottom: 0.25rem;
     }
-
-    /* Subtotal spans full width */
     .restock-item-card .card-subtotal {
         grid-column: 1 / -1;
         display: flex;
@@ -532,8 +500,6 @@ table.dataTable thead > tr > th.no-sort {
         color: #15803d;
         font-family: ui-monospace, monospace;
     }
-
-    /* Empty state card */
     .restock-mobile-empty {
         text-align: center;
         padding: 2rem 1rem;
@@ -542,7 +508,6 @@ table.dataTable thead > tr > th.no-sort {
     }
 }
 
-/* Hide mobile cards on desktop */
 .restock-cards-mobile {
     display: none;
 }
@@ -565,7 +530,6 @@ table.dataTable thead > tr > th.no-sort {
 /* ══════════════════════════════════════════════════
    THIN ELEGANT SCROLLBAR — DataTables Desktop
    ══════════════════════════════════════════════════ */
-/* Webkit browsers: Chrome, Safari, Edge */
 .dataTables_wrapper .table-responsive::-webkit-scrollbar,
 .dataTables_scroll::-webkit-scrollbar,
 .dataTables_scrollBody::-webkit-scrollbar,
@@ -594,8 +558,6 @@ table.dataTable thead > tr > th.no-sort {
 .card-box .table-responsive::-webkit-scrollbar-thumb:hover {
     background: #94a3b8;
 }
-
-/* === TAMBAHKAN KODE INI DI BAWAH UNTUK MENGHILANGKAN PANAH === */
 .dataTables_wrapper .table-responsive::-webkit-scrollbar-button,
 .dataTables_scroll::-webkit-scrollbar-button,
 .dataTables_scrollBody::-webkit-scrollbar-button,
@@ -604,10 +566,7 @@ table.dataTable thead > tr > th.no-sort {
     width: 0;
     height: 0;
 }
-*/
-
-/* Also apply to the card-box container that holds the table */
-.card-box {
+*/ .card-box {
     scrollbar-width: thin;
     scrollbar-color: #cbd5e1 transparent;
 }
@@ -629,21 +588,16 @@ table.dataTable thead > tr > th.no-sort {
    MOBILE CARD LAYOUT — DataTables Index (Restock List)
    ══════════════════════════════════════════════════ */
 @media (max-width: 767.98px) {
-    /* Hide DataTables table on mobile */
     #restockDataTable.dataTable,
     #restockDataTable_wrapper .table-responsive,
     .card-box > .table-responsive,
     #restockDataTable {
         display: none !important;
     }
-
-    /* Show mobile card container */
     #restockMobileCards {
         display: block !important;
         padding: 0 0 0.5rem;
     }
-
-    /* Individual restock list card */
     .restock-list-card {
         background: #fff;
         border: 1px solid #e2e8f0;
@@ -653,8 +607,6 @@ table.dataTable thead > tr > th.no-sort {
         box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
         position: relative;
     }
-
-    /* Top row: kode + tanggal */
     .restock-list-card .rlc-header {
         display: flex;
         align-items: flex-start;
@@ -675,8 +627,6 @@ table.dataTable thead > tr > th.no-sort {
         white-space: nowrap;
         flex-shrink: 0;
     }
-
-    /* Info bar: supplier + petugas */
     .restock-list-card .rlc-info-bar {
         display: flex;
         align-items: center;
@@ -707,8 +657,6 @@ table.dataTable thead > tr > th.no-sort {
         color: #64748b;
         white-space: nowrap;
     }
-
-    /* Stats grid: item + nilai */
     .restock-list-card .rlc-stats {
         display: grid;
         grid-template-columns: 1fr 1fr;
@@ -743,8 +691,6 @@ table.dataTable thead > tr > th.no-sort {
         color: #94a3b8;
         display: block;
     }
-
-    /* Action buttons row */
     .restock-list-card .rlc-actions {
         display: flex;
         gap: 0.5rem;
@@ -797,16 +743,12 @@ table.dataTable thead > tr > th.no-sort {
         font-size: 0.9rem;
         pointer-events: none;
     }
-
-    /* Mobile empty state */
     .restock-mobile-list-empty {
         text-align: center;
         padding: 2.5rem 1rem;
         color: #94a3b8;
         font-size: 0.85rem;
     }
-
-    /* DataTables pagination & info — still show below cards */
     #restockDataTable_wrapper .dataTables_info,
     #restockDataTable_wrapper .dataTables_paginate {
         width: 100%;
@@ -816,7 +758,191 @@ table.dataTable thead > tr > th.no-sort {
     }
 }
 
-/* Hide mobile cards on desktop */
 #restockMobileCards {
     display: none;
+}
+
+/* ══════════════════════════════════════════════════
+   DETAIL RESTOCK — Mobile Card Layout
+   "Daftar Produk Masuk" pada show.blade.php
+   Hanya ditambahkan — tidak mengubah kode lain
+   ══════════════════════════════════════════════════ */
+
+.rdm-wrap {
+    padding: 0.5rem 0.75rem 0.25rem;
+}
+
+.rdm-card {
+    padding: 0.85rem 0.1rem;
+}
+.rdm-card-border {
+    border-bottom: 1px solid #f1f5f9;
+}
+
+/* Header: number circle + product name/sku */
+.rdm-card-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.6rem;
+    margin-bottom: 0.6rem;
+}
+.rdm-no {
+    flex-shrink: 0;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: #e2e8f0;
+    color: #64748b;
+    font-size: 0.7rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 2px;
+}
+.rdm-product {
+    flex: 1;
+    min-width: 0;
+}
+.rdm-product-name {
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: #1e293b;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.rdm-product-sku {
+    font-size: 0.73rem;
+    color: #94a3b8;
+    font-family: ui-monospace, monospace;
+    margin-top: 1px;
+}
+
+/* Info row: satuan | hpp | qty */
+.rdm-info-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.45rem 0.65rem;
+    background: #f8fafc;
+    border: 1px solid #e9ecef;
+    border-radius: 6px;
+    margin-bottom: 0.6rem;
+    flex-wrap: wrap;
+    row-gap: 0.3rem;
+}
+.rdm-info-item {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    min-width: 0;
+}
+.rdm-info-label {
+    font-size: 0.63rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #94a3b8;
+}
+.rdm-info-val {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #334155;
+    white-space: nowrap;
+}
+.rdm-hpp-auto {
+    color: #0f766e;
+}
+.rdm-qty {
+    color: #16a34a;
+}
+.rdm-info-divider {
+    width: 1px;
+    height: 26px;
+    background: #e2e8f0;
+    flex-shrink: 0;
+}
+
+/* Amounts: harga/unit + subtotal */
+.rdm-amounts {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+}
+.rdm-amount-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 0.4rem 0.6rem;
+    background: #f8fafc;
+    border: 1px solid #e9ecef;
+    border-radius: 6px;
+}
+.rdm-subtotal-item {
+    background: #f0fdf4;
+    border-color: #bbf7d0;
+}
+.rdm-amount-label {
+    font-size: 0.63rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #94a3b8;
+}
+.rdm-subtotal-item .rdm-amount-label {
+    color: #4ade80;
+}
+.rdm-amount-val {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: #334155;
+    font-family: ui-monospace, monospace;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.rdm-subtotal-val {
+    color: #15803d;
+    font-weight: 700;
+}
+
+/* Grand Total footer */
+.rdm-grand-total {
+    margin-top: 0.5rem;
+    padding: 0.65rem 0.75rem;
+    background: #f8f9fa;
+    border-top: 2px solid #dee2e6;
+    border-radius: 0 0 8px 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+.rdm-gt-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+}
+.rdm-gt-label {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #64748b;
+}
+.rdm-gt-val {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #1e293b;
+}
+.rdm-gt-money {
+    color: #15803d;
+    font-size: 0.9rem;
+}
+
+/* Empty state */
+.rdm-empty {
+    text-align: center;
+    padding: 2rem 1rem;
+    color: #94a3b8;
+    font-size: 0.84rem;
 }

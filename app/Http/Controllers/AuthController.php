@@ -44,7 +44,7 @@ class AuthController extends Controller
                 module: 'AUTH',
                 entityType: User::class,
                 entityId: $user?->id,
-                description: "User {$user->employee_name} ({$user->nrk}) logged in successfully.",
+                description: "User {$user->employee_name} dengan nrk ({$user->nrk}) logged in successfully.",
                 oldValues: null,
                 newValues: [
                     'ip' => $request->ip(),
@@ -110,7 +110,7 @@ class AuthController extends Controller
                 module: 'AUTH',
                 entityType: User::class,
                 entityId: $user->id,
-                description: "User {$user->employee_name} ({$user->nrk}) logged out.",
+                description: "User {$user->employee_name} dengan nrk ({$user->nrk}) logged out.",
                 oldValues: null,
                 newValues: null,
                 userId: $user->id
