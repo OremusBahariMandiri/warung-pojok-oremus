@@ -21,6 +21,9 @@ class LoginRequest extends FormRequest
                 'nrk' => trim($this->nrk),
             ]);
         }
+        $this->merge([
+            'remember' => $this->boolean('remember'),
+        ]);
     }
 
     public function rules(): array
