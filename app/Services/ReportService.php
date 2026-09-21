@@ -117,11 +117,13 @@ class ReportService
             $reportDate = !empty($data['report_date']) ? Carbon::parse($data['report_date']) : Carbon::now();
 
             $report = Reports::create([
+                'created_by' => auth()->guard()->id(),
                 'total_quantity' => 0,
                 'total_sales' => 0.0,
                 'total_hpp' => 0.0,
                 'total_margin' => 0.0,
                 'report_date' => $reportDate,
+                'notes' => isset($data['notes']) ? $data['notes'] : null,
             ]);
 
             $headerQuantity = 0;

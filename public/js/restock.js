@@ -224,7 +224,7 @@ function buildSelectOptionsHtml() {
 function buildSearchableSelectHtml(idx, selectOpts, divOpts) {
     return `
         <div class="searchable-select-wrapper">
-            <select name="items[${idx}][product_id]" class="d-none product-select" onchange="onProductSelectChange(this)" required>
+            <select name="items[${idx}][product_id]" class="d-none product-select" onchange="onProductSelectChange(this)">
                 ${selectOpts}
             </select>
             <div class="searchable-select-trigger" onclick="toggleSearchableSelect(this, event)" tabindex="0" role="combobox">
@@ -263,12 +263,12 @@ function addRestockTableRow(idx, selectOpts, divOpts) {
             </div>
         </td>
         <td class="col-qty">
-            <input type="number" name="items[${idx}][quantity]" class="form-control form-control-sm font-monospace text-center rounded-2 item-qty" min="1" oninput="onItemQtyOrPriceChange(this)" required>
+            <input type="number" name="items[${idx}][quantity]" class="form-control form-control-sm font-monospace text-center rounded-2 item-qty" min="1" oninput="onItemQtyOrPriceChange(this)">
         </td>
         <td class="col-price">
             <div class="input-group input-group-sm">
                 <span class="input-group-text bg-light border-end-0">Rp</span>
-                <input type="number" name="items[${idx}][unit_price]" class="form-control form-control-sm font-monospace text-end rounded-end-2 item-unit-price" min="0" oninput="onItemQtyOrPriceChange(this)" readonly required>
+                <input type="number" name="items[${idx}][unit_price]" class="form-control form-control-sm font-monospace text-end rounded-end-2 item-unit-price" min="0" oninput="onItemQtyOrPriceChange(this)" readonly>
             </div>
             <div class="unit-price-hint text-muted text-end small"></div>
         </td>
@@ -315,13 +315,13 @@ function addRestockMobileCard(idx, selectOpts, divOpts) {
         <div class="card-fields-row">
             <div class="card-field">
                 <label>Jumlah Masuk</label>
-                <input type="number" name="items[${idx}][quantity]" class="form-control form-control-sm font-monospace text-center rounded-2 item-qty" min="1" oninput="onItemQtyOrPriceChange(this)" required>
+                <input type="number" name="items[${idx}][quantity]" class="form-control form-control-sm font-monospace text-center rounded-2 item-qty" min="1" oninput="onItemQtyOrPriceChange(this)" >
             </div>
             <div class="card-field">
                 <label>Harga Modal / Unit</label>
                 <div class="input-group input-group-sm">
                     <span class="input-group-text bg-light border-end-0">Rp</span>
-                    <input type="number" name="items[${idx}][unit_price]" class="form-control form-control-sm font-monospace text-end item-unit-price" min="0" oninput="onItemQtyOrPriceChange(this)" readonly required>
+                    <input type="number" name="items[${idx}][unit_price]" class="form-control form-control-sm font-monospace text-end item-unit-price" min="0" oninput="onItemQtyOrPriceChange(this)" readonly >
                 </div>
                 <div class="unit-price-hint text-muted text-end" style="font-size:0.68rem;margin-top:2px;"></div>
             </div>

@@ -67,7 +67,7 @@
                 </div>
 
                 <div class="mb-4">
-                    <label for="type" class="form-label small fw-semibold text-dark">Kategori / Tipe Satuan <span class="text-danger">*</span></label>
+                    <label for="type" class="form-label small fw-semibold text-dark">Tipe Satuan <span class="text-danger">*</span></label>
                     <input type="text" class="form-control rounded-2 @error('type') is-invalid @enderror" 
                         id="type" name="type" value="{{ old('type') }}" list="typeSuggestions">
                     <datalist id="typeSuggestions">

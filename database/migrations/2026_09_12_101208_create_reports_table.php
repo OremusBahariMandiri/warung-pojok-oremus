@@ -13,10 +13,12 @@ return new class extends Migration
     {
         Schema::create('reports', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('created_by')->constrained('users')->onDelete('cascade')->onUpdate('restrict');
             $table->integer("total_quantity");
             $table->decimal("total_sales", 15, 3);
             $table->decimal("total_hpp", 15,3);
             $table->decimal("total_margin", 15, 3);
+            $table->text('notes');
             $table->timestamp("report_date");
             $table->timestamps();
         });
