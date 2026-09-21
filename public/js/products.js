@@ -1,19 +1,65 @@
 ﻿/**
- * WARJOK — Manajemen Produk & HPP DataTables & CRUD JS
+ * WARJOK — Manajemen Produk DataTables & CRUD JS
  * Warung Pojok Oremus | PT Oremus Bahari Mandiri
  */
-$(document).ready(function () {
-    // Initialize DataTables with dedicated table-responsive wrapper
+
+if (window.jQuery) {
+    jQuery(function ($) {
+        if ($("#productsDataTable").length && $.fn.DataTable) {
+            initProductsDataTable($);
+        }
+        setTimeout(function () {
+            $(".alert-dismissible").fadeOut("slow");
+        }, 5000);
+    });
+}
+
+function initProductsDataTable($) {
+    /*
+     * Mobile (< 768px): responsive: false → card layout murni via CSS
+     * Desktop (≥ 768px): responsive inline child row →
+     *   kolom Metode HPP (index 8) & Gambar (index 9) disembunyikan duluan
+     */
+    const isMobile = window.innerWidth < 768;
+
     const dataTable = $("#productsDataTable").DataTable({
-        responsive: false,
-        columnDefs: [{ targets: "no-sort", orderable: false }],
+        responsive: isMobile
+            ? false
+            : {
+                  details: {
+                      type: "inline",
+                      target: "tr",
+                      renderer:
+                          $.fn.dataTable.Responsive.renderer.listHiddenNodes(),
+                  },
+              },
+
+        columnDefs: [
+            { targets: "no-sort", orderable: false },
+            // Prioritas kolom — makin kecil = makin dipertahankan
+            { targets: 0, responsivePriority: 1 }, // No
+            { targets: 1, responsivePriority: 2 }, // Nama Produk
+            { targets: 2, responsivePriority: 6 }, // SKU
+            { targets: 3, responsivePriority: 7 }, // Satuan
+            { targets: 4, responsivePriority: 3 }, // Harga Jual
+            { targets: 5, responsivePriority: 4 }, // HPP Total
+            { targets: 6, responsivePriority: 5 }, // Margin %
+            { targets: 7, responsivePriority: 8 }, // Stok
+            { targets: 8, responsivePriority: 11 }, // Metode HPP — disembunyikan duluan
+            { targets: 9, responsivePriority: 12 }, // Gambar     — disembunyikan duluan
+            { targets: 10, responsivePriority: 1 }, // Aksi       — selalu tampil
+        ],
+
+        scrollX: false,
+        autoWidth: false,
+
         language: {
             emptyTable:
                 "Belum ada produk di database. Klik tombol 'Tambah Produk' untuk membuat baru.",
             zeroRecords: "Tidak ada produk yang cocok dengan pencarian",
-            info: "Showing _START_ to _END_ of _TOTAL_ entries",
-            infoEmpty: "Showing 0 to 0 of 0 entries",
-            infoFiltered: "(filtered from _MAX_ total entries)",
+            info: "Menampilkan _START_–_END_ dari _TOTAL_ data",
+            infoEmpty: "Tidak ada data",
+            infoFiltered: "(difilter dari _MAX_ total data)",
             paginate: {
                 first: "«",
                 previous: "‹",
@@ -22,21 +68,34 @@ $(document).ready(function () {
             },
         },
         pagingType: "full_numbers",
-        dom: '<"table-responsive"t><"d-flex flex-column flex-sm-row align-items-center justify-content-between p-3 gap-2 bg-white"ip>',
+        dom: '<"table-responsive-wrapper"t><"d-flex flex-column flex-sm-row align-items-center justify-content-between p-3 gap-2 bg-white"ip>',
         pageLength: 10,
     });
 
-    // Custom Search Input binding
+    // Resize handler — reinit jika berubah antara mobile dan desktop
+    let resizeTimer;
+    $(window).on("resize", function () {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(function () {
+            const nowMobile = window.innerWidth < 768;
+            if (nowMobile !== isMobile) {
+                dataTable.destroy();
+                initProductsDataTable($);
+            }
+        }, 300);
+    });
+
+    // Custom search
     $("#dtSearchInput").on("keyup input", function () {
         dataTable.search(this.value).draw();
     });
 
-    // Modal Filter Action: Apply
+    // Modal Filter Apply
     $("#btnApplyFilter").on("click", function () {
         applyFilters();
     });
 
-    // Modal Filter Action: Reset
+    // Modal Filter Reset
     $("#btnResetFilter").on("click", function () {
         $("#modalFilterUnit").val("");
         $("#modalFilterHppMethod").val("");
@@ -49,19 +108,19 @@ $(document).ready(function () {
         const hppMethod = $("#modalFilterHppMethod").val();
         const stockStatus = $("#modalFilterStock").val();
 
-        // Satuan Filter (col index 2: Satuan)
-        dataTable.column(2).search(unit ? "^" + unit + "$" : "", true, false);
+        // Satuan — kolom index 3
+        dataTable.column(3).search(unit ? "^" + unit + "$" : "", true, false);
 
-        // HPP Method Filter (col index 7: Metode HPP)
+        // Metode HPP — kolom index 8
         if (hppMethod === "calculated") {
-            dataTable.column(7).search("Otomatis", true, false);
+            dataTable.column(8).search("Otomatis", true, false);
         } else if (hppMethod === "manual") {
-            dataTable.column(7).search("Manual", true, false);
+            dataTable.column(8).search("Manual", true, false);
         } else {
-            dataTable.column(7).search("");
+            dataTable.column(8).search("");
         }
 
-        // Custom search extension for Stock status
+        // Stok — custom filter via data-stock attribute
         $.fn.dataTable.ext.search = $.fn.dataTable.ext.search.filter(
             (fn) => fn.name !== "productStockFilter",
         );
@@ -69,27 +128,20 @@ $(document).ready(function () {
             const productStockFilter = function (settings, data, dataIndex) {
                 if (settings.nTable.id !== "productsDataTable") return true;
                 const rowNode = dataTable.row(dataIndex).node();
-                const rowStock = $(rowNode).attr("data-stock");
-                return rowStock === stockStatus;
+                return $(rowNode).attr("data-stock") === stockStatus;
             };
             $.fn.dataTable.ext.search.push(productStockFilter);
         }
 
         dataTable.draw();
 
-        // Active filter badge indicator
         if (unit || hppMethod || stockStatus) {
             $("#activeFilterBadge").removeClass("d-none");
         } else {
             $("#activeFilterBadge").addClass("d-none");
         }
     }
-
-    // Auto dismiss alert after 5s
-    setTimeout(function () {
-        $(".alert-dismissible").fadeOut("slow");
-    }, 5000);
-});
+}
 
 function openDeleteModal(id, name) {
     document.getElementById("deleteProductName").textContent = name;

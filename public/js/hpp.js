@@ -4,10 +4,7 @@
  */
 
 /* ════════════════════════════════════════════════════════════
-   1. SEARCHABLE SELECT (custom, Select2-style)
-   Ditaruh PALING ATAS & tidak bergantung pada jQuery/DataTables,
-   supaya listener "klik di luar = tutup" selalu terpasang
-   walaupun bagian lain file ini error di halaman create/edit.
+   1. SEARCHABLE SELECT
    ════════════════════════════════════════════════════════════ */
 
 function toggleSearchableSelect(triggerEl, e) {
@@ -102,9 +99,6 @@ function closeAllSearchableSelects() {
         .forEach((t) => t.classList.remove("active"));
 }
 
-// Cek apakah event terjadi DI DALAM komponen select.
-// Pakai composedPath() karena lebih akurat daripada closest():
-// elemen yang diklik bisa saja sudah terlepas dari DOM saat handler jalan.
 function isInsideSearchableSelect(e) {
     const path = typeof e.composedPath === "function" ? e.composedPath() : [];
     if (path.length) {
@@ -120,54 +114,37 @@ function isInsideSearchableSelect(e) {
 }
 
 function handleOutsideInteraction(e) {
-    if (!isInsideSearchableSelect(e)) {
-        closeAllSearchableSelects();
-    }
+    if (!isInsideSearchableSelect(e)) closeAllSearchableSelects();
 }
 
-// Expose ke window agar onclick inline bisa memanggil
 window.toggleSearchableSelect = toggleSearchableSelect;
 window.filterSearchableOptions = filterSearchableOptions;
 window.selectSearchableOption = selectSearchableOption;
 window.closeAllSearchableSelects = closeAllSearchableSelects;
 
-// Global listeners (guard supaya hanya terpasang sekali)
 if (!window.__searchableSelectInit) {
     window.__searchableSelectInit = true;
-
-    // Fase capture (true) => jalan lebih dulu, tidak bisa "diblokir"
-    // oleh stopPropagation() di elemen lain (sidebar, card, layout, dll).
     ["pointerdown", "mousedown", "touchstart", "click", "focusin"].forEach(
-        (eventType) => {
-            document.addEventListener(eventType, handleOutsideInteraction, {
+        (ev) =>
+            document.addEventListener(ev, handleOutsideInteraction, {
                 capture: true,
                 passive: true,
-            });
-        },
+            }),
     );
-
-    // Tutup juga saat window kehilangan fokus (pindah tab / klik iframe)
     window.addEventListener("blur", closeAllSearchableSelects);
-
-    document.addEventListener("keydown", function (e) {
-        if (e.key === "Escape") {
-            closeAllSearchableSelects();
-        }
+    document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") closeAllSearchableSelects();
     });
 }
 
 /* ════════════════════════════════════════════════════════════
-   2. HALAMAN INDEX: DataTables, filter, alert
-   Semua dibungkus guard supaya aman dipakai di halaman create/edit
-   (yang tidak punya #hppDataTable / plugin DataTables).
+   2. DATATABLES
    ════════════════════════════════════════════════════════════ */
 if (window.jQuery) {
     jQuery(function ($) {
         if ($("#hppDataTable").length && $.fn.DataTable) {
             initHppDataTable($);
         }
-
-        // Auto dismiss alert after 5s
         setTimeout(function () {
             $(".alert-dismissible").fadeOut("slow");
         }, 5000);
@@ -175,17 +152,49 @@ if (window.jQuery) {
 }
 
 function initHppDataTable($) {
-    // Initialize DataTables with dedicated table-responsive wrapper
+    /*
+     * Deteksi apakah layar saat ini adalah mobile (< 768px).
+     * Responsive child row HANYA aktif di desktop/tablet (>= 768px).
+     * Di mobile, card layout CSS yang bekerja — DataTables tidak perlu
+     * menyembunyikan kolom maupun membuat child row.
+     */
+    const isMobile = window.innerWidth < 768;
+
     const dataTable = $("#hppDataTable").DataTable({
-        responsive: false,
-        columnDefs: [{ targets: "no-sort", orderable: false }],
+        responsive: isMobile
+            ? false // ← mobile: matikan responsive DataTables sepenuhnya
+            : {
+                  details: {
+                      type: "inline", // child row di bawah baris, bukan modal
+                      target: "tr", // klik seluruh baris untuk expand
+                      renderer:
+                          $.fn.dataTable.Responsive.renderer.listHiddenNodes(),
+                  },
+              },
+
+        columnDefs: [
+            { targets: "no-sort", orderable: false },
+            // Prioritas kolom (makin kecil = makin dipertahankan saat layar sempit)
+            // Hanya berlaku di desktop karena mobile responsive: false
+            { targets: 0, responsivePriority: 1 }, // No
+            { targets: 1, responsivePriority: 2 }, // Nama
+            { targets: 2, responsivePriority: 4 }, // Satuan
+            { targets: 3, responsivePriority: 3 }, // Unit Cost
+            { targets: 4, responsivePriority: 5 }, // Produk
+            { targets: 5, responsivePriority: 10 }, // Dibuat — disembunyikan duluan
+            { targets: 6, responsivePriority: 1 }, // Aksi — selalu tampil
+        ],
+
+        scrollX: false,
+        autoWidth: false,
+
         language: {
             emptyTable:
                 "Belum ada master komponen HPP di database. Klik tombol 'Tambah Komponen' untuk membuat baru.",
             zeroRecords: "Tidak ada komponen HPP yang cocok dengan pencarian",
-            info: "Showing _START_ to _END_ of _TOTAL_ entries",
-            infoEmpty: "Showing 0 to 0 of 0 entries",
-            infoFiltered: "(filtered from _MAX_ total entries)",
+            info: "Menampilkan _START_–_END_ dari _TOTAL_ data",
+            infoEmpty: "Tidak ada data",
+            infoFiltered: "(difilter dari _MAX_ total data)",
             paginate: {
                 first: "«",
                 previous: "‹",
@@ -194,21 +203,35 @@ function initHppDataTable($) {
             },
         },
         pagingType: "full_numbers",
-        dom: '<"table-responsive"t><"d-flex flex-column flex-sm-row align-items-center justify-content-between p-3 gap-2 bg-white"ip>',
+        dom: '<"table-responsive-wrapper"t><"d-flex flex-column flex-sm-row align-items-center justify-content-between p-3 gap-2 bg-white"ip>',
         pageLength: 10,
     });
 
-    // Custom Search Input binding
+    // Jika ukuran window berubah (rotate device, resize browser),
+    // reinit agar mode responsive menyesuaikan
+    let resizeTimer;
+    $(window).on("resize", function () {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(function () {
+            const nowMobile = window.innerWidth < 768;
+            // Hanya reinit jika mode berubah (mobile <-> desktop)
+            if (nowMobile !== isMobile) {
+                dataTable.destroy();
+                initHppDataTable($);
+            }
+        }, 300);
+    });
+
+    // Custom search
     $("#dtSearchInput").on("keyup input", function () {
         dataTable.search(this.value).draw();
     });
 
-    // Modal Filter Action: Apply
+    // Modal Filter
     $("#btnApplyFilter").on("click", function () {
         applyFilters();
     });
 
-    // Modal Filter Action: Reset
     $("#btnResetFilter").on("click", function () {
         $("#modalFilterUnit").val("");
         $("#modalFilterUsage").val("");
@@ -219,21 +242,30 @@ function initHppDataTable($) {
         const unit = $("#modalFilterUnit").val();
         const usage = $("#modalFilterUsage").val();
 
-        // Satuan Filter (col index 2: Satuan Pemakaian)
-        dataTable.column(2).search(unit ? "^" + unit + "$" : "", true, false);
+        dataTable.column(2).search(unit ? unit : "", false, false);
 
-        // Usage Filter (col index 4: Produk Terkait)
+        $.fn.dataTable.ext.search = $.fn.dataTable.ext.search.filter(
+            (fn) => fn.name !== "hppUsageFilter",
+        );
+
         if (usage === "used") {
-            dataTable.column(4).search("[1-9][0-9]* Produk", true, false);
+            function hppUsageFilter(settings, data) {
+                if (settings.nTable.id !== "hppDataTable") return true;
+                const count = parseInt(data[4] || "");
+                return !isNaN(count) && count > 0;
+            }
+            $.fn.dataTable.ext.search.push(hppUsageFilter);
         } else if (usage === "unused") {
-            dataTable.column(4).search("0 Produk", true, false);
-        } else {
-            dataTable.column(4).search("");
+            function hppUsageFilter(settings, data) {
+                if (settings.nTable.id !== "hppDataTable") return true;
+                const count = parseInt(data[4] || "");
+                return !isNaN(count) && count === 0;
+            }
+            $.fn.dataTable.ext.search.push(hppUsageFilter);
         }
 
         dataTable.draw();
 
-        // Active filter badge indicator
         if (unit || usage) {
             $("#activeFilterBadge").removeClass("d-none");
         } else {

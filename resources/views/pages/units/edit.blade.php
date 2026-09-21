@@ -22,7 +22,6 @@
 <div class="d-flex align-items-center justify-content-between mb-4">
     <div>
         <h4 class="fw-bold text-dark mb-1">Edit Master Satuan</h4>
-        <p class="text-muted small mb-0">Perbarui data unit/satuan ukuran produk "{{ $unitObj->unit_name }}".</p>
     </div>
     <a href="{{ route('units.index') }}" class="btn btn-sm btn-outline-secondary rounded-2 px-3 d-inline-flex align-items-center gap-2">
         <i class="bi bi-arrow-left"></i> Kembali
@@ -53,7 +52,7 @@
 
                 <div class="row g-3 mb-3">
                     <div class="col-md-8">
-                        <label for="unit_name" class="form-label small fw-semibold text-dark">Nama Satuan Lengkap <span class="text-danger">*</span></label>
+                        <label for="unit_name" class="form-label small fw-semibold text-dark">Nama Satuan<span class="text-danger">*</span></label>
                         <input type="text" class="form-control rounded-2 @error('unit_name') is-invalid @enderror" 
                             id="unit_name" name="unit_name" value="{{ old('unit_name', $unitObj->unit_name) }}" required autofocus>
                         @error('unit_name')
@@ -72,7 +71,7 @@
                 </div>
 
                 <div class="mb-4">
-                    <label for="type" class="form-label small fw-semibold text-dark">Kategori / Tipe Satuan <span class="text-danger">*</span></label>
+                    <label for="type" class="form-label small fw-semibold text-dark">Kategori<span class="text-danger">*</span></label>
                     <input type="text" class="form-control rounded-2 @error('type') is-invalid @enderror" 
                         id="type" name="type" value="{{ old('type', $unitObj->type) }}" list="typeSuggestions" required>
                     <datalist id="typeSuggestions">
@@ -89,10 +88,10 @@
                 </div>
                 
                 <!-- Submit Card -->
-                <div class="d-flex align-items-center justify-content-between pt-3 border-top">
+                <div class="d-flex align-items-center justify-content-between pt-3 ">
                     <a href="{{ route('units.index') }}" class="btn btn-sm btn-light border rounded-2 px-3">Batal</a>
                     <button type="submit" class="btn btn-sm btn-success text-white fw-bold px-4 rounded-2 d-inline-flex align-items-center gap-2">
-                        <i class="bi bi-check-circle-fill"></i> Perbarui
+                       Perbarui
                     </button>
                 </div>
             </div>
