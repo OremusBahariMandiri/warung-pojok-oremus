@@ -63,7 +63,7 @@
         <!-- Left: Search Box -->
         <div class="position-relative product-search-box">
             <i class="bi bi-search position-absolute top-50 start-0 translate-middle-y ms-3 text-muted"></i>
-            <input type="text" id="dtSearchInput" class="form-control form-control-sm ps-5 pe-3 rounded-2" placeholder="Cari nama produk / SKU...">
+            <input type="text" id="dtSearchInput" class="form-control form-control-sm ps-5 pe-3 rounded-2" placeholder="Cari nama produk, SKU, satuan...">
         </div>
 
         <!-- Right: Action & Filter Buttons -->

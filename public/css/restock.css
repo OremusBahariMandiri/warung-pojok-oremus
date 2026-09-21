@@ -566,7 +566,7 @@ table.dataTable thead > tr > th.no-sort {
     width: 0;
     height: 0;
 }
-*/ .card-box {
+.card-box {
     scrollbar-width: thin;
     scrollbar-color: #cbd5e1 transparent;
 }

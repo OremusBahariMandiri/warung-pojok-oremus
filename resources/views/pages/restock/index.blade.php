@@ -28,7 +28,6 @@
 <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-2 mb-3">
     <div>
         <h4 class="fw-bold text-dark mb-1">Riwayat Transaksi Restock</h4>
-        <p class="text-muted small mb-0">Kelola riwayat penerimaan barang masuk dari supplier, penambahan stok produk, dan log restock inventori.</p>
     </div>
 </div>
 
@@ -65,7 +64,7 @@
         <!-- Left: Search Box -->
         <div class="position-relative restock-search-box">
             <i class="bi bi-search position-absolute top-50 start-0 translate-middle-y ms-3 text-muted"></i>
-            <input type="text" id="dtSearchInput" class="form-control form-control-sm ps-5 pe-3 rounded-2" placeholder="Cari kode restock / supplier...">
+            <input type="text" id="dtSearchInput" class="form-control form-control-sm ps-5 pe-3 rounded-2" placeholder="Cari kode restock, supplier, tanggal...">
         </div>
 
         <!-- Right: Action & Filter Buttons -->

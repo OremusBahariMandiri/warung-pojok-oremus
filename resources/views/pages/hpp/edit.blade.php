@@ -26,7 +26,6 @@
 <div class="d-flex align-items-center justify-content-between mb-4">
     <div>
         <h4 class="fw-bold text-dark mb-1">Edit Master Komponen HPP</h4>
-        <p class="text-muted small mb-0">Perbarui data komponen HPP "{{ $hppObj->name }}".</p>
     </div>
     <a href="{{ route('hpp.index') }}" class="btn btn-sm btn-outline-secondary rounded-2 px-3 d-inline-flex align-items-center gap-2">
         <i class="bi bi-arrow-left"></i> Kembali
@@ -155,7 +154,7 @@
                 <div class="d-flex align-items-center justify-content-between pt-3 border-top">
                     <a href="{{ route('hpp.index') }}" class="btn btn-sm btn-light border rounded-2 px-3">Batal</a>
                     <button type="submit" class="btn btn-sm btn-success text-white fw-bold px-4 rounded-2 d-inline-flex align-items-center gap-2">
-                        <i class="bi bi-check-circle-fill"></i> Perbarui
+                        Perbarui
                     </button>
                 </div>
             </div>

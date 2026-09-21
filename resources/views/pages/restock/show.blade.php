@@ -27,7 +27,6 @@
 <div class="d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-3 mb-4">
     <div>
         <h4 class="fw-bold text-dark mb-1">Detail Transaksi Restock</h4>
-        <p class="text-muted small mb-0">Rincian penerimaan barang masuk, supplier, dan penambahan stok produk.</p>
     </div>
     <div class="d-flex align-items-center gap-2">
         <a href="{{ route('restock.index') }}" class="btn btn-sm btn-outline-secondary rounded-2 px-3 d-inline-flex align-items-center gap-2">
