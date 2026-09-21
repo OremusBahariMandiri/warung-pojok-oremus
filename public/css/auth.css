@@ -1,5 +1,7 @@
 :root {
-    --font-family-base: 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --font-family-base:
+        "Poppins", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+        sans-serif;
     --primary-navy: #0f172a;
     --primary-slate: #1e293b;
     --accent-emerald: #10b981;
@@ -13,7 +15,8 @@
     box-sizing: border-box;
 }
 
-html, body {
+html,
+body {
     height: 100%;
     margin: 0;
     padding: 0;
@@ -37,8 +40,13 @@ body {
 
 /* Left Branding Panel with background image */
 .auth-brand-panel {
-    background: linear-gradient(145deg, rgba(15, 23, 42, 0.86) 0%, rgba(30, 41, 59, 0.92) 100%), 
-                url('/assets/background-homepage.png') center/cover no-repeat;
+    background:
+        linear-gradient(
+            145deg,
+            rgba(15, 23, 42, 0.86) 0%,
+            rgba(30, 41, 59, 0.92) 100%
+        ),
+        url("/assets/background-homepage.png") center/cover no-repeat;
     color: #ffffff;
     position: relative;
     overflow: hidden;
@@ -50,24 +58,32 @@ body {
 }
 
 .auth-brand-panel::before {
-    content: '';
+    content: "";
     position: absolute;
     width: 450px;
     height: 450px;
     border-radius: 50%;
-    background: radial-gradient(circle, rgba(16, 185, 129, 0.15) 0%, rgba(15, 23, 42, 0) 70%);
+    background: radial-gradient(
+        circle,
+        rgba(16, 185, 129, 0.15) 0%,
+        rgba(15, 23, 42, 0) 70%
+    );
     top: -100px;
     right: -100px;
     pointer-events: none;
 }
 
 .auth-brand-panel::after {
-    content: '';
+    content: "";
     position: absolute;
     width: 380px;
     height: 380px;
     border-radius: 50%;
-    background: radial-gradient(circle, rgba(59, 130, 246, 0.10) 0%, rgba(15, 23, 42, 0) 70%);
+    background: radial-gradient(
+        circle,
+        rgba(59, 130, 246, 0.1) 0%,
+        rgba(15, 23, 42, 0) 70%
+    );
     bottom: -50px;
     left: -50px;
     pointer-events: none;
@@ -77,7 +93,7 @@ body {
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
-    background: rgba(255, 255, 255, 0.10);
+    background: rgba(255, 255, 255, 0.1);
     border: 1px solid rgba(255, 255, 255, 0.18);
     padding: 0.35rem 0.85rem;
     border-radius: 9999px;
@@ -102,7 +118,11 @@ body {
 .brand-logo-icon {
     width: 42px;
     height: 42px;
-    background: linear-gradient(135deg, var(--accent-emerald) 0%, var(--accent-emerald-dark) 100%);
+    background: linear-gradient(
+        135deg,
+        var(--accent-emerald) 0%,
+        var(--accent-emerald-dark) 100%
+    );
     border-radius: 12px;
     display: inline-flex;
     align-items: center;
@@ -119,20 +139,23 @@ body {
     padding: 0.9rem 1.15rem;
     margin-bottom: 0.75rem;
     backdrop-filter: blur(10px);
-    transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+    transition:
+        transform 0.2s ease,
+        border-color 0.2s ease,
+        background 0.2s ease;
 }
 
 .feature-card:hover {
     transform: translateX(4px);
     border-color: rgba(16, 185, 129, 0.5);
-    background: rgba(15, 23, 42, 0.70);
+    background: rgba(15, 23, 42, 0.7);
 }
 
 .feature-icon-box {
     width: 36px;
     height: 36px;
     border-radius: 99px;
-    background: rgba(16, 185, 129, 0.20);
+    background: rgba(16, 185, 129, 0.2);
     color: #34d399;
     display: inline-flex;
     align-items: center;
@@ -159,7 +182,9 @@ body {
     border: 1px solid var(--border-color);
     border-radius: 18px;
     padding: 1.85rem 2rem;
-    box-shadow: 0 10px 30px -5px rgba(15, 23, 42, 0.05), 0 4px 12px -2px rgba(15, 23, 42, 0.02);
+    box-shadow:
+        0 10px 30px -5px rgba(15, 23, 42, 0.05),
+        0 4px 12px -2px rgba(15, 23, 42, 0.02);
 }
 
 .form-pill {
@@ -193,7 +218,9 @@ body {
     font-weight: 500;
     border-radius: 0 10px 10px 0;
     color: #1e293b;
-    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    transition:
+        border-color 0.15s ease,
+        box-shadow 0.15s ease;
 }
 
 .input-group > .form-control:not(:last-child) {
@@ -219,7 +246,11 @@ body {
 }
 
 .btn-primary-auth {
-    background: linear-gradient(135deg, var(--primary-slate) 0%, var(--primary-navy) 100%);
+    background: linear-gradient(
+        135deg,
+        var(--primary-slate) 0%,
+        var(--primary-navy) 100%
+    );
     border: 1px solid var(--primary-navy);
     color: #ffffff;
     font-weight: 600;
@@ -249,34 +280,222 @@ body {
     border-color: var(--accent-emerald);
 }
 
+.brand-content-center {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    width: 100%;
+    text-align: center;
+    padding: 3rem;
+}
+
+.brand-heading {
+    font-family: "Montserrat", sans-serif;
+    font-weight: 800;
+    color: #fff;
+    margin: 0 0 1.25rem;
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+}
+
+.brand-heading-main {
+    display: block;
+    font-size: 2.6rem;
+    white-space: nowrap;
+}
+
+.brand-heading-accent {
+    display: block;
+    font-size: 2.6rem;
+    margin-top: 0.2rem;
+    background: linear-gradient(135deg, #22c55e, #16a34a);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.brand-subtitle {
+    font-family: "Montserrat", sans-serif;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.55);
+    max-width: 380px;
+    line-height: 1.8;
+    margin: 0;
+    letter-spacing: 0.02em;
+}
+
 @media (max-width: 991.98px) {
-    html, body {
+    html,
+    body {
         overflow: auto;
     }
+
     .auth-wrapper {
         height: auto;
         min-height: 100vh;
         max-height: none;
         overflow: auto;
+        background: linear-gradient(
+            160deg,
+            #1a2e1a 0%,
+            #1e3a2e 40%,
+            #162638 100%
+        );
+        position: relative;
     }
+
+    .auth-wrapper::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        background-image:
+            radial-gradient(
+                circle at 10% 15%,
+                rgba(107, 142, 90, 0.12) 0%,
+                transparent 40%
+            ),
+            radial-gradient(
+                circle at 90% 80%,
+                rgba(107, 142, 90, 0.08) 0%,
+                transparent 40%
+            ),
+            radial-gradient(
+                circle at 50% 50%,
+                rgba(107, 142, 90, 0.05) 0%,
+                transparent 60%
+            );
+        pointer-events: none;
+        z-index: 0;
+    }
+
+    /* Floating icon decorations */
+    .auth-mobile-icons {
+        display: block;
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        z-index: 0;
+        overflow: hidden;
+    }
+
+    .auth-mobile-icons span {
+        position: absolute;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 52px;
+        height: 52px;
+        border-radius: 14px;
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        color: rgba(255, 255, 255, 0.25);
+        font-size: 1.4rem;
+        backdrop-filter: blur(4px);
+    }
+
+    .auth-mobile-icons span:nth-child(1) {
+        top: 6%;
+        left: 5%;
+    }
+    .auth-mobile-icons span:nth-child(2) {
+        top: 6%;
+        right: 5%;
+    }
+    .auth-mobile-icons span:nth-child(3) {
+        top: 22%;
+        left: 3%;
+        width: 44px;
+        height: 44px;
+        font-size: 1.1rem;
+    }
+    .auth-mobile-icons span:nth-child(4) {
+        top: 22%;
+        right: 3%;
+        width: 44px;
+        height: 44px;
+        font-size: 1.1rem;
+    }
+    .auth-mobile-icons span:nth-child(5) {
+        top: 40%;
+        left: 4%;
+        width: 40px;
+        height: 40px;
+        font-size: 1rem;
+    }
+    .auth-mobile-icons span:nth-child(6) {
+        top: 40%;
+        right: 4%;
+        width: 40px;
+        height: 40px;
+        font-size: 1rem;
+    }
+    .auth-mobile-icons span:nth-child(7) {
+        bottom: 22%;
+        left: 4%;
+        width: 44px;
+        height: 44px;
+        font-size: 1.1rem;
+    }
+    .auth-mobile-icons span:nth-child(8) {
+        bottom: 22%;
+        right: 4%;
+        width: 44px;
+        height: 44px;
+        font-size: 1.1rem;
+    }
+    .auth-mobile-icons span:nth-child(9) {
+        bottom: 7%;
+        left: 5%;
+    }
+    .auth-mobile-icons span:nth-child(10) {
+        bottom: 7%;
+        right: 5%;
+    }
+
     .auth-brand-panel {
-        height: auto;
-        padding: 2.5rem 1.5rem;
-        text-align: center;
+        display: none !important;
     }
-    .auth-brand-panel .features-container {
-        display: none;
-    }
-    .auth-brand-panel .brand-footer {
-        display: none;
-    }
+
     .auth-form-panel {
         height: auto;
-    }
-    .auth-card {
-        padding: 2rem 1.5rem;
-        box-shadow: none;
-        border: none;
+        min-height: 100vh;
         background: transparent;
+        position: relative;
+        z-index: 1;
+        padding: 2.5rem 1.25rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
+
+    .auth-card {
+        width: 100%;
+        max-width: 420px;
+        background: #ffffff;
+        border-radius: 20px;
+        padding: 2rem 1.75rem;
+        box-shadow: 0 25px 60px rgba(0, 0, 0, 0.4);
+        border: none;
+        position: relative;
+        z-index: 2;
+    }
+}
+
+.mobile-app-chip {
+    display: inline-block;
+    background: #f0f7ee;
+    color: #4a7c59;
+    border: 1px solid rgba(107, 142, 90, 0.3);
+    border-radius: 999px;
+    padding: 0.35rem 1rem;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    font-family: "Montserrat", sans-serif;
 }

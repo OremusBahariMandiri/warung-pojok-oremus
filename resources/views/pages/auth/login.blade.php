@@ -2,75 +2,46 @@
 
 @section('title', 'Login Admin — Warung Pojok Oremus')
 
+@push('styles')
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ asset('css/auth.css') }}">
+@endpush
+
 @section('content')
 <div class="auth-wrapper container-fluid p-0">
+    <!-- Mobile Background Icons (hidden on desktop) -->
+    <div class="auth-mobile-icons d-lg-none">
+        <span><i class="bi bi-cup-hot"></i></span>
+        <span><i class="bi bi-basket2"></i></span>
+        <span><i class="bi bi-box-seam"></i></span>
+        <span><i class="bi bi-graph-up-arrow"></i></span>
+        <span><i class="bi bi-receipt"></i></span>
+        <span><i class="bi bi-bag-check"></i></span>
+        <span><i class="bi bi-calculator"></i></span>
+        <span><i class="bi bi-boxes"></i></span>
+        <span><i class="bi bi-shop"></i></span>
+        <span><i class="bi bi-cash-coin"></i></span>
+    </div>
     <div class="row g-0 w-100 min-vh-100">
         <!-- Left Side: Branding & Operational Features -->
-        <div class="col-lg-7 col-xl-7 auth-brand-panel d-none d-lg-flex">
-            <!-- Brand Header -->
-            <div>   
-                <h1 class="brand-logo-title mb-2">
-                    <span class="brand-logo-icon">
-                        <i class="bi bi-shop"></i>
-                    </span>
-                    WARJOK
+        <div class="col-lg-7 col-xl-7 auth-brand-panel d-none d-lg-flex" style="position: relative; overflow: hidden;">
+            <div class="brand-content-center">
+                <h1 class="brand-heading">
+                    <span class="brand-heading-main">Sistem Informasi Manajemen</span>
+                    <span class="brand-heading-accent">Warung Pojok Oremus</span>
                 </h1>
-                <p class="lead text-white fw-normal mb-5" style="max-width: 540px; font-size: 1.15rem; line-height: 1.6;">
-                    Sistem terpadu manajemen inventori stok, kalkulasi HPP presisi, pencatatan restock, dan laporan laba margin operasional warung.
+                <p class="brand-subtitle">
+                    Kelola inventori stok, kalkulasi HPP, pencatatan restock, dan pantau laporan laba margin operasional warung secara digital, cepat, dan transparan.
                 </p>
-
-                <!-- Feature Highlights Cards -->
-                <div class="features-container" style="max-width: 560px;">
-                    <div class="feature-card d-flex align-items-center gap-3">
-                        <div class="feature-icon-box">
-                            <i class="bi bi-boxes"></i>
-                        </div>
-                        <div>
-                            <h6 class="text-white fw-bold mb-1" style="font-size: 0.95rem;">Monitoring Stok & Restock Terintegrasi</h6>
-                            <p class="text-white-50 small mb-0" style="font-size: 0.82rem;">Pantau ketersediaan produk dan pencatatan restock otomatis dengan perhitungan harga beli pokok.</p>
-                        </div>
-                    </div>
-
-                    <div class="feature-card d-flex align-items-center gap-3">
-                        <div class="feature-icon-box">
-                            <i class="bi bi-calculator"></i>
-                        </div>
-                        <div>
-                            <h6 class="text-white fw-bold mb-1" style="font-size: 0.95rem;">Kalkulasi HPP Presisi & Transparan</h6>
-                            <p class="text-white-50 small mb-0" style="font-size: 0.82rem;">Perhitungan otomatis bahan utama + komponen pelengkap (air/es, gula, kemasan, gas) tanpa salah hitung.</p>
-                        </div>
-                    </div>
-
-                    <div class="feature-card d-flex align-items-center gap-3">
-                        <div class="feature-icon-box">
-                            <i class="bi bi-graph-up-arrow"></i>
-                        </div>
-                        <div>
-                            <h6 class="text-white fw-bold mb-1" style="font-size: 0.95rem;">Laporan Penjualan & Margin Real-Time</h6>
-                            <p class="text-white-50 small mb-0" style="font-size: 0.82rem;">Rekapitulasi omset, beban pokok penjualan, dan margin laba bersih harian maupun rentang periode.</p>
-                        </div>
-                    </div>
-                </div>
             </div>
         </div>
 
         <!-- Right Side: Login Form -->
         <div class="col-12 col-lg-5 col-xl-5 auth-form-panel">
             <div class="auth-card">
-                <!-- Mobile Logo Header (visible on mobile only) -->
-                <div class="d-lg-none text-center mb-4">
-                    <div class="d-inline-flex align-items-center gap-2 mb-2">
-                        <span class="brand-logo-icon" style="width: 38px; height: 38px; font-size: 1.1rem;">
-                            <i class="bi bi-shop"></i>
-                        </span>
-                        <h2 class="h3 fw-bold text-dark mb-0">WARJOK</h2>
-                    </div>
-                    <p class="text-muted small">Warung Pojok Oremus Admin Portal</p>
-                </div>
-
                 <!-- Form Heading -->
                 <div class="mb-4">
-                    <h2 class="h4 fw-bold text-dark mb-1">Masuk ke Akun</h2>
+                    <h2 class="h4 fw-bold text-dark mb-1">Selamat Datang!</h2>
                     <p class="text-muted small mb-0">Gunakan Nomor Registrasi Karyawan (NRK) dan password Anda untuk masuk.</p>
                 </div>
 

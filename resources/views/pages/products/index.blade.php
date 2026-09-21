@@ -28,7 +28,6 @@
 <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-2 mb-3">
     <div>
         <h4 class="fw-bold text-dark mb-1">Manajemen Produk</h4>
-        <p class="text-muted small mb-0">Kelola katalog produk, resep/komposisi HPP, penetapan harga jual, dan stok inventori.</p>
     </div>
 </div>
 

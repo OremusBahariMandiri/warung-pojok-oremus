@@ -28,7 +28,6 @@
     <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
         <div>
             <h4 class="fw-bold mb-1 text-dark">{{ $greeting }}, {{ $userName }} 👋</h4>
-            <p class="text-muted mb-0 small">Berikut ringkasan operasional dan performa penjualan warung hari ini.</p>
         </div>
         <div class="text-end text-md-start">
             <span class="badge bg-white text-dark border py-2 px-3 fs-6 fw-semibold shadow-sm rounded-3">
@@ -47,9 +46,6 @@
                 <div class="stat-card-icon stat-card-icon--emerald">
                     <i class="bi bi-box-seam"></i>
                 </div>
-                <span class="stat-card-trend stat-card-trend--up">
-                    <i class="bi bi-arrow-up-short"></i> +{{ $newProductsThisMonth }} bulan ini
-                </span>
             </div>
             <div>
                 <h3 class="stat-card-value">{{ number_format($totalProducts, 0, ',', '.') }}</h3>
@@ -65,15 +61,6 @@
                 <div class="stat-card-icon stat-card-icon--amber">
                     <i class="bi bi-exclamation-triangle"></i>
                 </div>
-                @if ($lowStockProductsCount > 0)
-                    <span class="stat-card-trend stat-card-trend--warn">
-                        <i class="bi bi-exclamation-circle-fill me-1"></i> Perlu restock segera
-                    </span>
-                @else
-                    <span class="stat-card-trend stat-card-trend--safe">
-                        <i class="bi bi-check-circle-fill me-1"></i> Stok aman
-                    </span>
-                @endif
             </div>
             <div>
                 <h3 class="stat-card-value text-{{ $lowStockProductsCount > 0 ? 'danger' : 'dark' }}">
@@ -91,21 +78,6 @@
                 <div class="stat-card-icon stat-card-icon--blue">
                     <i class="bi bi-cart-check"></i>
                 </div>
-                @if (!is_null($salesGrowth))
-                    @if ($salesGrowth >= 0)
-                        <span class="stat-card-trend stat-card-trend--up">
-                            <i class="bi bi-arrow-up-short"></i> +{{ $salesGrowth }}% vs kemarin
-                        </span>
-                    @else
-                        <span class="stat-card-trend stat-card-trend--down">
-                            <i class="bi bi-arrow-down-short"></i> {{ $salesGrowth }}% vs kemarin
-                        </span>
-                    @endif
-                @else
-                    <span class="stat-card-trend stat-card-trend--up">
-                        <i class="bi bi-activity"></i> Hari ini
-                    </span>
-                @endif
             </div>
             <div>
                 <h3 class="stat-card-value font-monospace">Rp {{ number_format($todaySales, 0, ',', '.') }}</h3>
@@ -121,9 +93,6 @@
                 <div class="stat-card-icon stat-card-icon--rose">
                     <i class="bi bi-graph-up-arrow"></i>
                 </div>
-                <span class="stat-card-trend stat-card-trend--up font-monospace">
-                    Rp {{ number_format($todayMargin, 0, ',', '.') }}
-                </span>
             </div>
             <div>
                 <h3 class="stat-card-value text-success">{{ number_format($todayMarginPct, 1, ',', '.') }}%</h3>
