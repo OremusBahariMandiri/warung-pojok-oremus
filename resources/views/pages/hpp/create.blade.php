@@ -72,11 +72,6 @@
                                         {{ $unitItem->unit_name }} ({{ $unitItem->short_name }})
                                     </option>
                                 @endforeach
-                            @else
-                                <option value="Pcs" {{ old('unit') == 'Pcs' ? 'selected' : '' }}>Pcs</option>
-                                <option value="Porsi" {{ old('unit') == 'Porsi' ? 'selected' : '' }}>Porsi</option>
-                                <option value="Gram" {{ old('unit') == 'Gram' ? 'selected' : '' }}>Gram</option>
-                                <option value="Liter" {{ old('unit') == 'Liter' ? 'selected' : '' }}>Liter</option>
                             @endif
                         </select>
 
@@ -87,14 +82,9 @@
                                 @php
                                     $selectedUnit = old('unit');
                                     $selectedLabel = '';
-                                    if ($selectedUnit) {
-                                        if (isset($units) && $units->count() > 0) {
-                                            $found = $units->firstWhere('short_name', $selectedUnit);
-                                            $selectedLabel = $found ? $found->unit_name . ' (' . $found->short_name . ')' : $selectedUnit;
-                                        } else {
-                                            $map = ['Pcs'=>'Pcs','Porsi'=>'Porsi','Gram'=>'Gram','Liter'=>'Liter'];
-                                            $selectedLabel = $map[$selectedUnit] ?? $selectedUnit;
-                                        }
+                                    if ($selectedUnit && isset($units) && $units->count() > 0) {
+                                        $found = $units->firstWhere('short_name', $selectedUnit);
+                                        $selectedLabel = $found ? $found->unit_name . ' (' . $found->short_name . ')' : $selectedUnit;
                                     }
                                 @endphp
                                 @if($selectedLabel)
@@ -120,10 +110,9 @@
                                             </div>
                                         @endforeach
                                     @else
-                                        <div class="searchable-select-option {{ old('unit') == 'Pcs' ? 'selected' : '' }}" data-value="Pcs" data-label="Pcs" onclick="selectSearchableOption(this)">Pcs</div>
-                                        <div class="searchable-select-option {{ old('unit') == 'Porsi' ? 'selected' : '' }}" data-value="Porsi" data-label="Porsi" onclick="selectSearchableOption(this)">Porsi</div>
-                                        <div class="searchable-select-option {{ old('unit') == 'Gram' ? 'selected' : '' }}" data-value="Gram" data-label="Gram (gr)" onclick="selectSearchableOption(this)">Gram (gr)</div>
-                                        <div class="searchable-select-option {{ old('unit') == 'Liter' ? 'selected' : '' }}" data-value="Liter" data-label="Liter (L)" onclick="selectSearchableOption(this)">Liter (L)</div>
+                                        <div class="searchable-select-no-results text-muted p-2 small text-center">
+                                            Belum ada data satuan
+                                        </div>
                                     @endif
                                 </div>
                             </div>
