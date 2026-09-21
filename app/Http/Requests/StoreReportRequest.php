@@ -20,6 +20,7 @@ class StoreReportRequest extends FormRequest
             'items.*.quantity' => 'required|integer|min:1',
             'items.*.selling_price' => 'nullable|numeric|min:0',
             'items.*.hpp' => 'nullable|numeric|min:0',
+            'notes' => 'nullable|string'
         ];
     }
 

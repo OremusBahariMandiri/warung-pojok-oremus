@@ -115,7 +115,7 @@
                         $totalHpp     = (float)($r->total_hpp ?? 0);
                         $totalMargin  = (float)($r->total_margin ?? ($totalSales - $totalHpp));
                         $formattedDate = $r->report_date ? $r->report_date->format('d M Y') : '-';
-                        $creatorName  = $r->creator->employee_name ?? 'Administrator';
+                        $creatorName  = $r->creator->employee_name ?? '';
                     @endphp
                     <tr data-date="{{ $r->report_date ? $r->report_date->format('Y-m-d') : '' }}">
                         <td class="text-center text-muted fw-medium small">{{ $loop->iteration }}</td>

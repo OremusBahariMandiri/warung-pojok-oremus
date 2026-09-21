@@ -90,7 +90,7 @@
                     <th style="width: 50px;" class="text-center">No</th>
                     <th style="width: 170px;">Kode Restock</th>
                     <th class="text-center" style="width: 150px;">Tanggal Restock</th>
-                    <th>Supplier / Sumber</th>
+                    <th class="text-center">Supplier</th>
                     <th class="text-center" style="width: 160px;">Total Item Masuk</th>
                     <th class="text-end" style="width: 160px;">Total Nilai Biaya</th>
                     <th class="text-center" style="width: 140px;">Petugas</th>
@@ -222,7 +222,7 @@
             </div>
             <div class="modal-body modal-body-minimal d-flex flex-column gap-3">
                 <div>
-                    <label for="modalFilterSupplier" class="form-label small fw-semibold text-muted mb-1">Supplier / Sumber</label>
+                    <label for="modalFilterSupplier" class="form-label small fw-semibold text-muted mb-1">Supplier</label>
                     <select id="modalFilterSupplier" class="form-select form-select-sm rounded-2">
                         <option value="">Semua Supplier</option>
                         @foreach ($list->pluck('supplier_name')->unique()->filter() as $supplier)

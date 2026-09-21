@@ -248,9 +248,7 @@
                             <div class="fw-bold text-dark small">{{ $employeeName }}</div>
                             <div class="text-muted" style="font-size: 0.72rem;">{{ $userEmail }}</div>
                         </li>
-                        <li><a class="dropdown-item py-2 px-3 small d-flex align-items-center gap-2 text-secondary" href="#"><i class="bi bi-person"></i> Profil Saya</a></li>
-                        <li><a class="dropdown-item py-2 px-3 small d-flex align-items-center gap-2 text-secondary" href="#"><i class="bi bi-gear"></i> Pengaturan Akun</a></li>
-                        <li><hr class="dropdown-divider my-1 border-slate-200"></li>
+                        <li><a class="dropdown-item py-2 px-3 small d-flex align-items-center gap-2 text-secondary" href="#"><i class="bi bi-person"></i> Profil Saya</a></li></li>
                         <li>
                             <form action="{{ route('logout') }}" method="POST" id="logout-dropdown-head" style="display:none">
                                 @csrf

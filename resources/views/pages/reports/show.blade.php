@@ -38,7 +38,7 @@
             <i class="bi bi-arrow-left"></i> Kembali
         </a>
         <button type="button" class="btn btn-sm btn-danger text-white rounded-2 px-3 d-inline-flex align-items-center gap-2" onclick="openDeleteModal({{ $reportObj->id }}, '{{ $formattedDate }}', {{ (int)($reportObj->total_quantity ?? 0) }}, {{ $totalSales }})">
-            <i class="bi bi-trash-fill"></i> Batalkan & Hapus Laporan
+            <i class="bi bi-trash-fill"></i>Hapus
         </button>
     </div>
 </div>
@@ -191,7 +191,7 @@
         <div class="modal-content rounded-3 border-0 shadow">
             <div class="modal-header border-bottom py-3">
                 <h6 class="modal-title fw-bold text-danger" id="modalDeleteReportLabel">
-                    <i class="bi bi-exclamation-triangle-fill me-1"></i> Batalkan & Hapus Laporan
+                    <i class="bi bi-exclamation-triangle-fill me-1"></i>Hapus
                 </h6>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>

@@ -15,6 +15,7 @@ class UserService
     public const MODULES = [
         'dashboard',
         'products',
+        'units',
         'hpp',
         'restock',
         'reports',
