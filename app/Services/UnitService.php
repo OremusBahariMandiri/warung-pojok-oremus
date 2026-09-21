@@ -37,7 +37,7 @@ class UnitService
 
             ActivityLogService::log(
                 action: 'CREATE',
-                module: 'UNIT',
+                module: 'UNITS',
                 entityType: Unit::class,
                 entityId: $unit->id,
                 description: "Created unit: {$unit->unit_name} ({$unit->short_name})",
@@ -65,7 +65,7 @@ class UnitService
 
             ActivityLogService::log(
                 action: 'UPDATE',
-                module: 'UNIT',
+                module: 'UNITS',
                 entityType: Unit::class,
                 entityId: $unit->id,
                 description: "Updated unit: {$unit->unit_name}",
@@ -96,7 +96,7 @@ class UnitService
 
             ActivityLogService::log(
                 action: 'DELETE',
-                module: 'UNIT',
+                module: 'UNITS',
                 entityType: Unit::class,
                 entityId: $id,
                 description: "Deleted unit: {$name}",
