@@ -11,7 +11,9 @@
     <ol class="breadcrumb mb-0">
         <li class="breadcrumb-item"><a href="{{ route('admin.dashboard') }}" class="text-decoration-none text-muted">warjok</a></li>
         <li class="breadcrumb-item text-muted">pengaturan sistem</li>
-        <li class="breadcrumb-item"><a href="{{ route('users.index') }}" class="text-decoration-none text-muted">kelola pengguna</a></li>
+        @if($user->id !== auth()->id())
+            <li class="breadcrumb-item"><a href="{{ route('users.index') }}" class="text-decoration-none text-muted">kelola pengguna</a></li>
+        @endif
         <li class="breadcrumb-item active text-dark" aria-current="page">profil pengguna</li>
     </ol>
 </nav>
@@ -42,12 +44,14 @@
 <div class="d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-3 mb-4">
     <div>
         <h4 class="fw-bold text-dark mb-1">Profil Pengguna</h4>
-        <p class="text-muted small mb-0">Informasi akun karyawan, ringkasan izin hak akses modul, dan statistik aktivitas.</p>
+        <p class="text-muted small mb-0">Informasi akun, ringkasan izin hak akses modul, dan statistik aktivitas.</p>
     </div>
     <div class="d-flex align-items-center gap-2 justify-around">
-        <a href="{{ route('users.index') }}" class="btn btn-sm btn-outline-secondary rounded-2 px-3 d-inline-flex align-items-center gap-2">
-            <i class="bi bi-arrow-left"></i> Kembali
-        </a>
+        @if($user->id !== auth()->id())
+            <a href="{{ route('users.index') }}" class="btn btn-sm btn-outline-secondary ...">← Kembali</a>
+        @else
+            <a href="{{ route('admin.dashboard') }}" class="btn btn-sm btn-outline-secondary ...">← Kembali</a>
+        @endif
         <a href="{{ route('users.edit', $user->id) }}" class="btn btn-sm btn-outline-warning rounded-2 px-3 text-dark d-inline-flex align-items-center gap-2">
             <i class="bi bi-pencil"></i> Edit
         </a>
@@ -77,9 +81,9 @@
                 <p class="text-muted small mb-2">{{ $user->email }}</p>
                 <div>
                     @if ($isAdmin)
-                        <span class="badge-role-admin"><i class="bi bi-shield-fill-check"></i> Super Administrator</span>
+                        <span class="badge-role-admin">Super Administrator</span>
                     @else
-                        <span class="badge-role-cashier"><i class="bi bi-person-fill"></i> Petugas Kasir / Staff</span>
+                        <span class="badge-role-cashier">Staff</span>
                     @endif
                 </div>
 
