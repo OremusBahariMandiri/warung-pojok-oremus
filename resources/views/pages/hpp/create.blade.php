@@ -22,7 +22,6 @@
 <div class="d-flex align-items-center justify-content-between mb-4">
     <div>
         <h4 class="fw-bold text-dark mb-1">Tambah Komponen HPP Baru</h4>
-        <p class="text-muted small mb-0">Isi formulir di bawah ini untuk menambahkan komponen atau bahan baku HPP baru.</p>
     </div>
     <a href="{{ route('hpp.index') }}" class="btn btn-sm btn-outline-secondary rounded-2 px-3 d-inline-flex align-items-center gap-2">
         <i class="bi bi-arrow-left"></i> Kembali
@@ -139,7 +138,7 @@
                 <div class="d-flex align-items-center justify-content-between pt-3">
                     <a href="{{ route('hpp.index') }}" class="btn btn-sm btn-light border rounded-2 px-3">Batal</a>
                     <button type="submit" class="btn btn-sm btn-success text-white fw-bold px-4 rounded-2 d-inline-flex align-items-center gap-2">
-                        <i class="bi bi-check-circle-fill"></i> Simpan
+                        Simpan
                     </button>
                 </div>
             </div>

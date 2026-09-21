@@ -28,7 +28,6 @@
 <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-2 mb-3">
     <div>
         <h4 class="fw-bold text-dark mb-1">Master Satuan Produk</h4>
-        <p class="text-muted small mb-0">Kelola dan atur daftar satuan atau unit barang untuk produk dan komposisi HPP.</p>
     </div>
 </div>
 
@@ -64,7 +63,7 @@
         <!-- Left: Search Box -->
         <div class="position-relative units-search-box">
             <i class="bi bi-search position-absolute top-50 start-0 translate-middle-y ms-3 text-muted"></i>
-            <input type="text" id="dtSearchInput" class="form-control form-control-sm ps-5 pe-3 rounded-2" placeholder="Cari nama satuan / singkatan...">
+            <input type="text" id="dtSearchInput" class="form-control form-control-sm ps-5 pe-3 rounded-2" placeholder="Cari nama satuan, singkatan, kategori...">
         </div>
 
         <!-- Right: Action & Filter Buttons -->
@@ -88,7 +87,7 @@
                 <th style="width: 50px;" class="text-center">No</th>
                 <th>Nama Satuan</th>
                 <th style="width: 120px;">Singkatan</th>
-                <th>Kategori / Tipe</th>
+                <th>Kategori</th>
                 <th class="text-center" style="width: 160px;">Produk Terkait</th>
                 <th class="text-center" style="width: 150px;">Tanggal Dibuat</th>
                 <th class="text-center no-sort" style="width: 130px;">Aksi</th>
@@ -206,7 +205,7 @@
             </div>
             <div class="modal-body modal-body-minimal d-flex flex-column gap-3">
                 <div>
-                    <label for="modalFilterCategory" class="form-label small fw-semibold text-muted mb-1">Kategori / Tipe</label>
+                    <label for="modalFilterCategory" class="form-label small fw-semibold text-muted mb-1">Kategori</label>
                     <select id="modalFilterCategory" class="form-select form-select-sm rounded-2">
                         <option value="">Semua Kategori</option>
                         @foreach ($list->pluck('type')->unique()->filter() as $cat)

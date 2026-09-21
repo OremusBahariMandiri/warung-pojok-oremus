@@ -3,30 +3,37 @@
    Warung Pojok Oremus | PT Oremus Bahari Mandiri
    ============================================================= */
 
-/* ── Table Bordered & Grid ───────────────────── */
+/* ── Table Base ─────────────────────────────────────────────── */
+#hppDataTable {
+    width: 100% !important;
+    table-layout: auto;
+}
+
+/* ── Table Header ───────────────────────────────────────────── */
 #hppDataTable.table-bordered {
-    border: 1px solid #dee2e6;
+    border: 1px solid #e2e8f0;
 }
 #hppDataTable.table-bordered th,
 #hppDataTable.table-bordered td {
-    border: 1px solid #dee2e6;
-    padding: 0.65rem 0.85rem;
+    border: 1px solid #e2e8f0;
+    padding: 0.6rem 0.8rem;
 }
 #hppDataTable thead th {
-    background-color: #f8f9fa;
+    background-color: #f8fafc;
     font-weight: 700 !important;
-    color: #334155;
-    font-size: 0.8rem;
-    letter-spacing: 0.03em;
+    color: #475569;
+    font-size: 0.72rem;
+    letter-spacing: 0.06em;
     text-transform: uppercase;
     vertical-align: middle;
+    white-space: nowrap;
 }
 
-/* ── DataTables Sorting Arrows Spacing ───────── */
+/* ── DataTables Sorting Arrows ──────────────────────────────── */
 table.dataTable thead > tr > th.sorting,
 table.dataTable thead > tr > th.sorting_asc,
 table.dataTable thead > tr > th.sorting_desc {
-    padding-right: 2rem !important;
+    padding-right: 1.8rem !important;
     cursor: pointer;
     position: relative;
     white-space: nowrap;
@@ -37,87 +44,219 @@ table.dataTable thead > tr > th.sorting_asc::before,
 table.dataTable thead > tr > th.sorting_asc::after,
 table.dataTable thead > tr > th.sorting_desc::before,
 table.dataTable thead > tr > th.sorting_desc::after {
-    right: 0.65rem !important;
+    right: 0.55rem !important;
+    opacity: 0.45;
+}
+table.dataTable thead > tr > th.sorting_asc::before,
+table.dataTable thead > tr > th.sorting_desc::after {
+    opacity: 1;
 }
 table.dataTable thead > tr > th.no-sort {
-    padding-right: 0.85rem !important;
+    padding-right: 0.8rem !important;
 }
 
-/* ── Search & Filter Toolbar ─────────────────── */
+/* ── Body Rows ───────────────────────────────────────────────── */
+#hppDataTable tbody tr {
+    transition: background-color 0.12s ease;
+}
+#hppDataTable tbody tr:hover > td {
+    background-color: #f8fafc !important;
+}
+#hppDataTable tbody td {
+    font-size: 0.83rem;
+    color: #334155;
+    vertical-align: middle;
+}
+
+/* ── Search & Filter Toolbar ─────────────────────────────────── */
 .hpp-search-box {
     flex-grow: 1;
-    min-width: 260px;
-    max-width: 480px;
+    min-width: 240px;
+    max-width: 420px;
 }
 .hpp-search-box .form-control {
-    font-size: 0.85rem;
+    font-size: 0.83rem;
     border-color: #e2e8f0;
+    background-color: #f8fafc;
+    color: #334155;
+    transition: all 0.15s;
 }
 .hpp-search-box .form-control:focus {
     border-color: #22c55e;
-    box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.15);
+    box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.12);
+    background-color: #fff;
+}
+.hpp-search-box .form-control::placeholder {
+    color: #94a3b8;
 }
 
-/* ── AdminLTE Styled Pagination ───────────────── */
+/* ── Pagination ──────────────────────────────────────────────── */
 .dataTables_wrapper .dataTables_paginate .pagination {
     margin: 0;
-    gap: 0;
+    gap: 3px;
     flex-wrap: wrap;
 }
 .dataTables_wrapper .dataTables_paginate .page-item .page-link {
-    font-size: 0.82rem;
-    padding: 0.35rem 0.65rem;
-    color: #495057;
-    background-color: #fff;
-    border: 1px solid #dee2e6;
-    margin-left: -1px;
-    border-radius: 0;
+    font-size: 0.78rem;
+    padding: 0.3rem 0.58rem;
+    color: #64748b;
+    background-color: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px !important;
+    min-width: 28px;
+    text-align: center;
+    transition: all 0.12s;
+    font-weight: 500;
+    margin-left: 0 !important;
 }
-.dataTables_wrapper .dataTables_paginate .page-item:first-child .page-link {
-    border-top-left-radius: 4px;
-    border-bottom-left-radius: 4px;
-    margin-left: 0;
-}
-.dataTables_wrapper .dataTables_paginate .page-item:last-child .page-link {
-    border-top-right-radius: 4px;
-    border-bottom-right-radius: 4px;
+.dataTables_wrapper .dataTables_paginate .page-item .page-link:hover {
+    background-color: #f0fdf4;
+    border-color: #86efac;
+    color: #16a34a;
 }
 .dataTables_wrapper .dataTables_paginate .page-item.active .page-link {
-    background-color: #0d6efd;
-    border-color: #0d6efd;
+    background-color: #22c55e;
+    border-color: #22c55e;
     color: #fff;
-    font-weight: 600;
-    z-index: 3;
+    font-weight: 700;
+    box-shadow: 0 2px 6px rgba(34, 197, 94, 0.35);
 }
 .dataTables_wrapper .dataTables_paginate .page-item.disabled .page-link {
-    color: #6c757d;
-    background-color: #f8f9fa;
-    border-color: #dee2e6;
+    color: #cbd5e1;
+    background-color: #f8fafc;
+    border-color: #f1f5f9;
 }
 .dataTables_wrapper .dataTables_info {
-    font-size: 0.82rem;
-    color: #6c757d;
+    font-size: 0.78rem;
+    color: #94a3b8;
     padding: 0;
 }
 
-/* ═══════════════════════════════════════════════════════════
+/* ── Tidak ada overflow-x ───────────────────────────────────── */
+.dataTables_wrapper {
+    overflow-x: visible !important;
+}
+.dataTables_wrapper .dataTables_scroll,
+.dataTables_scrollBody {
+    overflow-x: visible !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   DESKTOP RESPONSIVE — child row (≥ 768px)
+   Kolom "Dibuat" disembunyikan DataTables, tampil di child row.
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Arrow expand/collapse — chevron seperti <select> ────────
+   Override total semua style bawaan DataTables Responsive.
+   Tidak ada lingkaran, tidak ada background, tidak ada border.
+   Hanya chevron SVG tipis, persis seperti dropdown arrow native.
+   ──────────────────────────────────────────────────────────── */
+
+/* ── Arrow expand/collapse — segitiga solid ▶ / ▼ ───────────
+   Default: ▶ menunjuk ke kanan (tertutup)
+   Saat expand: ▼ menunjuk ke bawah (terbuka)
+   ──────────────────────────────────────────────────────────── */
+table.dataTable tbody td.dtr-control {
+    cursor: pointer;
+    text-align: center;
+    vertical-align: middle;
+    padding-left: 0.65rem !important;
+    padding-right: 0.5rem !important;
+    width: 28px !important;
+    min-width: 28px !important;
+}
+
+table.dataTable tbody td.dtr-control::before {
+    display: inline-block !important;
+    width: 0 !important;
+    height: 0 !important;
+    border-radius: 0 !important;
+    background-color: transparent !important;
+    background-image: none !important;
+    border-top: 5px solid transparent !important;
+    border-bottom: 5px solid transparent !important;
+    border-left: 8px solid #94a3b8 !important;
+    border-right: none !important;
+    box-shadow: none !important;
+    content: "" !important;
+    vertical-align: middle !important;
+    transition:
+        transform 0.18s ease,
+        border-left-color 0.18s ease !important;
+    transform: rotate(0deg) !important;
+    transform-origin: 35% 50% !important;
+}
+
+/* Saat baris ter-expand: putar 90° → ▼ menunjuk ke bawah, warna hijau */
+table.dataTable tbody tr.parent td.dtr-control::before {
+    border-left-color: #22c55e !important;
+    transform: rotate(90deg) !important;
+}
+
+/* Hover saat tertutup: warna sedikit lebih gelap */
+table.dataTable tbody tr:not(.parent) td.dtr-control:hover::before {
+    border-left-color: #475569 !important;
+}
+
+/* Child row container */
+#hppDataTable tbody td.child {
+    background-color: #f8fafc !important;
+    padding: 0.55rem 1.1rem !important;
+    border-top: none !important;
+}
+
+/* List di dalam child row */
+#hppDataTable tbody td.child ul.dtr-details {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0 1.5rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+#hppDataTable tbody td.child ul.dtr-details li {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.15rem 0;
+    border: none;
+}
+
+#hppDataTable tbody td.child ul.dtr-details li span.dtr-title {
+    font-size: 0.68rem;
+    font-weight: 700;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    white-space: nowrap;
+}
+#hppDataTable tbody td.child ul.dtr-details li span.dtr-title::after {
+    content: ":";
+}
+
+#hppDataTable tbody td.child ul.dtr-details li span.dtr-data {
+    font-size: 0.8rem;
+    color: #334155;
+    font-weight: 500;
+}
+
+/* ═══════════════════════════════════════════════════════════════
    MOBILE CARD LAYOUT  (< 768px)
-   Setiap <tr> berubah menjadi card terpisah.
-   Kolom ditampilkan sebagai baris label : value.
-   ═══════════════════════════════════════════════════════════ */
+   Layout card lama — DataTables responsive dimatikan di JS,
+   tampilan diatur murni oleh CSS ini.
+   ═══════════════════════════════════════════════════════════════ */
 @media (max-width: 767.98px) {
-    /* Hilangkan border tabel utama */
     #hppDataTable.table-bordered {
         border: none !important;
         background: transparent !important;
     }
 
-    /* Sembunyikan header kolom */
     #hppDataTable thead {
         display: none !important;
     }
 
-    /* Setiap baris tabel → card */
     #hppDataTable tbody tr {
         display: block !important;
         background: #ffffff;
@@ -129,13 +268,11 @@ table.dataTable thead > tr > th.no-sort {
         overflow: hidden;
     }
 
-    /* Hover state card */
     #hppDataTable tbody tr:hover {
         box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1) !important;
         border-color: #cbd5e1 !important;
     }
 
-    /* Setiap cell → baris label:value */
     #hppDataTable tbody td {
         display: flex !important;
         justify-content: space-between !important;
@@ -148,7 +285,6 @@ table.dataTable thead > tr > th.no-sort {
         text-align: right !important;
     }
 
-    /* Label pseudo sebelum value */
     #hppDataTable tbody td::before {
         content: attr(data-label);
         font-size: 0.73rem;
@@ -162,7 +298,7 @@ table.dataTable thead > tr > th.no-sort {
         white-space: nowrap;
     }
 
-    /* ── Cell #1: Nomor — header strip kecil ── */
+    /* Cell #1: Nomor */
     #hppDataTable tbody td:nth-child(1) {
         background: #f8fafc;
         border-bottom: 1px solid #e2e8f0 !important;
@@ -183,7 +319,7 @@ table.dataTable thead > tr > th.no-sort {
         font-size: 0.72rem;
     }
 
-    /* ── Cell #2: Nama Komponen HPP — nama utama bold ── */
+    /* Cell #2: Nama Komponen */
     #hppDataTable tbody td:nth-child(2) {
         font-size: 0.95rem !important;
         font-weight: 600 !important;
@@ -192,7 +328,7 @@ table.dataTable thead > tr > th.no-sort {
         padding-bottom: 0.7rem !important;
     }
 
-    /* ── Cell #4: Biaya Standar — highlight harga ── */
+    /* Cell #4: Biaya Standar */
     #hppDataTable tbody td:nth-child(4) {
         color: #166534 !important;
         font-weight: 700 !important;
@@ -200,7 +336,7 @@ table.dataTable thead > tr > th.no-sort {
             ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
     }
 
-    /* ── Cell terakhir: Aksi — footer strip ── */
+    /* Cell terakhir: Aksi */
     #hppDataTable tbody td:last-child {
         background: #f8fafc;
         border-bottom: none !important;
@@ -213,7 +349,16 @@ table.dataTable thead > tr > th.no-sort {
         display: none !important;
     }
 
-    /* Di mobile, paksa tampil tombol desktop (bukan dropdown) */
+    /* Sembunyikan child row di mobile (kalau sempat ter-render) */
+    #hppDataTable tbody td.child {
+        display: none !important;
+    }
+    /* Sembunyikan dtr-control chevron di mobile */
+    table.dataTable tbody td.dtr-control::before {
+        display: none !important;
+    }
+
+    /* Mobile: paksa tampil tombol desktop (bukan dropdown) */
     #hppDataTable tbody td:last-child .d-none.d-md-inline-flex {
         display: inline-flex !important;
     }
@@ -221,7 +366,6 @@ table.dataTable thead > tr > th.no-sort {
         display: none !important;
     }
 
-    /* Nonaktifkan overflow scroll bawaan DataTables */
     .dataTables_wrapper .dataTables_scroll,
     .dataTables_scrollBody {
         overflow-x: visible !important;
@@ -230,14 +374,12 @@ table.dataTable thead > tr > th.no-sort {
         width: 100% !important;
     }
 
-    /* Toolbar: search full width */
     .hpp-search-box {
         max-width: 100% !important;
         width: 100%;
         min-width: unset;
     }
 
-    /* Info & pagination tengah */
     .dataTables_wrapper .dataTables_info,
     .dataTables_wrapper .dataTables_paginate {
         width: 100%;
@@ -250,20 +392,16 @@ table.dataTable thead > tr > th.no-sort {
         flex-wrap: wrap;
         gap: 3px;
     }
-    .dataTables_wrapper .dataTables_paginate .page-item .page-link {
-        border-radius: 5px !important;
-        margin-left: 0 !important;
-    }
 }
 
-/* ── Tablet: search bar full width ─────────────── */
+/* ── Tablet ───────────────────────────────────────────────────── */
 @media (min-width: 768px) and (max-width: 991.98px) {
     .hpp-search-box {
         max-width: 100%;
     }
 }
 
-/* ── Searchable Select Component (Select2-Style) ── */
+/* ── Searchable Select Component (Select2-Style) ─────────────── */
 .searchable-select-wrapper {
     position: relative;
     width: 100%;
@@ -331,7 +469,6 @@ table.dataTable thead > tr > th.no-sort {
     text-overflow: ellipsis;
     padding-right: 1.25rem;
 }
-
 .searchable-select-dropdown {
     display: none;
     position: absolute;
@@ -349,8 +486,6 @@ table.dataTable thead > tr > th.no-sort {
 .searchable-select-dropdown.show {
     display: block;
 }
-
-/* Search input di dalam dropdown */
 .searchable-select-search-wrap {
     padding: 0.5rem;
     background: #f8f9fa;
@@ -370,8 +505,6 @@ table.dataTable thead > tr > th.no-sort {
     border-color: #22c55e;
     box-shadow: 0 0 0 0.15rem rgba(34, 197, 94, 0.2);
 }
-
-/* Options list */
 .searchable-select-options {
     max-height: 210px;
     overflow-y: auto;
