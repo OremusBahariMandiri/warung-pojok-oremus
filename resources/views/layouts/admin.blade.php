@@ -173,7 +173,15 @@
                     <div class="collapse {{ $isSettingsActive ? 'show' : '' }}" id="menuSettings">
                         <ul class="submenu-list">
                             <li class="submenu-item">
-                                <a href="{{ Route::has('users.index') ? route('users.index') : '#' }}" class="submenu-link {{ request()->routeIs('users.*') ? 'active' : '' }}">
+                                <a href="{{ Route::has('users.show') ? route('users.show', auth()->id()) : '#' }}" 
+                                class="submenu-link {{ request()->routeIs('users.show') && request()->route('user')?->id == auth()->id() ? 'active' : '' }}">
+                                    <span class="submenu-dot"></span>
+                                    <span>Profile</span>
+                                </a>
+                            </li>
+                            <li class="submenu-item">
+                                <a href="{{ Route::has('users.index') ? route('users.index') : '#' }}" 
+                                class="submenu-link {{ request()->routeIs('users.index', 'users.create', 'users.edit') || (request()->routeIs('users.show') && request()->route('user')?->id != auth()->id()) ? 'active' : '' }}">
                                     <span class="submenu-dot"></span>
                                     <span>Kelola Pengguna</span>
                                 </a>
@@ -248,7 +256,7 @@
                             <div class="fw-bold text-dark small">{{ $employeeName }}</div>
                             <div class="text-muted" style="font-size: 0.72rem;">{{ $userEmail }}</div>
                         </li>
-                        <li><a class="dropdown-item py-2 px-3 small d-flex align-items-center gap-2 text-secondary" href="#"><i class="bi bi-person"></i> Profil Saya</a></li></li>
+                        <li><a class="dropdown-item py-2 px-3 small d-flex align-items-center gap-2 text-secondary" href="{{ route('users.show', auth()->id()) }}"><i class="bi bi-person"></i> Profil Saya</a></li></li>
                         <li>
                             <form action="{{ route('logout') }}" method="POST" id="logout-dropdown-head" style="display:none">
                                 @csrf

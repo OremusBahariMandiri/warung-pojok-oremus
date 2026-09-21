@@ -145,7 +145,7 @@
         <!-- Left: Search Box -->
         <div class="position-relative activity-search-box">
             <i class="bi bi-search position-absolute top-50 start-0 translate-middle-y ms-3 text-muted"></i>
-            <input type="text" id="dtSearchInput" class="form-control form-control-sm ps-5 pe-3 rounded-2" placeholder="Cari deskripsi, modul, petugas, atau IP...">
+            <input type="text" id="dtSearchInput" class="form-control form-control-sm ps-5 pe-3 rounded-2" placeholder="Cari deskripsi, modul, pengguna, atau IP...">
         </div>
 
         <!-- Right: Action & Filter Buttons -->
@@ -400,9 +400,9 @@
                 </div>
 
                 <div>
-                    <label for="modalFilterUser" class="form-label small fw-semibold text-dark mb-1">Petugas / User</label>
+                    <label for="modalFilterUser" class="form-label small fw-semibold text-dark mb-1">Pengguna</label>
                     <select id="modalFilterUser" class="form-select form-select-sm rounded-2">
-                        <option value="">Semua Petugas</option>
+                        <option value="">Semua Pengguna</option>
                         @foreach ($uniqueUsers as $u)
                             <option value="{{ $u->employee_name ?? $u->email }}">{{ $u->employee_name ?? $u->email }}</option>
                         @endforeach

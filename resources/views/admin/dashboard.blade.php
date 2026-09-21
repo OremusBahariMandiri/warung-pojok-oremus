@@ -1,34 +1,46 @@
 @extends('layouts.admin')
+
 @section('title', 'Dashboard — Warjok Admin')
 @section('page-title', 'Dashboard')
+
+@push('styles')
+<link rel="stylesheet" href="{{ asset('css/dashboard.css') }}">
+@endpush
+
 @section('breadcrumb')
-  <nav aria-label="breadcrumb">
+<nav aria-label="breadcrumb">
     <ol class="breadcrumb mb-0">
-      <li class="breadcrumb-item"><a href="#">Home</a></li>
-      <li class="breadcrumb-item active" aria-current="page">Dashboard</li>
+        <li class="breadcrumb-item"><a href="{{ route('admin.dashboard') }}" class="text-decoration-none text-muted">Home</a></li>
+        <li class="breadcrumb-item active text-dark" aria-current="page">Dashboard</li>
     </ol>
-  </nav>
+</nav>
 @endsection
+
 @section('content')
 
+@php
+    $currentUser = auth()->user();
+    $userName = $currentUser->employee_name ?? $currentUser->username ?? 'Administrator';
+@endphp
+
 <!-- Welcome Banner -->
-<div class="card-box welcome-banner">
+<div class="card-box welcome-banner mb-4">
     <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
         <div>
-            <h4 class="fw-semibold mb-1">Selamat Pagi, Administrator 👋</h4>
-            <p class="text-muted mb-0">Berikut ringkasan operasional warung hari ini.</p>
+            <h4 class="fw-bold mb-1 text-dark">{{ $greeting }}, {{ $userName }} 👋</h4>
+            <p class="text-muted mb-0 small">Berikut ringkasan operasional dan performa penjualan warung hari ini.</p>
         </div>
         <div class="text-end text-md-start">
-            <span class="badge bg-light text-dark border py-2 px-3 fs-6 fw-medium">
-                <i class="bi bi-calendar-event me-2"></i>Rabu, 17 September 2026
+            <span class="badge bg-white text-dark border py-2 px-3 fs-6 fw-semibold shadow-sm rounded-3">
+                <i class="bi bi-calendar-event text-success me-2"></i>{{ $formattedToday }}
             </span>
         </div>
     </div>
 </div>
 
-<!-- Stats Cards Row -->
-<div class="row">
-    <!-- Card 1 -->
+<!-- Stats Cards Row (4 KPI Cards) -->
+<div class="row g-3 mb-2">
+    <!-- Card 1: Total Produk Aktif -->
     <div class="col-xl-3 col-md-6 col-12">
         <div class="stat-card">
             <div class="d-flex align-items-start justify-content-between mb-3">
@@ -36,263 +48,274 @@
                     <i class="bi bi-box-seam"></i>
                 </div>
                 <span class="stat-card-trend stat-card-trend--up">
-                    <i class="bi bi-arrow-up-short"></i> +12 bulan ini
+                    <i class="bi bi-arrow-up-short"></i> +{{ $newProductsThisMonth }} bulan ini
                 </span>
             </div>
-            <h3 class="stat-card-value">156</h3>
-            <p class="stat-card-label">Total Produk Aktif</p>
+            <div>
+                <h3 class="stat-card-value">{{ number_format($totalProducts, 0, ',', '.') }}</h3>
+                <p class="stat-card-label">Total Produk Aktif</p>
+            </div>
         </div>
     </div>
-    <!-- Card 2 -->
+
+    <!-- Card 2: Produk Stok Rendah -->
     <div class="col-xl-3 col-md-6 col-12">
         <div class="stat-card">
             <div class="d-flex align-items-start justify-content-between mb-3">
                 <div class="stat-card-icon stat-card-icon--amber">
                     <i class="bi bi-exclamation-triangle"></i>
                 </div>
-                <span class="stat-card-trend stat-card-trend--warn">
-                    <i class="bi bi-exclamation-circle-fill me-1"></i> Perlu restock segera
-                </span>
+                @if ($lowStockProductsCount > 0)
+                    <span class="stat-card-trend stat-card-trend--warn">
+                        <i class="bi bi-exclamation-circle-fill me-1"></i> Perlu restock segera
+                    </span>
+                @else
+                    <span class="stat-card-trend stat-card-trend--safe">
+                        <i class="bi bi-check-circle-fill me-1"></i> Stok aman
+                    </span>
+                @endif
             </div>
-            <h3 class="stat-card-value">23</h3>
-            <p class="stat-card-label">Produk Stok Rendah</p>
+            <div>
+                <h3 class="stat-card-value text-{{ $lowStockProductsCount > 0 ? 'danger' : 'dark' }}">
+                    {{ number_format($lowStockProductsCount, 0, ',', '.') }}
+                </h3>
+                <p class="stat-card-label">Produk Stok Rendah</p>
+            </div>
         </div>
     </div>
-    <!-- Card 3 -->
+
+    <!-- Card 3: Omset Hari Ini -->
     <div class="col-xl-3 col-md-6 col-12">
         <div class="stat-card">
             <div class="d-flex align-items-start justify-content-between mb-3">
                 <div class="stat-card-icon stat-card-icon--blue">
                     <i class="bi bi-cart-check"></i>
                 </div>
-                <span class="stat-card-trend stat-card-trend--up">
-                    <i class="bi bi-arrow-up-short"></i> +18.5% vs kemarin
-                </span>
+                @if (!is_null($salesGrowth))
+                    @if ($salesGrowth >= 0)
+                        <span class="stat-card-trend stat-card-trend--up">
+                            <i class="bi bi-arrow-up-short"></i> +{{ $salesGrowth }}% vs kemarin
+                        </span>
+                    @else
+                        <span class="stat-card-trend stat-card-trend--down">
+                            <i class="bi bi-arrow-down-short"></i> {{ $salesGrowth }}% vs kemarin
+                        </span>
+                    @endif
+                @else
+                    <span class="stat-card-trend stat-card-trend--up">
+                        <i class="bi bi-activity"></i> Hari ini
+                    </span>
+                @endif
             </div>
-            <h3 class="stat-card-value">Rp 2.450.000</h3>
-            <p class="stat-card-label">Omset Hari Ini</p>
+            <div>
+                <h3 class="stat-card-value font-monospace">Rp {{ number_format($todaySales, 0, ',', '.') }}</h3>
+                <p class="stat-card-label">Omset Hari Ini</p>
+            </div>
         </div>
     </div>
-    <!-- Card 4 -->
+
+    <!-- Card 4: Margin Laba Bersih -->
     <div class="col-xl-3 col-md-6 col-12">
         <div class="stat-card">
             <div class="d-flex align-items-start justify-content-between mb-3">
                 <div class="stat-card-icon stat-card-icon--rose">
                     <i class="bi bi-graph-up-arrow"></i>
                 </div>
-                <span class="stat-card-trend stat-card-trend--up">
-                    <i class="bi bi-arrow-up-short"></i> +2.1% vs minggu lalu
+                <span class="stat-card-trend stat-card-trend--up font-monospace">
+                    Rp {{ number_format($todayMargin, 0, ',', '.') }}
                 </span>
             </div>
-            <h3 class="stat-card-value">32.8%</h3>
-            <p class="stat-card-label">Margin Laba Bersih</p>
+            <div>
+                <h3 class="stat-card-value text-success">{{ number_format($todayMarginPct, 1, ',', '.') }}%</h3>
+                <p class="stat-card-label">Margin Laba Bersih</p>
+            </div>
         </div>
     </div>
 </div>
 
-<!-- Middle Row -->
-<div class="row">
-    <!-- Left: Grafik Penjualan Mingguan -->
+<!-- Middle Row: Sales Bar Chart & Top Selling Products -->
+<div class="row g-3 mb-4">
+    <!-- Left: Grafik Penjualan (Bar Chart) -->
     <div class="col-lg-8">
-        <div class="card-box h-100">
-            <div class="card-box-header">
-                <h5 class="card-box-title">Penjualan 7 Hari Terakhir</h5>
-                <select class="form-select form-select-sm w-auto">
-                    <option>Minggu Ini</option>
-                    <option>Bulan Ini</option>
-                </select>
+        <div class="card-box h-100 d-flex flex-column">
+            <div class="card-box-header d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+                <div>
+                    <h5 class="card-box-title" id="salesChartTitle">Penjualan 7 Hari Terakhir</h5>
+                    <span class="text-muted small" style="font-size:0.75rem;">Grafik batang performa omset dan margin keuntungan harian.</span>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <select class="form-select form-select-sm w-auto rounded-2" id="selectSalesPeriod">
+                        <option value="7days" selected>7 Hari Terakhir</option>
+                        <option value="30days">30 Hari Terakhir</option>
+                    </select>
+                </div>
             </div>
-            <div class="chart-placeholder">
-                <i class="bi bi-bar-chart-fill fs-1 mb-2 text-muted"></i>
-                <p class="mb-0">Area Grafik Penjualan</p>
+            <div class="sales-chart-wrapper flex-grow-1">
+                <canvas id="salesBarChart"></canvas>
             </div>
         </div>
     </div>
     
     <!-- Right: Produk Terlaris -->
     <div class="col-lg-4">
-        <div class="card-box h-100">
-            <div class="card-box-header">
-                <h5 class="card-box-title">Produk Terlaris Hari Ini</h5>
+        <div class="card-box h-100 d-flex flex-column">
+            <div class="card-box-header border-bottom pb-2 mb-2">
+                <h5 class="card-box-title">
+                    {{ $isTodayBestSeller ? 'Produk Terlaris Hari Ini' : 'Produk Terlaris Terakhir' }}
+                </h5>
             </div>
-            <div class="top-products-list mt-3">
-                <div class="top-product-item">
-                    <div class="top-product-rank">1</div>
-                    <div class="top-product-info">
-                        <div class="top-product-name">
-                            <span>Es Teh Manis</span>
-                            <span class="top-product-qty">45 porsi</span>
-                        </div>
-                        <div class="progress progress-thin">
-                            <div class="progress-bar bg-success" style="width: 100%"></div>
-                        </div>
-                    </div>
-                </div>
-                <div class="top-product-item">
-                    <div class="top-product-rank">2</div>
-                    <div class="top-product-info">
-                        <div class="top-product-name">
-                            <span>Nasi Goreng Spesial</span>
-                            <span class="top-product-qty">38 porsi</span>
-                        </div>
-                        <div class="progress progress-thin">
-                            <div class="progress-bar bg-primary" style="width: 85%"></div>
-                        </div>
-                    </div>
-                </div>
-                <div class="top-product-item">
-                    <div class="top-product-rank">3</div>
-                    <div class="top-product-info">
-                        <div class="top-product-name">
-                            <span>Mie Ayam Bakso</span>
-                            <span class="top-product-qty">32 porsi</span>
-                        </div>
-                        <div class="progress progress-thin">
-                            <div class="progress-bar bg-info" style="width: 70%"></div>
+            <div class="top-products-list flex-grow-1 d-flex flex-column justify-content-around">
+                @php
+                    $rankColors = ['bg-success', 'bg-primary', 'bg-info', 'bg-warning', 'bg-secondary'];
+                @endphp
+                @forelse ($topProducts as $item)
+                    @php
+                        $prod = $item->product;
+                        $unit = $prod && $prod->unit ? ($prod->unit->short_name ?? $prod->unit->unit_name) : 'porsi';
+                        $pct = $maxQty > 0 ? round(($item->total_qty / $maxQty) * 100) : 0;
+                        $rankClass = $loop->iteration <= 3 ? 'rank-' . $loop->iteration : '';
+                        $barColor = $rankColors[$loop->index % count($rankColors)];
+                    @endphp
+                    <div class="top-product-item">
+                        <div class="top-product-rank {{ $rankClass }}">{{ $loop->iteration }}</div>
+                        <div class="top-product-info">
+                            <div class="top-product-name">
+                                <span class="text-truncate" style="max-width: 160px;" title="{{ $prod->prod_name ?? 'Produk' }}">
+                                    {{ $prod->prod_name ?? 'Produk #' . $item->product_id }}
+                                </span>
+                                <span class="top-product-qty">{{ (int)$item->total_qty }} {{ $unit }}</span>
+                            </div>
+                            <div class="progress progress-thin">
+                                <div class="progress-bar {{ $barColor }}" style="width: {{ $pct }}%"></div>
+                            </div>
                         </div>
                     </div>
-                </div>
-                <div class="top-product-item">
-                    <div class="top-product-rank">4</div>
-                    <div class="top-product-info">
-                        <div class="top-product-name">
-                            <span>Es Jeruk Segar</span>
-                            <span class="top-product-qty">28 porsi</span>
-                        </div>
-                        <div class="progress progress-thin">
-                            <div class="progress-bar bg-warning" style="width: 60%"></div>
-                        </div>
+                @empty
+                    <div class="text-center py-4 text-muted small">
+                        <i class="bi bi-basket fs-3 d-block mb-1 text-secondary"></i>
+                        Belum ada data penjualan tercatat.
                     </div>
-                </div>
-                <div class="top-product-item">
-                    <div class="top-product-rank">5</div>
-                    <div class="top-product-info">
-                        <div class="top-product-name">
-                            <span>Kopi Susu Gula Aren</span>
-                            <span class="top-product-qty">25 porsi</span>
-                        </div>
-                        <div class="progress progress-thin">
-                            <div class="progress-bar bg-secondary" style="width: 55%"></div>
-                        </div>
-                    </div>
-                </div>
+                @endforelse
             </div>
         </div>
     </div>
 </div>
 
-<!-- Bottom Row -->
-<div class="row">
+<!-- Bottom Row: Recent Restocks & Critical Stock Table -->
+<div class="row g-3">
     <!-- Left: Aktivitas Restock Terakhir -->
     <div class="col-lg-5">
         <div class="card-box h-100">
-            <div class="card-box-header">
+            <div class="card-box-header border-bottom pb-2 mb-3 d-flex align-items-center justify-content-between">
                 <h5 class="card-box-title">Restock Terakhir</h5>
+                <a href="{{ route('restock.index') }}" class="text-decoration-none small fw-medium text-success">
+                    Semua <i class="bi bi-arrow-right"></i>
+                </a>
             </div>
             <div class="timeline mt-3">
-                <div class="timeline-item status-done">
-                    <div class="timeline-title">Gula Pasir 50kg</div>
-                    <div class="timeline-meta">
-                        <span><i class="bi bi-calendar-event"></i> 16 Sep 2026</span>
-                        <span><i class="bi bi-tag"></i> Rp 750.000</span>
-                        <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill">Selesai</span>
+                @forelse ($recentRestocks as $r)
+                    @php
+                        $firstItem = $r->items->first();
+                        $itemCount = $r->items->count();
+                        $mainTitle = $firstItem && $firstItem->product 
+                            ? $firstItem->product->prod_name . ' (' . (int)$firstItem->quantity . ' ' . ($firstItem->product->unit->short_name ?? 'Pcs') . ')'
+                            : ($r->supplier_name ?: 'Restock Barang');
+                        if ($itemCount > 1) {
+                            $mainTitle .= ' +' . ($itemCount - 1) . ' item lain';
+                        }
+                        $cost = (float)($r->total_value ?? 0);
+                    @endphp
+                    <div class="timeline-item">
+                        <div class="timeline-title text-truncate" title="{{ $mainTitle }}">{{ $mainTitle }}</div>
+                        <div class="timeline-meta">
+                            <span><i class="bi bi-calendar-event me-1"></i>{{ $r->restock_date ? $r->restock_date->format('d M Y') : '-' }}</span>
+                            <span class="font-monospace text-dark fw-semibold">Rp {{ number_format($cost, 0, ',', '.') }}</span>
+                            <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill">Selesai</span>
+                        </div>
                     </div>
-                </div>
-                <div class="timeline-item status-done">
-                    <div class="timeline-title">Beras Premium 100kg</div>
-                    <div class="timeline-meta">
-                        <span><i class="bi bi-calendar-event"></i> 15 Sep 2026</span>
-                        <span><i class="bi bi-tag"></i> Rp 1.400.000</span>
-                        <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill">Selesai</span>
+                @empty
+                    <div class="text-center py-4 text-muted small">
+                        <i class="bi bi-box-arrow-in-down fs-3 d-block mb-1 text-secondary"></i>
+                        Belum ada riwayat restock barang.
                     </div>
-                </div>
-                <div class="timeline-item status-pending">
-                    <div class="timeline-title">Minyak Goreng 20L</div>
-                    <div class="timeline-meta">
-                        <span><i class="bi bi-calendar-event"></i> 15 Sep 2026</span>
-                        <span><i class="bi bi-tag"></i> Rp 380.000</span>
-                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill">Dikirim</span>
-                    </div>
-                </div>
-                <div class="timeline-item status-pending">
-                    <div class="timeline-title">Kopi Bubuk 10kg</div>
-                    <div class="timeline-meta">
-                        <span><i class="bi bi-calendar-event"></i> 14 Sep 2026</span>
-                        <span><i class="bi bi-tag"></i> Rp 950.000</span>
-                        <span class="badge bg-warning-subtle text-warning border border-warning-subtle rounded-pill">Pending</span>
-                    </div>
-                </div>
+                @endforelse
             </div>
         </div>
     </div>
     
-    <!-- Right: Tabel Stok Rendah -->
+    <!-- Right: Tabel Stok Rendah / Kritis -->
     <div class="col-lg-7">
         <div class="card-box h-100">
-            <div class="card-box-header">
+            <div class="card-box-header border-bottom pb-2 mb-3 d-flex align-items-center justify-content-between">
                 <h5 class="card-box-title">Produk Stok Kritis</h5>
-                <a href="#" class="text-decoration-none small fw-medium">Lihat Semua <i class="bi bi-arrow-right"></i></a>
+                <a href="{{ route('products.index') }}" class="text-decoration-none small fw-medium text-success">
+                    Lihat Semua Produk <i class="bi bi-arrow-right"></i>
+                </a>
             </div>
             <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
-                    <thead class="table-light">
+                <table class="table table-hover align-middle mb-0 table-critical-stock">
+                    <thead>
                         <tr>
                             <th>Produk</th>
-                            <th class="text-center">Stok Saat Ini</th>
-                            <th class="text-center">Min. Stok</th>
-                            <th>Status</th>
+                            <th class="text-center" style="width: 110px;">Stok Saat Ini</th>
+                            <th class="text-center" style="width: 100px;">Min. Stok</th>
+                            <th class="text-center" style="width: 90px;">Status</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <tr>
-                            <td>
-                                <div class="fw-medium">Kecap Manis 600ml</div>
-                                <div class="small text-muted">Bumbu Dapur</div>
-                            </td>
-                            <td class="text-center fw-bold text-danger">2</td>
-                            <td class="text-center">10</td>
-                            <td><span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill">Kritis</span></td>
-                        </tr>
-                        <tr>
-                            <td>
-                                <div class="fw-medium">Telur Ayam</div>
-                                <div class="small text-muted">Bahan Makanan</div>
-                            </td>
-                            <td class="text-center fw-bold text-danger">15</td>
-                            <td class="text-center">50</td>
-                            <td><span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill">Kritis</span></td>
-                        </tr>
-                        <tr>
-                            <td>
-                                <div class="fw-medium">Garam Dapur 500g</div>
-                                <div class="small text-muted">Bumbu Dapur</div>
-                            </td>
-                            <td class="text-center fw-bold text-warning">8</td>
-                            <td class="text-center">15</td>
-                            <td><span class="badge bg-warning-subtle text-warning border border-warning-subtle rounded-pill">Rendah</span></td>
-                        </tr>
-                        <tr>
-                            <td>
-                                <div class="fw-medium">Saus Sambal 1kg</div>
-                                <div class="small text-muted">Bumbu Dapur</div>
-                            </td>
-                            <td class="text-center fw-bold text-warning">5</td>
-                            <td class="text-center">10</td>
-                            <td><span class="badge bg-warning-subtle text-warning border border-warning-subtle rounded-pill">Rendah</span></td>
-                        </tr>
-                        <tr>
-                            <td>
-                                <div class="fw-medium">Tepung Terigu 1kg</div>
-                                <div class="small text-muted">Bahan Makanan</div>
-                            </td>
-                            <td class="text-center fw-bold text-success">22</td>
-                            <td class="text-center">20</td>
-                            <td><span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill">Aman</span></td>
-                        </tr>
+                        @forelse ($criticalStockProducts as $p)
+                            @php
+                                $unitName = $p->unit ? ($p->unit->short_name ?? $p->unit->unit_name) : 'Pcs';
+                                $curr = (int)$p->current_stock;
+                                $min = (int)$p->min_stock;
+                            @endphp
+                            <tr>
+                                <td>
+                                    <div class="fw-semibold text-dark">{{ $p->prod_name }}</div>
+                                    <div class="small text-muted font-monospace" style="font-size:0.72rem;">{{ $p->sku ?: 'PRD-' . $p->id }}</div>
+                                </td>
+                                <td class="text-center fw-bold font-monospace {{ $curr <= $min ? 'text-danger' : 'text-dark' }}">
+                                    {{ $curr }} {{ $unitName }}
+                                </td>
+                                <td class="text-center font-monospace text-muted">
+                                    {{ $min }} {{ $unitName }}
+                                </td>
+                                <td class="text-center">
+                                    @if ($curr <= 0)
+                                        <span class="badge bg-danger text-white rounded-pill px-2 py-1">Habis</span>
+                                    @elseif ($curr <= $min)
+                                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill px-2 py-1">Kritis</span>
+                                    @elseif ($curr <= $min * 1.5)
+                                        <span class="badge bg-warning-subtle text-warning border border-warning-subtle rounded-pill px-2 py-1">Rendah</span>
+                                    @else
+                                        <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-2 py-1">Aman</span>
+                                    @endif
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="4" class="text-center py-4 text-muted small">
+                                    Seluruh stok produk berada dalam kondisi aman.
+                                </td>
+                            </tr>
+                        @endforelse
                     </tbody>
                 </table>
             </div>
         </div>
     </div>
 </div>
+
 @endsection
+
+@push('scripts')
+<!-- Chart.js & Dashboard Script -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    window.dashboardChartData = {
+        last7Days: @json($last7Days),
+        last30Days: @json($last30Days)
+    };
+</script>
+<script src="{{ asset('js/dashboard.js') }}"></script>
+@endpush

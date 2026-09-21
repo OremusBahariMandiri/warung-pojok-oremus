@@ -46,13 +46,18 @@ Route::middleware('auth')->group(function () {
     Route::resource('products', ProductController::class)->middleware('user.access:products');
 
     // Master Data: Users & Hak Akses
-    Route::get('users/{user}/access', [UserAccessController::class, 'show'])
+    Route::get('users/settings/{user}/profile', [UserController::class, 'show'])
+    ->name('users.show')
+    ->middleware('user.access:users,show');
+    Route::get('users/settings/{user}/access', [UserAccessController::class, 'show'])
         ->name('users.access.show')
         ->middleware('user.access:users,show');
-    Route::put('users/{user}/access', [UserAccessController::class, 'update'])
+    Route::put('users/settings/{user}/access', [UserAccessController::class, 'update'])
         ->name('users.access.update')
         ->middleware('user.access:users,edit');
-    Route::resource('users', UserController::class)->middleware('user.access:users');
+    Route::resource('users', UserController::class, [
+        'parameters' => ['users' => 'user']
+    ])->middleware('user.access:users');
 
     // Transaksi: Restock
     Route::resource('restock', RestockController::class)->middleware('user.access:restock');

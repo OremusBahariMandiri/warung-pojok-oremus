@@ -156,9 +156,6 @@
                         {{-- #7 Aksi --}}
                         <td class="text-center">
                             <div class="d-inline-flex align-items-center gap-1">
-                                <a href="{{ route('users.show', $u->id) }}" class="btn btn-sm btn-outline-secondary rounded-2 px-2 py-1" title="Profil Pengguna">
-                                    <i class="bi bi-eye"></i>
-                                </a>
                                 <a href="{{ route('users.access.show', $u->id) }}" class="btn btn-sm btn-outline-success rounded-2 px-2 py-1" title="Atur Hak Akses">
                                     <i class="bi bi-shield-lock"></i>
                                 </a>
