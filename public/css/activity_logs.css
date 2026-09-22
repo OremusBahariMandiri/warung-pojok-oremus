@@ -620,3 +620,277 @@ table.dataTable thead > tr > th.no-sort {
         flex: 0 0 100%;
     }
 }
+
+/* =============================================================
+   TAMBAHAN — DataTables Responsive (Desktop Index Page)
+   Pola sama dengan hpp.css, products.css, restock.css, reports.css
+   ============================================================= */
+
+/* ── Hilangkan overflow-x & scroll lama ─────────────────────── */
+#activityLogsDataTable_wrapper {
+    overflow-x: visible !important;
+}
+.activity-dt-scroll {
+    overflow-x: visible !important;
+}
+
+/* ── Table header redesign ───────────────────────────────────── */
+#activityLogsDataTable thead th {
+    background-color: #f8fafc;
+    font-weight: 700 !important;
+    color: #475569;
+    font-size: 0.72rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    vertical-align: middle;
+    white-space: nowrap;
+}
+#activityLogsDataTable.table-bordered {
+    border: 1px solid #e2e8f0;
+}
+#activityLogsDataTable.table-bordered th,
+#activityLogsDataTable.table-bordered td {
+    border: 1px solid #e2e8f0;
+    padding: 0.6rem 0.8rem;
+}
+#activityLogsDataTable tbody tr {
+    transition: background-color 0.12s ease;
+}
+#activityLogsDataTable tbody tr:hover > td {
+    background-color: #f8fafc !important;
+}
+#activityLogsDataTable tbody td {
+    font-size: 0.83rem;
+    color: #334155;
+    vertical-align: middle;
+}
+
+/* ── Sorting arrows ──────────────────────────────────────────── */
+#activityLogsDataTable_wrapper table.dataTable thead > tr > th.sorting,
+#activityLogsDataTable_wrapper table.dataTable thead > tr > th.sorting_asc,
+#activityLogsDataTable_wrapper table.dataTable thead > tr > th.sorting_desc {
+    padding-right: 1.8rem !important;
+}
+#activityLogsDataTable_wrapper table.dataTable thead > tr > th.sorting::before,
+#activityLogsDataTable_wrapper table.dataTable thead > tr > th.sorting::after,
+#activityLogsDataTable_wrapper
+    table.dataTable
+    thead
+    > tr
+    > th.sorting_asc::before,
+#activityLogsDataTable_wrapper
+    table.dataTable
+    thead
+    > tr
+    > th.sorting_asc::after,
+#activityLogsDataTable_wrapper
+    table.dataTable
+    thead
+    > tr
+    > th.sorting_desc::before,
+#activityLogsDataTable_wrapper
+    table.dataTable
+    thead
+    > tr
+    > th.sorting_desc::after {
+    right: 0.55rem !important;
+    opacity: 0.45;
+}
+#activityLogsDataTable_wrapper
+    table.dataTable
+    thead
+    > tr
+    > th.sorting_asc::before,
+#activityLogsDataTable_wrapper
+    table.dataTable
+    thead
+    > tr
+    > th.sorting_desc::after {
+    opacity: 1;
+}
+
+/* ── Pagination redesign ─────────────────────────────────────── */
+#activityLogsDataTable_wrapper .dataTables_paginate .pagination {
+    gap: 3px;
+}
+#activityLogsDataTable_wrapper .dataTables_paginate .page-item .page-link {
+    font-size: 0.78rem;
+    padding: 0.3rem 0.58rem;
+    color: #64748b;
+    background-color: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px !important;
+    min-width: 28px;
+    text-align: center;
+    transition: all 0.12s;
+    font-weight: 500;
+    margin-left: 0 !important;
+}
+#activityLogsDataTable_wrapper
+    .dataTables_paginate
+    .page-item
+    .page-link:hover {
+    background-color: #f0fdf4;
+    border-color: #86efac;
+    color: #16a34a;
+}
+#activityLogsDataTable_wrapper
+    .dataTables_paginate
+    .page-item.active
+    .page-link {
+    background-color: #22c55e;
+    border-color: #22c55e;
+    color: #fff;
+    font-weight: 700;
+    box-shadow: 0 2px 6px rgba(34, 197, 94, 0.35);
+}
+#activityLogsDataTable_wrapper
+    .dataTables_paginate
+    .page-item.disabled
+    .page-link {
+    color: #cbd5e1;
+    background-color: #f8fafc;
+    border-color: #f1f5f9;
+}
+#activityLogsDataTable_wrapper .dataTables_info {
+    font-size: 0.78rem;
+    color: #94a3b8;
+}
+
+/* ── Arrow expand/collapse — segitiga solid ▶ / ▼ ────────────
+   Default: ▶ kanan (tertutup), Expand: ▼ bawah hijau
+   ─────────────────────────────────────────────────────────── */
+#activityLogsDataTable_wrapper table.dataTable tbody td.dtr-control {
+    cursor: pointer;
+    text-align: center;
+    vertical-align: middle;
+    padding-left: 0.65rem !important;
+    padding-right: 0.5rem !important;
+    width: 28px !important;
+    min-width: 28px !important;
+}
+
+#activityLogsDataTable_wrapper table.dataTable tbody td.dtr-control::before {
+    display: inline-block !important;
+    width: 0 !important;
+    height: 0 !important;
+    border-radius: 0 !important;
+    background-color: transparent !important;
+    background-image: none !important;
+    border-top: 5px solid transparent !important;
+    border-bottom: 5px solid transparent !important;
+    border-left: 8px solid #94a3b8 !important;
+    border-right: none !important;
+    box-shadow: none !important;
+    content: "" !important;
+    vertical-align: middle !important;
+    transition:
+        transform 0.18s ease,
+        border-left-color 0.18s ease !important;
+    transform: rotate(0deg) !important;
+    transform-origin: 35% 50% !important;
+}
+
+#activityLogsDataTable_wrapper
+    table.dataTable
+    tbody
+    tr.parent
+    td.dtr-control::before {
+    border-left-color: #22c55e !important;
+    transform: rotate(90deg) !important;
+}
+
+#activityLogsDataTable_wrapper
+    table.dataTable
+    tbody
+    tr:not(.parent)
+    td.dtr-control:hover::before {
+    border-left-color: #475569 !important;
+}
+
+/* ── Child row ───────────────────────────────────────────────── */
+#activityLogsDataTable tbody td.child {
+    background-color: #f8fafc !important;
+    padding: 0.55rem 1.1rem !important;
+    border-top: none !important;
+}
+
+#activityLogsDataTable tbody td.child ul.dtr-details {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 0.25rem 2rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+#activityLogsDataTable tbody td.child ul.dtr-details li {
+    display: flex;
+    align-items: baseline;
+    gap: 0.35rem;
+    padding: 0.2rem 0;
+    border: none;
+    max-width: 100%;
+}
+
+#activityLogsDataTable tbody td.child ul.dtr-details li span.dtr-title {
+    font-size: 0.68rem;
+    font-weight: 700;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+#activityLogsDataTable tbody td.child ul.dtr-details li span.dtr-title::after {
+    content: ":";
+}
+
+#activityLogsDataTable tbody td.child ul.dtr-details li span.dtr-data {
+    font-size: 0.8rem;
+    color: #334155;
+    font-weight: 500;
+    white-space: normal;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+}
+
+/* ── Mobile: sembunyikan child row & arrow ───────────────────── */
+@media (max-width: 767.98px) {
+    #activityLogsDataTable tbody td.child {
+        display: none !important;
+    }
+    #activityLogsDataTable_wrapper
+        table.dataTable
+        tbody
+        td.dtr-control::before {
+        display: none !important;
+    }
+    #activityLogsDataTable_wrapper .dataTables_info,
+    #activityLogsDataTable_wrapper .dataTables_paginate {
+        width: 100%;
+        text-align: center;
+        display: flex;
+        justify-content: center;
+    }
+}
+
+/* ── Show/hide desktop table vs mobile card ─────────────────
+   Pola sama dengan reports.css — DataTables harus selalu di DOM
+   ─────────────────────────────────────────────────────────── */
+.activity-logs-desktop-card {
+    display: block;
+}
+.activity-logs-mobile-wrapper {
+    display: none;
+}
+
+@media (max-width: 767.98px) {
+    .activity-logs-desktop-card {
+        display: none !important;
+    }
+    .activity-logs-mobile-wrapper {
+        display: block !important;
+    }
+}

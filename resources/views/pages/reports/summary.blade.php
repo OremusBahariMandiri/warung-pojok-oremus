@@ -41,7 +41,6 @@
 <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3 mb-4">
     <div>
         <h4 class="fw-bold text-dark mb-1">Ringkasan & Margin Penjualan</h4>
-        <p class="text-muted small mb-0">Analisis performa omset penjualan, modal HPP, margin keuntungan, dan rasio laba kotor.</p>
     </div>
     <div class="d-flex align-items-center gap-2">
         <a href="{{ route('reports.index') }}" class="btn btn-sm btn-outline-secondary rounded-2 px-3 d-inline-flex align-items-center gap-2">

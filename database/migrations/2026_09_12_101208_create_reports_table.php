@@ -18,7 +18,7 @@ return new class extends Migration
             $table->decimal("total_sales", 15, 3);
             $table->decimal("total_hpp", 15,3);
             $table->decimal("total_margin", 15, 3);
-            $table->text('notes');
+            $table->text('notes')->nullable();
             $table->timestamp("report_date");
             $table->timestamps();
         });
