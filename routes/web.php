@@ -20,7 +20,7 @@ Route::middleware('guest')->group(function () {
 });
 
 // Authenticated Application Routes
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', 'remember'])->group(function () {
     /* HOMEPAGE */
     Route::get('/', [AdminDashboardController::class, 'index'])->name('admin.dashboard');
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');

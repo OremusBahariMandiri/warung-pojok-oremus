@@ -14,6 +14,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->alias([
             'user.access' => \App\Http\Middleware\CheckUserAccess::class,
+            'remember' => \App\Http\Middleware\ExtendedRememberSession::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
