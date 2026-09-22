@@ -9,7 +9,9 @@ if (typeof window.reportProductsList === "undefined") {
 
 let reportItemIndex = 100;
 
-// ── Dropdown Portal: posisikan dropdown fixed di viewport ── //
+/* ════════════════════════════════════════════════════════════
+   SEARCHABLE SELECT
+   ════════════════════════════════════════════════════════════ */
 function positionDropdown(triggerEl, dropdown) {
     const rect = triggerEl.getBoundingClientRect();
     dropdown.style.position = "fixed";
@@ -19,7 +21,6 @@ function positionDropdown(triggerEl, dropdown) {
     dropdown.style.zIndex = "99999";
 }
 
-// ── Global Searchable Select Helper Functions ── //
 function toggleSearchableSelect(triggerEl, e) {
     if (e) e.stopPropagation();
     const wrapper = triggerEl.closest(".searchable-select-wrapper");
@@ -124,7 +125,6 @@ function selectSearchableOption(optionEl) {
         hiddenSel.value = val;
         onProductSelectChange(hiddenSel);
     }
-
     if (trigger) {
         trigger.innerHTML = '<span class="selected-text">' + label + "</span>";
         trigger.classList.remove("active", "is-invalid");
@@ -142,11 +142,7 @@ function closeAllSearchableSelects() {
         .querySelectorAll(".searchable-select-dropdown.show")
         .forEach((d) => {
             d.classList.remove("show");
-            d.style.position = "";
-            d.style.top = "";
-            d.style.left = "";
-            d.style.width = "";
-            d.style.zIndex = "";
+            d.style.cssText = "";
             if (d._sourceWrapper) {
                 d._sourceWrapper.appendChild(d);
                 d._sourceWrapper = null;
@@ -174,36 +170,35 @@ function closeAllSearchableSelects() {
 
 if (!window.__reportsSearchableSelectInit) {
     window.__reportsSearchableSelectInit = true;
-    ["click", "mousedown", "touchstart", "focusin"].forEach((eventType) => {
+    ["click", "mousedown", "touchstart", "focusin"].forEach((ev) => {
         document.addEventListener(
-            eventType,
+            ev,
             function (e) {
                 const insideWrapper = e.target.closest(
                     ".searchable-select-wrapper",
                 );
-                const insideDetachedDropdown = e.target.closest(
+                const insideDropdown = e.target.closest(
                     ".searchable-select-dropdown",
                 );
-                if (!insideWrapper && !insideDetachedDropdown)
+                if (!insideWrapper && !insideDropdown)
                     closeAllSearchableSelects();
             },
             true,
         );
     });
-    document.addEventListener("keydown", function (e) {
+    document.addEventListener("keydown", (e) => {
         if (e.key === "Escape") closeAllSearchableSelects();
     });
 }
 
-// ══════════════════════════════════════════════════
-// BUILD HELPERS
-// ══════════════════════════════════════════════════
+/* ════════════════════════════════════════════════════════════
+   BUILD HELPERS
+   ════════════════════════════════════════════════════════════ */
 function _buildReportSelectOptions() {
     let selectOpts =
         '<option value="" disabled selected>Pilih Produk...</option>';
     let divOpts = "";
     if (
-        window.reportProductsList &&
         Array.isArray(window.reportProductsList) &&
         window.reportProductsList.length > 0
     ) {
@@ -244,12 +239,13 @@ function _buildSelectHtml(idx, selectOpts, divOpts) {
     </div>`;
 }
 
-// ── Add table row (desktop) ── //
+/* ════════════════════════════════════════════════════════════
+   ADD / REMOVE ROWS & CARDS
+   ════════════════════════════════════════════════════════════ */
 function _addReportTableRow(idx, selectOpts, divOpts) {
     const tbody = document.getElementById("reportItemRows");
     if (!tbody) return;
-    const emptyRow = document.getElementById("emptyItemRow");
-    if (emptyRow) emptyRow.remove();
+    document.getElementById("emptyItemRow")?.remove();
 
     const tr = document.createElement("tr");
     tr.className = "report-item-row align-middle";
@@ -288,12 +284,10 @@ function _addReportTableRow(idx, selectOpts, divOpts) {
     tbody.appendChild(tr);
 }
 
-// ── Add mobile card ── //
 function _addReportMobileCard(idx, selectOpts, divOpts) {
     const container = document.getElementById("reportCardsMobile");
     if (!container) return;
-    const emptyState = document.getElementById("reportMobileEmptyState");
-    if (emptyState) emptyState.remove();
+    document.getElementById("reportMobileEmptyState")?.remove();
 
     const card = document.createElement("div");
     card.className = "report-item-card";
@@ -343,7 +337,6 @@ function _addReportMobileCard(idx, selectOpts, divOpts) {
     container.appendChild(card);
 }
 
-// ── Master add: table + card ── //
 function addReportItemRow() {
     const { selectOpts, divOpts } = _buildReportSelectOptions();
     _addReportTableRow(reportItemIndex, selectOpts, divOpts);
@@ -358,14 +351,11 @@ function removeReportItemRow(btn) {
     if (!row) return;
     const select = row.querySelector(".product-select");
     if (select) {
-        const nameAttr = select.getAttribute("name");
-        const idxMatch = nameAttr && nameAttr.match(/items\[(\d+)\]/);
-        if (idxMatch) {
-            const cardEl = document.querySelector(
-                `.report-item-card[data-card-idx="${idxMatch[1]}"]`,
-            );
-            if (cardEl) cardEl.remove();
-        }
+        const m = select.getAttribute("name")?.match(/items\[(\d+)\]/);
+        if (m)
+            document
+                .querySelector(`.report-item-card[data-card-idx="${m[1]}"]`)
+                ?.remove();
     }
     row.remove();
     _checkReportEmptyStates();
@@ -377,13 +367,10 @@ function removeReportItemCard(btn) {
     const card = btn.closest(".report-item-card");
     if (!card) return;
     const idx = card.dataset.cardIdx;
-    const tableSelect = document.querySelector(
+    const sel = document.querySelector(
         `#reportItemRows .product-select[name="items[${idx}][product_id]"]`,
     );
-    if (tableSelect) {
-        const row = tableSelect.closest("tr");
-        if (row) row.remove();
-    }
+    if (sel) sel.closest("tr")?.remove();
     card.remove();
     _checkReportEmptyStates();
     updateRowNumbers();
@@ -393,22 +380,16 @@ function removeReportItemCard(btn) {
 function _checkReportEmptyStates() {
     const tbody = document.getElementById("reportItemRows");
     if (tbody && tbody.querySelectorAll(".report-item-row").length === 0) {
-        tbody.innerHTML = `<tr id="emptyItemRow">
-            <td colspan="9" class="text-center py-4 text-muted small">
-                Belum ada produk yang ditambahkan. Klik tombol "+ Tambah" di atas untuk menambahkan item penjualan.
-            </td></tr>`;
+        tbody.innerHTML = `<tr id="emptyItemRow"><td colspan="9" class="text-center py-4 text-muted small">Belum ada produk yang ditambahkan. Klik tombol "+ Tambah" di atas untuk menambahkan item penjualan.</td></tr>`;
     }
-    const mobileContainer = document.getElementById("reportCardsMobile");
-    if (
-        mobileContainer &&
-        mobileContainer.querySelectorAll(".report-item-card").length === 0
-    ) {
+    const mob = document.getElementById("reportCardsMobile");
+    if (mob && mob.querySelectorAll(".report-item-card").length === 0) {
         if (!document.getElementById("reportMobileEmptyState")) {
             const el = document.createElement("div");
             el.className = "reports-mobile-empty";
             el.id = "reportMobileEmptyState";
             el.textContent = 'Belum ada produk. Klik "+ Tambah" di atas.';
-            mobileContainer.appendChild(el);
+            mob.appendChild(el);
         }
     }
 }
@@ -416,31 +397,30 @@ function _checkReportEmptyStates() {
 function updateRowNumbers() {
     document
         .querySelectorAll("#reportItemRows .report-item-row")
-        .forEach((row, idx) => {
-            const cell = row.querySelector(".row-number");
-            if (cell) cell.textContent = idx + 1;
+        .forEach((row, i) => {
+            const c = row.querySelector(".row-number");
+            if (c) c.textContent = i + 1;
         });
-    document.querySelectorAll(".report-item-card").forEach((card, idx) => {
-        const badge = card.querySelector(".ric-row-number-mobile");
-        if (badge) badge.textContent = idx + 1;
+    document.querySelectorAll(".report-item-card").forEach((card, i) => {
+        const b = card.querySelector(".ric-row-number-mobile");
+        if (b) b.textContent = i + 1;
     });
 }
 
 function _applyProductInfoToContainer(container, { price, hpp, stock, unit }) {
-    const stockNumSpan = container.querySelector(".stock-num");
-    const priceDisplay = container.querySelector(".item-price-display");
-    const hppDisplay = container.querySelector(".item-hpp-display");
+    const stockNum = container.querySelector(".stock-num");
+    const priceDisp = container.querySelector(".item-price-display");
+    const hppDisp = container.querySelector(".item-hpp-display");
     const priceInput = container.querySelector(".item-selling-price");
     const hppInput = container.querySelector(".item-hpp-price");
     const qtyInput = container.querySelector(".item-qty");
 
-    if (stockNumSpan) stockNumSpan.textContent = stock + " " + unit;
-    if (priceDisplay)
-        priceDisplay.textContent =
+    if (stockNum) stockNum.textContent = stock + " " + unit;
+    if (priceDisp)
+        priceDisp.textContent =
             "Rp " + Math.round(price).toLocaleString("id-ID");
-    if (hppDisplay)
-        hppDisplay.textContent =
-            "Rp " + Math.round(hpp).toLocaleString("id-ID");
+    if (hppDisp)
+        hppDisp.textContent = "Rp " + Math.round(hpp).toLocaleString("id-ID");
     if (priceInput) priceInput.value = price;
     if (hppInput) hppInput.value = hpp;
     if (qtyInput) qtyInput.max = stock;
@@ -451,25 +431,22 @@ function _applyProductInfoToContainer(container, { price, hpp, stock, unit }) {
 }
 
 function onProductSelectChange(selectEl) {
-    const selectedOption = selectEl.options[selectEl.selectedIndex];
-    if (!selectedOption) return;
-
-    const price = parseFloat(selectedOption.getAttribute("data-price")) || 0;
-    const hpp = parseFloat(selectedOption.getAttribute("data-hpp")) || 0;
-    const stock = parseInt(selectedOption.getAttribute("data-stock"), 10) || 0;
-    const unit = selectedOption.getAttribute("data-unit") || "Pcs";
+    const opt = selectEl.options[selectEl.selectedIndex];
+    if (!opt) return;
+    const price = parseFloat(opt.getAttribute("data-price")) || 0;
+    const hpp = parseFloat(opt.getAttribute("data-hpp")) || 0;
+    const stock = parseInt(opt.getAttribute("data-stock"), 10) || 0;
+    const unit = opt.getAttribute("data-unit") || "Pcs";
 
     const row = selectEl.closest("tr");
     if (row) {
         _applyProductInfoToContainer(row, { price, hpp, stock, unit });
         onItemQtyChange(row.querySelector(".item-qty") || selectEl);
     }
-
-    const nameAttr = selectEl.getAttribute("name");
-    const idxMatch = nameAttr && nameAttr.match(/items\[(\d+)\]/);
-    if (idxMatch) {
+    const m = selectEl.getAttribute("name")?.match(/items\[(\d+)\]/);
+    if (m) {
         const card = document.querySelector(
-            `.report-item-card[data-card-idx="${idxMatch[1]}"]`,
+            `.report-item-card[data-card-idx="${m[1]}"]`,
         );
         if (card) {
             _applyProductInfoToContainer(card, { price, hpp, stock, unit });
@@ -486,14 +463,14 @@ function onItemQtyChange(inputEl) {
     if (!container) return;
 
     const qtyInput = container.querySelector(".item-qty");
-    const qty = parseInt(qtyInput ? qtyInput.value : 0, 10) || 0;
+    const qty = parseInt(qtyInput?.value || 0, 10) || 0;
     const currentStock = parseInt(container.dataset.currentStock || 0, 10) || 0;
     const price = parseFloat(container.dataset.sellingPrice || 0) || 0;
     const hpp = parseFloat(container.dataset.hpp || 0) || 0;
 
     const warningText = container.querySelector(".stock-warning-text");
     if (qty > currentStock && currentStock >= 0) {
-        if (qtyInput) qtyInput.classList.add("is-invalid");
+        qtyInput?.classList.add("is-invalid");
         if (warningText) {
             warningText.style.display = "block";
             const msg =
@@ -501,7 +478,7 @@ function onItemQtyChange(inputEl) {
             msg.textContent = `Jumlah terjual (${qty}) melebihi stok tersedia (${currentStock})!`;
         }
     } else {
-        if (qtyInput) qtyInput.classList.remove("is-invalid");
+        qtyInput?.classList.remove("is-invalid");
         if (warningText) warningText.style.display = "none";
     }
 
@@ -510,88 +487,68 @@ function onItemQtyChange(inputEl) {
     const margin = totalPrice - totalHpp;
     const fmt = (v) => "Rp " + Math.round(v).toLocaleString("id-ID");
 
-    const totalPriceDisplay = container.querySelector(
-        ".item-total-price-display",
-    );
-    const totalHppDisplay = container.querySelector(".item-total-hpp-display");
-    const marginDisplay = container.querySelector(".item-margin-display");
-    const marginBar = container.querySelector(".ric-margin-bar");
+    const set = (sel, val, cls) => {
+        const el = container.querySelector(sel);
+        if (!el) return;
+        el.textContent = val;
+        if (cls !== undefined) {
+            el.classList.toggle("text-danger", cls < 0);
+            el.classList.toggle("text-success", cls >= 0);
+        }
+    };
+    set(".item-total-price-display", fmt(totalPrice));
+    set(".item-total-hpp-display", fmt(totalHpp));
+    set(".item-margin-display", fmt(margin), margin);
+    const bar = container.querySelector(".ric-margin-bar");
+    if (bar) bar.classList.toggle("negative", margin < 0);
 
-    if (totalPriceDisplay) totalPriceDisplay.textContent = fmt(totalPrice);
-    if (totalHppDisplay) totalHppDisplay.textContent = fmt(totalHpp);
-    if (marginDisplay) {
-        marginDisplay.textContent = fmt(margin);
-        marginDisplay.classList.toggle("text-danger", margin < 0);
-        marginDisplay.classList.toggle("text-success", margin >= 0);
-    }
-    if (marginBar) marginBar.classList.toggle("negative", margin < 0);
-
-    const nameAttr = qtyInput && qtyInput.getAttribute("name");
-    const idxMatch = nameAttr && nameAttr.match(/items\[(\d+)\]/);
-    if (idxMatch) {
-        const idx = idxMatch[1];
-        if (row) {
-            const pairedCard = document.querySelector(
-                `.report-item-card[data-card-idx="${idx}"]`,
-            );
-            if (pairedCard) {
-                const pQty = pairedCard.querySelector(".item-qty");
-                if (pQty) pQty.value = qtyInput ? qtyInput.value : "";
-                pairedCard.dataset.currentStock = currentStock;
-                pairedCard.dataset.sellingPrice = price;
-                pairedCard.dataset.hpp = hpp;
-                const pTotal = pairedCard.querySelector(
-                    ".item-total-price-display",
+    // Sync pair
+    const m = qtyInput?.getAttribute("name")?.match(/items\[(\d+)\]/);
+    if (m) {
+        const idx = m[1];
+        const syncPair = (pairEl) => {
+            if (!pairEl) return;
+            const pQty = pairEl.querySelector(".item-qty");
+            if (pQty) pQty.value = qtyInput?.value ?? "";
+            pairEl.dataset.currentStock = currentStock;
+            pairEl.dataset.sellingPrice = price;
+            pairEl.dataset.hpp = hpp;
+            const ps = (sel) => {
+                const e = pairEl.querySelector(sel);
+                return e;
+            };
+            if (ps(".item-total-price-display"))
+                ps(".item-total-price-display").textContent = fmt(totalPrice);
+            if (ps(".item-total-hpp-display"))
+                ps(".item-total-hpp-display").textContent = fmt(totalHpp);
+            if (ps(".item-margin-display")) {
+                ps(".item-margin-display").textContent = fmt(margin);
+                ps(".item-margin-display").classList.toggle(
+                    "text-danger",
+                    margin < 0,
                 );
-                const pTotalHpp = pairedCard.querySelector(
-                    ".item-total-hpp-display",
+                ps(".item-margin-display").classList.toggle(
+                    "text-success",
+                    margin >= 0,
                 );
-                const pMargin = pairedCard.querySelector(
-                    ".item-margin-display",
-                );
-                const pBar = pairedCard.querySelector(".ric-margin-bar");
-                if (pTotal) pTotal.textContent = fmt(totalPrice);
-                if (pTotalHpp) pTotalHpp.textContent = fmt(totalHpp);
-                if (pMargin) {
-                    pMargin.textContent = fmt(margin);
-                    pMargin.classList.toggle("text-danger", margin < 0);
-                    pMargin.classList.toggle("text-success", margin >= 0);
-                }
-                if (pBar) pBar.classList.toggle("negative", margin < 0);
             }
+            const pb = pairEl.querySelector(".ric-margin-bar");
+            if (pb) pb.classList.toggle("negative", margin < 0);
+        };
+
+        if (row) {
+            syncPair(
+                document.querySelector(
+                    `.report-item-card[data-card-idx="${idx}"]`,
+                ),
+            );
         } else if (card) {
-            const pairedSelect = document.querySelector(
+            const sel = document.querySelector(
                 `#reportItemRows .product-select[name="items[${idx}][product_id]"]`,
             );
-            if (pairedSelect) {
-                const pairedRow = pairedSelect.closest("tr");
-                if (pairedRow) {
-                    const pQty = pairedRow.querySelector(".item-qty");
-                    if (pQty) pQty.value = qtyInput ? qtyInput.value : "";
-                    pairedRow.dataset.currentStock = currentStock;
-                    pairedRow.dataset.sellingPrice = price;
-                    pairedRow.dataset.hpp = hpp;
-                    const pTotal = pairedRow.querySelector(
-                        ".item-total-price-display",
-                    );
-                    const pTotalHpp = pairedRow.querySelector(
-                        ".item-total-hpp-display",
-                    );
-                    const pMargin = pairedRow.querySelector(
-                        ".item-margin-display",
-                    );
-                    if (pTotal) pTotal.textContent = fmt(totalPrice);
-                    if (pTotalHpp) pTotalHpp.textContent = fmt(totalHpp);
-                    if (pMargin) {
-                        pMargin.textContent = fmt(margin);
-                        pMargin.classList.toggle("text-danger", margin < 0);
-                        pMargin.classList.toggle("text-success", margin >= 0);
-                    }
-                }
-            }
+            syncPair(sel?.closest("tr"));
         }
     }
-
     recalculateReportTotals();
 }
 
@@ -603,11 +560,11 @@ function recalculateReportTotals() {
         grandHpp = 0;
 
     rows.forEach((row) => {
-        const productSelect = row.querySelector(".product-select");
-        if (productSelect && productSelect.value) {
+        const sel = row.querySelector(".product-select");
+        if (sel && sel.value) {
             totalItems++;
-            const qtyInput = row.querySelector(".item-qty");
-            const qty = parseInt(qtyInput ? qtyInput.value : 0, 10) || 0;
+            const qty =
+                parseInt(row.querySelector(".item-qty")?.value || 0, 10) || 0;
             const price = parseFloat(row.dataset.sellingPrice || 0) || 0;
             const hpp = parseFloat(row.dataset.hpp || 0) || 0;
             totalQty += qty;
@@ -619,7 +576,6 @@ function recalculateReportTotals() {
     const grandMargin = grandSales - grandHpp;
     const fmt = (v) => "Rp " + Math.round(v).toLocaleString("id-ID");
     const el = (id) => document.getElementById(id);
-
     if (el("displayTotalItems"))
         el("displayTotalItems").textContent = totalItems + " Produk";
     if (el("displayTotalQty"))
@@ -641,7 +597,6 @@ function recalculateReportTotals() {
     }
 }
 
-// ── Delete Confirmation Modal ── //
 function openDeleteModal(id, dateStr, totalQty, totalSales) {
     const dateEl = document.getElementById("deleteReportDate");
     const formEl = document.getElementById("deleteReportForm");
@@ -654,13 +609,13 @@ function openDeleteModal(id, dateStr, totalQty, totalSales) {
         salesSpan.textContent =
             "Rp " + Number(totalSales).toLocaleString("id-ID");
     const modalEl = document.getElementById("modalDeleteReport");
-    if (modalEl && typeof bootstrap !== "undefined") {
-        const modal = new bootstrap.Modal(modalEl);
-        modal.show();
-    }
+    if (modalEl && typeof bootstrap !== "undefined")
+        new bootstrap.Modal(modalEl).show();
 }
 
-// ── Expose ── //
+/* ════════════════════════════════════════════════════════════
+   EXPOSE GLOBALS
+   ════════════════════════════════════════════════════════════ */
 window.toggleSearchableSelect = toggleSearchableSelect;
 window.filterSearchableOptions = filterSearchableOptions;
 window.selectSearchableOption = selectSearchableOption;
@@ -674,25 +629,25 @@ window.onItemQtyChange = onItemQtyChange;
 window.recalculateReportTotals = recalculateReportTotals;
 window.openDeleteModal = openDeleteModal;
 
-// ── Initialize on DOM ready ── //
+/* ════════════════════════════════════════════════════════════
+   DOM READY
+   ════════════════════════════════════════════════════════════ */
 document.addEventListener("DOMContentLoaded", function () {
-    // ── Create/Edit form init ── //
     const reportTbody = document.getElementById("reportItemRows");
     if (reportTbody) {
-        const existingRows = reportTbody.querySelectorAll(".report-item-row");
-        if (existingRows.length === 0) {
+        const existing = reportTbody.querySelectorAll(".report-item-row");
+        if (existing.length === 0) {
             addReportItemRow();
         } else {
-            existingRows.forEach((r) => {
-                const select = r.querySelector(".product-select");
-                if (select && select.value) onProductSelectChange(select);
+            existing.forEach((r) => {
+                const sel = r.querySelector(".product-select");
+                if (sel && sel.value) onProductSelectChange(sel);
             });
             updateRowNumbers();
             recalculateReportTotals();
         }
     }
 
-    // ── Auto-dismiss alerts ── //
     const alerts = document.querySelectorAll(".alert-dismissible");
     if (alerts.length > 0) {
         setTimeout(function () {
@@ -706,126 +661,143 @@ document.addEventListener("DOMContentLoaded", function () {
         }, 5000);
     }
 
-    // ══════════════════════════════════════════════════════════════════
-    // MOBILE SEARCH — filter card list langsung di DOM
-    // ══════════════════════════════════════════════════════════════════
-    const mobileSearchInput = document.getElementById("mobileSearchInput");
-    if (mobileSearchInput) {
-        mobileSearchInput.addEventListener("input", function () {
+    // Mobile search
+    const mobileSearch = document.getElementById("mobileSearchInput");
+    if (mobileSearch) {
+        mobileSearch.addEventListener("input", function () {
             const q = this.value.toLowerCase().trim();
-            const cards = document.querySelectorAll(
-                "#mobileReportCards .mobile-report-card",
-            );
             let hasVisible = false;
-
-            cards.forEach((card) => {
-                const searchData = (card.dataset.search || "").toLowerCase();
-                const match = !q || searchData.includes(q);
-                card.style.display = match ? "" : "none";
-                if (match) hasVisible = true;
-            });
-
+            document
+                .querySelectorAll("#mobileReportCards .mobile-report-card")
+                .forEach((card) => {
+                    const match =
+                        !q ||
+                        (card.dataset.search || "").toLowerCase().includes(q);
+                    card.style.display = match ? "" : "none";
+                    if (match) hasVisible = true;
+                });
             const noResult = document.getElementById("mobileNoResult");
             if (noResult) noResult.classList.toggle("d-none", hasVisible);
         });
     }
 });
 
-// ══════════════════════════════════════════════════════════════════
-// DESKTOP: jQuery / DataTables for Index page
-//
-// KUNCI PERBAIKAN:
-//   dom: '<"reports-dt-scroll"t><"#reportsDtFooter"ip>'
-//        ↑ tabel berada di dalam div.reports-dt-scroll (overflow-x: auto)
-//        ↑ info (i) dan pagination (p) ditempatkan di div#reportsDtFooter
-//          yang sudah ada di HTML di luar scroll wrapper
-// ══════════════════════════════════════════════════════════════════
+/* ════════════════════════════════════════════════════════════
+   DATATABLES — INDEX PAGE (Laporan Penjualan)
+   Mobile (< 768px) : responsive false → card HTML lama
+   Desktop (≥ 768px): responsive inline child row
+   Kolom disembunyikan duluan:
+     Total Margin (6)  → responsivePriority: 11
+     Dibuat Oleh  (7)  → responsivePriority: 12
+   ════════════════════════════════════════════════════════════ */
 if (typeof jQuery !== "undefined") {
     jQuery(document).ready(function ($) {
-        if ($("#reportsDataTable").length > 0) {
-            const dataTable = $("#reportsDataTable").DataTable({
-                responsive: false,
-                order: [[1, "desc"]],
-                columnDefs: [{ targets: "no-sort", orderable: false }],
-                language: {
-                    emptyTable:
-                        "Belum ada laporan penjualan yang tercatat. Klik tombol '+ Buat Laporan Penjualan' untuk membuat laporan baru.",
-                    zeroRecords:
-                        "Tidak ada laporan penjualan yang cocok dengan pencarian",
-                    info: "Showing _START_–_END_ dari _TOTAL_ entries",
-                    infoEmpty: "Tidak ada laporan",
-                    infoFiltered: "(difilter dari _MAX_ total)",
-                    paginate: {
-                        first: "«",
-                        previous: "‹",
-                        next: "›",
-                        last: "»",
-                    },
-                },
-                pagingType: "full_numbers",
-                pageLength: 10,
-                /*
-                 * dom explanation:
-                 *   <"reports-dt-scroll"t>  → tabel dibungkus div.reports-dt-scroll
-                 *                             yang hanya overflow-x: auto
-                 *   <"#reportsDtFooter"ip>  → info + pagination dimasukkan ke
-                 *                             #reportsDtFooter yang ada di luar
-                 *                             scroll wrapper, sehingga TIDAK ikut scroll
-                 */
-                dom: '<"reports-dt-scroll"t><"#reportsDtFooter"ip>',
-            });
+        if ($("#reportsDataTable").length === 0) return;
 
-            // Search dari custom input
-            $("#dtSearchInput").on("keyup input", function () {
-                dataTable.search(this.value).draw();
-            });
+        const isMobile = window.innerWidth < 768;
 
-            // Filter tanggal
-            $("#btnApplyFilter").on("click", function () {
-                applyFilters();
-            });
-            $("#btnResetFilter").on("click", function () {
-                $("#modalFilterStartDate").val("");
-                $("#modalFilterEndDate").val("");
-                applyFilters();
-            });
+        const dataTable = $("#reportsDataTable").DataTable({
+            responsive: isMobile
+                ? false
+                : {
+                      details: {
+                          type: "inline",
+                          target: "tr",
+                          renderer:
+                              $.fn.dataTable.Responsive.renderer.listHiddenNodes(),
+                      },
+                  },
 
-            function applyFilters() {
-                const startDate = $("#modalFilterStartDate").val();
-                const endDate = $("#modalFilterEndDate").val();
+            order: [[1, "desc"]],
 
-                $.fn.dataTable.ext.search = $.fn.dataTable.ext.search.filter(
-                    (fn) => fn.name !== "reportDateRangeFilter",
-                );
+            columnDefs: [
+                { targets: "no-sort", orderable: false },
+                // Prioritas — makin kecil = makin dipertahankan
+                { targets: 0, responsivePriority: 1 }, // No
+                { targets: 1, responsivePriority: 2 }, // Tanggal
+                { targets: 2, responsivePriority: 6 }, // Jumlah Produk
+                { targets: 3, responsivePriority: 7 }, // Produk Terjual
+                { targets: 4, responsivePriority: 3 }, // Total Penjualan
+                { targets: 5, responsivePriority: 4 }, // Total HPP
+                { targets: 6, responsivePriority: 11 }, // Total Margin  — disembunyikan duluan
+                { targets: 7, responsivePriority: 12 }, // Dibuat Oleh   — disembunyikan duluan
+                { targets: 8, responsivePriority: 1 }, // Aksi          — selalu tampil
+            ],
 
-                if (startDate || endDate) {
-                    const reportDateRangeFilter = function (
-                        settings,
-                        data,
-                        dataIndex,
-                    ) {
-                        if (settings.nTable.id !== "reportsDataTable")
-                            return true;
-                        const rawDate = $(dataTable.row(dataIndex).node()).attr(
-                            "data-date",
-                        );
-                        if (!rawDate) return true;
-                        if (startDate && rawDate < startDate) return false;
-                        if (endDate && rawDate > endDate) return false;
-                        return true;
-                    };
-                    $.fn.dataTable.ext.search.push(reportDateRangeFilter);
+            scrollX: false,
+            autoWidth: false,
+
+            language: {
+                emptyTable:
+                    "Belum ada laporan penjualan yang tercatat. Klik tombol '+ Tambah' untuk membuat laporan baru.",
+                zeroRecords:
+                    "Tidak ada laporan penjualan yang cocok dengan pencarian",
+                info: "Menampilkan _START_–_END_ dari _TOTAL_ data",
+                infoEmpty: "Tidak ada laporan",
+                infoFiltered: "(difilter dari _MAX_ total)",
+                paginate: { first: "«", previous: "‹", next: "›", last: "»" },
+            },
+            pagingType: "full_numbers",
+            dom: '<"table-responsive-wrapper"t><"d-flex flex-column flex-sm-row align-items-center justify-content-between p-3 gap-2 bg-white"ip>',
+            pageLength: 10,
+        });
+
+        // Resize handler
+        let resizeTimer;
+        $(window).on("resize", function () {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(function () {
+                if (window.innerWidth < 768 !== isMobile) {
+                    dataTable.destroy();
                 }
+            }, 300);
+        });
 
-                dataTable.draw();
-                if (startDate || endDate) {
-                    $("#activeFilterBadge").removeClass("d-none");
-                    $("#activeFilterBadgeMobile").removeClass("d-none");
-                } else {
-                    $("#activeFilterBadge").addClass("d-none");
-                    $("#activeFilterBadgeMobile").addClass("d-none");
-                }
+        // Search
+        $("#dtSearchInput").on("keyup input", function () {
+            dataTable.search(this.value).draw();
+        });
+
+        // Filter
+        $("#btnApplyFilter").on("click", function () {
+            applyFilters();
+        });
+        $("#btnResetFilter").on("click", function () {
+            $("#modalFilterStartDate").val("");
+            $("#modalFilterEndDate").val("");
+            applyFilters();
+        });
+
+        function applyFilters() {
+            const startDate = $("#modalFilterStartDate").val();
+            const endDate = $("#modalFilterEndDate").val();
+
+            $.fn.dataTable.ext.search = $.fn.dataTable.ext.search.filter(
+                (fn) => fn.name !== "reportDateRangeFilter",
+            );
+
+            if (startDate || endDate) {
+                const reportDateRangeFilter = function (
+                    settings,
+                    data,
+                    dataIndex,
+                ) {
+                    if (settings.nTable.id !== "reportsDataTable") return true;
+                    const rawDate = $(dataTable.row(dataIndex).node()).attr(
+                        "data-date",
+                    );
+                    if (!rawDate) return true;
+                    if (startDate && rawDate < startDate) return false;
+                    if (endDate && rawDate > endDate) return false;
+                    return true;
+                };
+                $.fn.dataTable.ext.search.push(reportDateRangeFilter);
             }
+
+            dataTable.draw();
+            const active = !!(startDate || endDate);
+            $("#activeFilterBadge").toggleClass("d-none", !active);
+            $("#activeFilterBadgeMobile").toggleClass("d-none", !active);
         }
     });
 }

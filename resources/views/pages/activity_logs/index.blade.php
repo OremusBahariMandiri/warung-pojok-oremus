@@ -66,7 +66,6 @@
 <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-2 mb-4">
     <div>
         <h4 class="fw-bold text-dark mb-1">Log Aktivitas Sistem</h4>
-        <p class="text-muted small mb-0">Audit trail dan rekam jejak riwayat mutasi data serta aktivitas pengguna di Warjok.</p>
     </div>
 </div>
 
@@ -88,7 +87,7 @@
 @endif
 
 <!-- Quick Stat Cards -->
-<div class="row g-3 mb-4">
+{{-- <div class="row g-3 mb-4">
     <div class="col-6 col-lg-3">
         <div class="log-stat-card d-flex align-items-center gap-3">
             <div class="log-stat-icon bg-primary bg-opacity-10 text-primary">
@@ -133,15 +132,15 @@
             </div>
         </div>
     </div>
-</div>
+</div> --}}
 
 {{-- ═══════════════════════════════════════════════════════════════
      DESKTOP LAYOUT (>= 768px) — DataTables Table
      ═══════════════════════════════════════════════════════════════ --}}
-<div class="card-box border rounded-3 overflow-hidden shadow-sm bg-white mb-4 d-none d-md-block">
+<div class="card-box border rounded-3 overflow-hidden shadow-sm bg-white mb-4 activity-logs-desktop-card">
 
     <!-- Action & Filter Header -->
-    <div class="p-3 d-flex align-items-center justify-content-between gap-3">
+    <div class="py-3 d-flex align-items-center justify-content-between gap-3">
         <!-- Left: Search Box -->
         <div class="position-relative activity-search-box">
             <i class="bi bi-search position-absolute top-50 start-0 translate-middle-y ms-3 text-muted"></i>
@@ -160,117 +159,114 @@
     </div>
 
     <!-- DataTables Table -->
-    <div class="activity-dt-scroll">
-        <table class="table table-bordered table-hover align-middle mb-0 w-100 text-nowrap" id="activityLogsDataTable">
-            <thead>
-                <tr>
-                    <th style="width: 50px;" class="text-center">No</th>
-                    <th style="width: 160px;" class="text-center">Waktu & Tanggal</th>
-                    <th style="width: 120px;" class="text-center">Modul</th>
-                    <th style="width: 110px;" class="text-center">Aksi</th>
-                    <th class="text-center">Deskripsi Aktivitas</th>
-                    <th style="width: 180px;" class="text-center">Pengguna</th>
-                    <th style="width: 100px;" class="text-center no-sort">Aksi</th>
+    <table class="table table-bordered table-hover align-middle mb-0 w-100 text-nowrap" id="activityLogsDataTable">
+        <thead>
+            <tr>
+                <th style="width: 50px;" class="text-center">No</th>
+                <th style="width: 160px;" class="text-center">Waktu & Tanggal</th>
+                <th style="width: 120px;" class="text-center">Modul</th>
+                <th style="width: 110px;" class="text-center">Aksi</th>
+                <th class="text-center">Deskripsi Aktivitas</th>
+                <th style="width: 180px;" class="text-center">Pengguna</th>
+                <th style="width: 100px;" class="text-center no-sort">Aksi</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach ($logList as $log)
+                @php
+                    $actor = $log->user;
+                    $actorName = $actor->employee_name ?? $actor->email ?? 'Sistem / Cron';
+                    $initials = strtoupper(substr(trim($actorName), 0, 2));
+                    $formattedDate = $log->created_at ? $log->created_at->format('d M Y, H:i:s') : '-';
+                    $rawDate = $log->created_at ? $log->created_at->format('Y-m-d') : '';
+                    $relativeTime = $log->created_at ? $log->created_at->diffForHumans() : '';
+                    $actionClass = getLogActionClass($log->action);
+                    $actionIcon = getLogActionIcon($log->action);
+
+                    // Payload for quick preview modal
+                    $quickPayload = [
+                        'id' => $log->id,
+                        'action' => strtoupper($log->action ?? '-'),
+                        'module' => strtoupper($log->module ?? '-'),
+                        'description' => $log->description,
+                        'user_name' => $actorName,
+                        'time' => $formattedDate . ' (' . $relativeTime . ')',
+                        'ip' => $log->ip_address ?? '127.0.0.1',
+                        'old_values' => $log->old_values,
+                        'new_values' => $log->new_values,
+                    ];
+                @endphp
+                <tr data-date="{{ $rawDate }}" data-module="{{ strtoupper($log->module ?? '') }}" data-action="{{ strtoupper($log->action ?? '') }}">
+                    {{-- #1 No --}}
+                    <td class="text-center text-muted fw-medium small">{{ $loop->iteration }}</td>
+
+                    {{-- #2 Waktu --}}
+                    <td class="text-center" data-order="{{ $log->created_at ? $log->created_at->timestamp : 0 }}">
+                        <div class="text-dark fw-semibold small">{{ $log->created_at ? $log->created_at->format('d M Y, H:i') : '-' }}</div>
+                        <div class="text-muted" style="font-size: 0.7rem;">{{ $relativeTime }}</div>
+                    </td>
+
+                    {{-- #3 Modul --}}
+                    <td class="text-center">
+                        <span class="badge-module">
+                            <i class="bi bi-folder2 me-1 text-secondary"></i>{{ strtoupper($log->module ?? 'SYSTEM') }}
+                        </span>
+                    </td>
+
+                    {{-- #4 Aksi --}}
+                    <td class="text-center">
+                        <span class="badge-action {{ $actionClass }}">
+                            <i class="bi {{ $actionIcon }}"></i> {{ strtoupper($log->action ?? 'LOG') }}
+                        </span>
+                    </td>
+
+                    {{-- #5 Deskripsi --}}
+                    <td>
+                        <div class="text-dark fw-medium fs-sm text-truncate" style="max-width: 420px;" title="{{ $log->description }}">
+                            {{ $log->description ?: "Aktivitas pada modul {$log->module}" }}
+                        </div>
+                        @if ($log->entity_type)
+                            <div class="text-muted small" style="font-size: 0.72rem;">
+                                <span class="font-monospace">{{ class_basename($log->entity_type) }}</span> (ID: {{ $log->entity_id }})
+                            </div>
+                        @endif
+                    </td>
+
+                    {{-- #6 User --}}
+                    <td>
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="actor-avatar-sm">{{ $initials }}</div>
+                            <div class="d-flex flex-column">
+                                <span class="text-dark fw-semibold small text-truncate" style="max-width: 120px;">{{ $actorName }}</span>
+                                <span class="ip-tag mt-1">{{ $log->ip_address ?? '127.0.0.1' }}</span>
+                            </div>
+                        </div>
+                    </td>
+
+                    {{-- #7 Aksi Detail --}}
+                    <td class="text-center">
+                        <div class="d-inline-flex align-items-center gap-1">
+                            <button type="button" class="btn btn-sm btn-outline-secondary rounded-2 px-2 py-1"
+                                    title="Quick Preview Data"
+                                    data-log="{{ json_encode($quickPayload) }}"
+                                    onclick="openQuickLogModal(this)">
+                                <i class="bi bi-search"></i>
+                            </button>
+                            <a href="{{ route('activity_logs.show', $log->id) }}" class="btn btn-sm btn-outline-success rounded-2 px-2 py-1" title="Detail">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                        </div>
+                    </td>
                 </tr>
-            </thead>
-            <tbody>
-                @foreach ($logList as $log)
-                    @php
-                        $actor = $log->user;
-                        $actorName = $actor->employee_name ?? $actor->email ?? 'Sistem / Cron';
-                        $initials = strtoupper(substr(trim($actorName), 0, 2));
-                        $formattedDate = $log->created_at ? $log->created_at->format('d M Y, H:i:s') : '-';
-                        $rawDate = $log->created_at ? $log->created_at->format('Y-m-d') : '';
-                        $relativeTime = $log->created_at ? $log->created_at->diffForHumans() : '';
-                        $actionClass = getLogActionClass($log->action);
-                        $actionIcon = getLogActionIcon($log->action);
-
-                        // Payload for quick preview modal
-                        $quickPayload = [
-                            'id' => $log->id,
-                            'action' => strtoupper($log->action ?? '-'),
-                            'module' => strtoupper($log->module ?? '-'),
-                            'description' => $log->description,
-                            'user_name' => $actorName,
-                            'time' => $formattedDate . ' (' . $relativeTime . ')',
-                            'ip' => $log->ip_address ?? '127.0.0.1',
-                            'old_values' => $log->old_values,
-                            'new_values' => $log->new_values,
-                        ];
-                    @endphp
-                    <tr data-date="{{ $rawDate }}" data-module="{{ strtoupper($log->module ?? '') }}" data-action="{{ strtoupper($log->action ?? '') }}">
-                        {{-- #1 No --}}
-                        <td class="text-center text-muted fw-medium small">{{ $loop->iteration }}</td>
-
-                        {{-- #2 Waktu --}}
-                        <td class="text-center" data-order="{{ $log->created_at ? $log->created_at->timestamp : 0 }}">
-                            <div class="text-dark fw-semibold small">{{ $log->created_at ? $log->created_at->format('d M Y, H:i') : '-' }}</div>
-                            <div class="text-muted" style="font-size: 0.7rem;">{{ $relativeTime }}</div>
-                        </td>
-
-                        {{-- #3 Modul --}}
-                        <td class="text-center">
-                            <span class="badge-module">
-                                <i class="bi bi-folder2 me-1 text-secondary"></i>{{ strtoupper($log->module ?? 'SYSTEM') }}
-                            </span>
-                        </td>
-
-                        {{-- #4 Aksi --}}
-                        <td class="text-center">
-                            <span class="badge-action {{ $actionClass }}">
-                                <i class="bi {{ $actionIcon }}"></i> {{ strtoupper($log->action ?? 'LOG') }}
-                            </span>
-                        </td>
-
-                        {{-- #5 Deskripsi --}}
-                        <td>
-                            <div class="text-dark fw-medium fs-sm text-truncate" style="max-width: 420px;" title="{{ $log->description }}">
-                                {{ $log->description ?: "Aktivitas pada modul {$log->module}" }}
-                            </div>
-                            @if ($log->entity_type)
-                                <div class="text-muted small" style="font-size: 0.72rem;">
-                                    <span class="font-monospace">{{ class_basename($log->entity_type) }}</span> (ID: {{ $log->entity_id }})
-                                </div>
-                            @endif
-                        </td>
-
-                        {{-- #6 User --}}
-                        <td>
-                            <div class="d-flex align-items-center gap-2">
-                                <div class="actor-avatar-sm">{{ $initials }}</div>
-                                <div class="d-flex flex-column">
-                                    <span class="text-dark fw-semibold small text-truncate" style="max-width: 120px;">{{ $actorName }}</span>
-                                    <span class="ip-tag mt-1">{{ $log->ip_address ?? '127.0.0.1' }}</span>
-                                </div>
-                            </div>
-                        </td>
-
-                        {{-- #7 Aksi Detail --}}
-                        <td class="text-center">
-                            <div class="d-inline-flex align-items-center gap-1">
-                                <button type="button" class="btn btn-sm btn-outline-secondary rounded-2 px-2 py-1"
-                                        title="Quick Preview Data"
-                                        data-log="{{ json_encode($quickPayload) }}"
-                                        onclick="openQuickLogModal(this)">
-                                    <i class="bi bi-search"></i>
-                                </button>
-                                <a href="{{ route('activity_logs.show', $log->id) }}" class="btn btn-sm btn-outline-success rounded-2 px-2 py-1" title="Detail">
-                                    <i class="bi bi-eye"></i>
-                                </a>
-                            </div>
-                        </td>
-                    </tr>
-                @endforeach
-            </tbody>
-        </table>
-    </div>
-
+            @endforeach
+        </tbody>
+    </table>
 </div>
 
 {{-- ═══════════════════════════════════════════════════════════════
      MOBILE LAYOUT (< 768px) — Responsive Card List
      ═══════════════════════════════════════════════════════════════ --}}
-<div class="d-block d-md-none mb-4">
+<div class="activity-logs-mobile-wrapper mb-4">
     <div class="card border-0 shadow-sm rounded-3 overflow-hidden">
         
         <!-- Mobile Header Toolbar -->
@@ -501,9 +497,10 @@
 @endsection
 
 @push('scripts')
-<!-- jQuery & DataTables JS -->
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-<script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script> 
 <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
+<script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
+<script src="https://cdn.datatables.net/responsive/2.5.0/js/responsive.bootstrap5.min.js"></script>
 <script src="{{ asset('js/activity_logs.js') }}"></script>
 @endpush

@@ -17,7 +17,7 @@ return new class extends Migration
             $table->string("restock_code");
             $table->timestamp("restock_date");
             $table->string("supplier_name", 180);
-            $table->text("notes");
+            $table->text("notes")->nullable();
             $table->timestamps();
         });
     }

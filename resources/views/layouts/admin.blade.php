@@ -181,7 +181,7 @@
                             </li>
                             <li class="submenu-item">
                                 <a href="{{ Route::has('users.index') ? route('users.index') : '#' }}" 
-                                class="submenu-link {{ request()->routeIs('users.index', 'users.create', 'users.edit') || (request()->routeIs('users.show') && request()->route('user')?->id != auth()->id()) ? 'active' : '' }}">
+                                class="submenu-link {{ request()->routeIs('users.index', 'users.create', 'users.edit', 'users.access.show') || (request()->routeIs('users.show') && request()->route('user')?->id != auth()->id()) ? 'active' : '' }}">
                                     <span class="submenu-dot"></span>
                                     <span>Kelola Pengguna</span>
                                 </a>

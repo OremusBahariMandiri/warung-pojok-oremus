@@ -696,3 +696,232 @@ table.dataTable thead > tr > th.no-sort {
 .reports-cards-mobile {
     display: none;
 }
+
+/* =============================================================
+   TAMBAHAN — DataTables Responsive (Desktop Index Page)
+   Pola sama dengan hpp.css, products.css, restock.css
+   ============================================================= */
+
+/* ── Hilangkan overflow-x & scroll lama ─────────────────────── */
+#reportsDataTable_wrapper {
+    overflow-x: visible !important;
+}
+.reports-dt-scroll {
+    overflow-x: visible !important;
+}
+
+/* ── Table header konsisten ──────────────────────────────────── */
+#reportsDataTable thead th {
+    background-color: #f8fafc;
+    font-weight: 700 !important;
+    color: #475569;
+    font-size: 0.72rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    vertical-align: middle;
+    white-space: nowrap;
+}
+#reportsDataTable.table-bordered {
+    border: 1px solid #e2e8f0;
+}
+#reportsDataTable.table-bordered th,
+#reportsDataTable.table-bordered td {
+    border: 1px solid #e2e8f0;
+    padding: 0.6rem 0.8rem;
+}
+#reportsDataTable tbody tr {
+    transition: background-color 0.12s ease;
+}
+#reportsDataTable tbody tr:hover > td {
+    background-color: #f8fafc !important;
+}
+#reportsDataTable tbody td {
+    font-size: 0.83rem;
+    color: #334155;
+    vertical-align: middle;
+}
+
+/* ── Sorting arrows ──────────────────────────────────────────── */
+#reportsDataTable_wrapper table.dataTable thead > tr > th.sorting,
+#reportsDataTable_wrapper table.dataTable thead > tr > th.sorting_asc,
+#reportsDataTable_wrapper table.dataTable thead > tr > th.sorting_desc {
+    padding-right: 1.8rem !important;
+}
+#reportsDataTable_wrapper table.dataTable thead > tr > th.sorting::before,
+#reportsDataTable_wrapper table.dataTable thead > tr > th.sorting::after,
+#reportsDataTable_wrapper table.dataTable thead > tr > th.sorting_asc::before,
+#reportsDataTable_wrapper table.dataTable thead > tr > th.sorting_asc::after,
+#reportsDataTable_wrapper table.dataTable thead > tr > th.sorting_desc::before,
+#reportsDataTable_wrapper table.dataTable thead > tr > th.sorting_desc::after {
+    right: 0.55rem !important;
+    opacity: 0.45;
+}
+#reportsDataTable_wrapper table.dataTable thead > tr > th.sorting_asc::before,
+#reportsDataTable_wrapper table.dataTable thead > tr > th.sorting_desc::after {
+    opacity: 1;
+}
+
+/* ── Pagination redesign ─────────────────────────────────────── */
+#reportsDataTable_wrapper .dataTables_paginate .pagination {
+    gap: 3px;
+}
+#reportsDataTable_wrapper .dataTables_paginate .page-item .page-link {
+    font-size: 0.78rem;
+    padding: 0.3rem 0.58rem;
+    color: #64748b;
+    background-color: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px !important;
+    min-width: 28px;
+    text-align: center;
+    transition: all 0.12s;
+    font-weight: 500;
+    margin-left: 0 !important;
+}
+#reportsDataTable_wrapper .dataTables_paginate .page-item .page-link:hover {
+    background-color: #f0fdf4;
+    border-color: #86efac;
+    color: #16a34a;
+}
+#reportsDataTable_wrapper .dataTables_paginate .page-item.active .page-link {
+    background-color: #22c55e;
+    border-color: #22c55e;
+    color: #fff;
+    font-weight: 700;
+    box-shadow: 0 2px 6px rgba(34, 197, 94, 0.35);
+}
+#reportsDataTable_wrapper .dataTables_paginate .page-item.disabled .page-link {
+    color: #cbd5e1;
+    background-color: #f8fafc;
+    border-color: #f1f5f9;
+}
+#reportsDataTable_wrapper .dataTables_info {
+    font-size: 0.78rem;
+    color: #94a3b8;
+}
+
+/* ── Arrow expand/collapse — segitiga solid ▶ / ▼ ────────────
+   Default: ▶ kanan (tertutup), Expand: ▼ bawah hijau
+   ─────────────────────────────────────────────────────────── */
+#reportsDataTable_wrapper table.dataTable tbody td.dtr-control {
+    cursor: pointer;
+    text-align: center;
+    vertical-align: middle;
+    padding-left: 0.65rem !important;
+    padding-right: 0.5rem !important;
+    width: 28px !important;
+    min-width: 28px !important;
+}
+
+#reportsDataTable_wrapper table.dataTable tbody td.dtr-control::before {
+    display: inline-block !important;
+    width: 0 !important;
+    height: 0 !important;
+    border-radius: 0 !important;
+    background-color: transparent !important;
+    background-image: none !important;
+    border-top: 5px solid transparent !important;
+    border-bottom: 5px solid transparent !important;
+    border-left: 8px solid #94a3b8 !important;
+    border-right: none !important;
+    box-shadow: none !important;
+    content: "" !important;
+    vertical-align: middle !important;
+    transition:
+        transform 0.18s ease,
+        border-left-color 0.18s ease !important;
+    transform: rotate(0deg) !important;
+    transform-origin: 35% 50% !important;
+}
+
+#reportsDataTable_wrapper
+    table.dataTable
+    tbody
+    tr.parent
+    td.dtr-control::before {
+    border-left-color: #22c55e !important;
+    transform: rotate(90deg) !important;
+}
+
+#reportsDataTable_wrapper
+    table.dataTable
+    tbody
+    tr:not(.parent)
+    td.dtr-control:hover::before {
+    border-left-color: #475569 !important;
+}
+
+/* ── Child row ───────────────────────────────────────────────── */
+#reportsDataTable tbody td.child {
+    background-color: #f8fafc !important;
+    padding: 0.55rem 1.1rem !important;
+    border-top: none !important;
+}
+
+#reportsDataTable tbody td.child ul.dtr-details {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0 2rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+#reportsDataTable tbody td.child ul.dtr-details li {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.2rem 0;
+    border: none;
+}
+
+#reportsDataTable tbody td.child ul.dtr-details li span.dtr-title {
+    font-size: 0.68rem;
+    font-weight: 700;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    white-space: nowrap;
+}
+#reportsDataTable tbody td.child ul.dtr-details li span.dtr-title::after {
+    content: ":";
+}
+#reportsDataTable tbody td.child ul.dtr-details li span.dtr-data {
+    font-size: 0.8rem;
+    color: #334155;
+    font-weight: 500;
+}
+
+/* ── Mobile: sembunyikan child row & arrow ───────────────────── */
+@media (max-width: 767.98px) {
+    #reportsDataTable tbody td.child {
+        display: none !important;
+    }
+    #reportsDataTable_wrapper table.dataTable tbody td.dtr-control::before {
+        display: none !important;
+    }
+}
+
+/* ── Show/hide desktop table vs mobile card via CSS ─────────
+   Pola sama dengan hpp.css (tidak pakai d-none d-md-block
+   karena DataTables harus selalu ada di DOM saat inisialisasi)
+   ─────────────────────────────────────────────────────────── */
+
+/* Desktop: tabel tampil, mobile wrapper sembunyi */
+.reports-desktop-card {
+    display: block;
+}
+.reports-mobile-wrapper {
+    display: none;
+}
+
+/* Mobile: tabel sembunyi, mobile wrapper tampil */
+@media (max-width: 767.98px) {
+    .reports-desktop-card {
+        display: none !important;
+    }
+    .reports-mobile-wrapper {
+        display: block !important;
+    }
+}

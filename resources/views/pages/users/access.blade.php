@@ -51,7 +51,6 @@
 <div class="d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-3 mb-4">
     <div>
         <h4 class="fw-bold text-dark mb-1">Konfigurasi Hak Akses Pengguna</h4>
-        <p class="text-muted small mb-0">Atur otorisasi izin menu per modul untuk akun karyawan.</p>
     </div>
     <div class="d-flex align-items-center gap-2">
         <a href="{{ route('users.index') }}" class="btn btn-sm btn-outline-secondary rounded-2 px-3 d-inline-flex align-items-center gap-2">
@@ -125,7 +124,6 @@
         <!-- Header Bar: Title + SIPAS Centang Semua & Hapus Semua -->
         <div class="rbac-header-bar">
             <div class="rbac-title">
-                <i class="bi bi-shield-check text-success fs-5"></i>
                 <span>Konfigurasi Akses</span>
             </div>
             <div class="rbac-actions">
