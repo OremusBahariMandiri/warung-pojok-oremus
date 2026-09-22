@@ -93,8 +93,7 @@
                                 class="form-control @error('nrk') is-invalid @enderror" 
                                 id="nrk" 
                                 name="nrk" 
-                                value="{{ old('nrk') }}" 
-                                placeholder="Contoh: ADM001 / KAS001" 
+                                value="{{ old('nrk') }}"
                                 autocomplete="username"
                                 required 
                                 autofocus
@@ -113,8 +112,7 @@
                                 type="password" 
                                 class="form-control @error('password') is-invalid @enderror" 
                                 id="password" 
-                                name="password" 
-                                placeholder="Masukkan password Anda" 
+                                name="password"
                                 autocomplete="current-password"
                                 required
                             >

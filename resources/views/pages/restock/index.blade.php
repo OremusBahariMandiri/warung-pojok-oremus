@@ -82,65 +82,63 @@
     </div>
 
     {{-- ═══ DESKTOP: DataTables Table ═══ --}}
-    <div class="table-responsive">
-        <table class="table table-bordered table-hover align-middle mb-0 w-100 text-nowrap" id="restockDataTable">
-            <thead>
-                <tr>
-                    <th style="width: 50px;" class="text-center">No</th>
-                    <th style="width: 170px;">Kode Restock</th>
-                    <th class="text-center" style="width: 150px;">Tanggal Restock</th>
-                    <th class="text-center">Supplier</th>
-                    <th class="text-center" style="width: 160px;">Total Item Masuk</th>
-                    <th class="text-end" style="width: 160px;">Total Nilai Biaya</th>
-                    <th class="text-center" style="width: 140px;">Petugas</th>
-                    <th class="text-center no-sort" style="width: 110px;">Aksi</th>
+    <table class="table table-bordered table-hover align-middle mb-0 w-100 text-nowrap" id="restockDataTable">
+        <thead>
+            <tr>
+                <th style="width: 50px;" class="text-center">No</th>
+                <th style="width: 170px;">Kode Restock</th>
+                <th class="text-center" style="width: 150px;">Tanggal Restock</th>
+                <th class="text-center">Supplier</th>
+                <th class="text-center" style="width: 160px;">Total Item Masuk</th>
+                <th class="text-end" style="width: 160px;">Total Nilai Biaya</th>
+                <th class="text-center" style="width: 140px;">Petugas</th>
+                <th class="text-center no-sort" style="width: 110px;">Aksi</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach ($list as $item)
+                @php
+                    $rawDate = $item->restock_date ? $item->restock_date->format('Y-m-d') : '';
+                @endphp
+                <tr data-date="{{ $rawDate }}">
+                    <td class="text-center text-muted fw-medium">{{ $loop->iteration }}</td>
+                    <td>
+                        <span class="text-dark">{{ $item->restock_code }}</span>
+                    </td>
+                    <td class="text-center text-secondary small">
+                        {{ $item->restock_date ? $item->restock_date->format('d M Y, H:i') : '-' }}
+                    </td>
+                    <td>
+                        <div class="text-dark">{{ $item->supplier_name }}</div>
+                        @if ($item->notes)
+                            <div class="text-muted small text-truncate" style="max-width: 260px;">{{ $item->notes }}</div>
+                        @endif
+                    </td>
+                    <td class="text-center">
+                        <span class="text-dark">{{ (int)($item->items->count()) }} Produk</span>
+                        <span class="text-muted small">({{ (int)($item->total_quantity ?? 0) }} Unit)</span>
+                    </td>
+                    <td class="text-end text-dark">
+                        Rp {{ number_format($item->total_value ?? 0, 0, ',', '.') }}
+                    </td>
+                    <td class="text-center text-secondary small">
+                        {{ $item->creator->employee_name ?? 'Admin' }}
+                    </td>
+                    <td class="text-center">
+                        <div class="d-inline-flex gap-1 justify-content-center">
+                            <a href="{{ route('restock.show', $item->id) }}" class="btn btn-sm btn-info text-white px-2 py-1 rounded-2 shadow-none" title="Detail" style="background-color: #0ea5e9; border-color: #0ea5e9;">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                            <button type="button" class="btn btn-sm btn-danger text-white px-2 py-1 rounded-2 shadow-none" title="Batalkan Stok" style="background-color: #ef4444; border-color: #ef4444;"
+                                onclick="openDeleteModal({{ $item->id }}, '{{ addslashes($item->restock_code) }}', {{ (int)($item->total_quantity ?? 0) }}, {{ (float)($item->total_value ?? 0) }})">
+                                <i class="bi bi-x-lg"></i>
+                            </button>
+                        </div>
+                    </td>
                 </tr>
-            </thead>
-            <tbody>
-                @foreach ($list as $item)
-                    @php
-                        $rawDate = $item->restock_date ? $item->restock_date->format('Y-m-d') : '';
-                    @endphp
-                    <tr data-date="{{ $rawDate }}">
-                        <td class="text-center text-muted fw-medium">{{ $loop->iteration }}</td>
-                        <td>
-                            <span class="text-dark">{{ $item->restock_code }}</span>
-                        </td>
-                        <td class="text-center text-secondary small">
-                            {{ $item->restock_date ? $item->restock_date->format('d M Y, H:i') : '-' }}
-                        </td>
-                        <td>
-                            <div class="text-dark">{{ $item->supplier_name }}</div>
-                            @if ($item->notes)
-                                <div class="text-muted small text-truncate" style="max-width: 260px;">{{ $item->notes }}</div>
-                            @endif
-                        </td>
-                        <td class="text-center">
-                            <span class="text-dark">{{ (int)($item->items->count()) }} Produk</span>
-                            <span class="text-muted small">({{ (int)($item->total_quantity ?? 0) }} Unit)</span>
-                        </td>
-                        <td class="text-end text-dark">
-                            Rp {{ number_format($item->total_value ?? 0, 0, ',', '.') }}
-                        </td>
-                        <td class="text-center text-secondary small">
-                            {{ $item->creator->employee_name ?? 'Admin' }}
-                        </td>
-                        <td class="text-center">
-                            <div class="d-inline-flex gap-1 justify-content-center">
-                                <a href="{{ route('restock.show', $item->id) }}" class="btn btn-sm btn-info text-white px-2 py-1 rounded-2 shadow-none" title="Detail" style="background-color: #0ea5e9; border-color: #0ea5e9;">
-                                    <i class="bi bi-eye"></i>
-                                </a>
-                                <button type="button" class="btn btn-sm btn-danger text-white px-2 py-1 rounded-2 shadow-none" title="Batalkan Stok" style="background-color: #ef4444; border-color: #ef4444;"
-                                    onclick="openDeleteModal({{ $item->id }}, '{{ addslashes($item->restock_code) }}', {{ (int)($item->total_quantity ?? 0) }}, {{ (float)($item->total_value ?? 0) }})">
-                                    <i class="bi bi-x-lg"></i>
-                                </button>
-                            </div>
-                        </td>
-                    </tr>
-                @endforeach
-            </tbody>
-        </table>
-    </div>
+            @endforeach
+        </tbody>
+    </table>
 
     {{-- ═══ MOBILE: Card List ═══ --}}
     <div id="restockMobileCards" class="px-1 pt-1">

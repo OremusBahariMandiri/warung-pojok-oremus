@@ -29,7 +29,6 @@
 <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-2 mb-3">
     <div>
         <h4 class="fw-bold text-dark mb-1">Laporan Penjualan</h4>
-        <p class="text-muted small mb-0">Kelola dan pantau laporan penjualan produk harian.</p>
     </div>
 </div>
 
@@ -60,16 +59,18 @@
 
 {{-- ═══════════════════════════════════════════════════════════════
      DESKTOP LAYOUT (>= 768px) — DataTables Table
-     Hanya tampil di md ke atas. Sembunyikan di mobile.
+     Pola sama dengan hpp, products, restock:
+     - Tidak pakai d-none / d-md-block (DataTables harus selalu ada di DOM)
+     - Mobile disembunyikan via CSS di reports.css (@media max-width 767.98px)
      ═══════════════════════════════════════════════════════════════ --}}
-<div class="card-box border rounded-3 overflow-hidden shadow-sm bg-white mb-4 d-none d-md-block">
+<div class="card-box px-3 border rounded-3 overflow-hidden shadow-sm bg-white mb-4 reports-desktop-card">
 
     <!-- Action & Filter Header -->
-    <div class="py-3 d-flex align-items-center justify-content-between gap-3">
+    <div class="py-3 d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-3">
         <!-- Left: Search Box -->
         <div class="position-relative reports-search-box">
             <i class="bi bi-search position-absolute top-50 start-0 translate-middle-y ms-3 text-muted"></i>
-            <input type="text" id="dtSearchInput" class="form-control form-control-sm ps-5 pe-3 rounded-2" placeholder="Cari tanggal / petugas...">
+            <input type="text" id="dtSearchInput" class="form-control form-control-sm ps-5 pe-3 rounded-2" placeholder="Cari tanggal, produk terjual, dibuat oleh...">
         </div>
 
         <!-- Right: Action & Filter Buttons -->
@@ -87,90 +88,83 @@
     </div>
 
     {{--
-        KUNCI PERBAIKAN DESKTOP:
-        - div.reports-dt-scroll  → hanya membungkus <table>, overflow-x: auto di sini
-        - Pagination & info      → dirender DataTables di LUAR div ini via custom `dom`
-        - div.reports-dt-footer  → tempat DataTables meletakkan info + pagination
+        PENTING: Tidak pakai wrapper .table-responsive di sini.
+        DataTables Responsive menangani sendiri kolom mana yang
+        disembunyikan agar tidak perlu scroll horizontal.
     --}}
-    <div class="reports-dt-scroll">
-        <table class="table table-bordered table-hover align-middle mb-0 w-100 text-nowrap" id="reportsDataTable">
-            <thead>
-                <tr>
-                    <th style="width: 50px;" class="text-center">No</th>
-                    <th class="text-center" style="width: 150px;">Tanggal</th>
-                    <th class="text-center" style="width: 130px;">Jumlah Produk</th>
-                    <th class="text-center" style="width: 140px;">Produk Terjual</th>
-                    <th class="text-end" style="width: 160px;">Total Penjualan</th>
-                    <th class="text-end" style="width: 150px;">Total HPP</th>
-                    <th class="text-end" style="width: 150px;">Total Margin</th>
-                    <th class="text-center" style="width: 140px;">Dibuat Oleh</th>
-                    <th class="text-center no-sort" style="width: 110px;">Aksi</th>
+    <table class="table table-bordered table-hover align-middle mb-0 w-100 text-nowrap" id="reportsDataTable">
+        <thead>
+            <tr>
+                <th style="width: 50px;" class="text-center">No</th>
+                <th class="text-center" style="width: 150px;">Tanggal</th>
+                <th class="text-center" style="width: 130px;">Jumlah Produk</th>
+                <th class="text-center" style="width: 140px;">Produk Terjual</th>
+                <th class="text-end" style="width: 160px;">Total Penjualan</th>
+                <th class="text-end" style="width: 150px;">Total HPP</th>
+                <th class="text-end" style="width: 150px;">Total Margin</th>
+                <th class="text-center" style="width: 140px;">Dibuat Oleh</th>
+                <th class="text-center no-sort" style="width: 110px;">Aksi</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach ($list as $r)
+                @php
+                    $itemCount    = $r->details ? $r->details->count() : 0;
+                    $totalSales   = (float)($r->total_sales ?? 0);
+                    $totalHpp     = (float)($r->total_hpp ?? 0);
+                    $totalMargin  = (float)($r->total_margin ?? ($totalSales - $totalHpp));
+                    $formattedDate = $r->report_date ? $r->report_date->format('d M Y') : '-';
+                    $creatorName  = $r->creator->employee_name ?? '';
+                @endphp
+                <tr data-date="{{ $r->report_date ? $r->report_date->format('Y-m-d') : '' }}">
+                    <td class="text-center text-muted fw-medium small">{{ $loop->iteration }}</td>
+                    <td class="text-center text-dark fw-semibold">{{ $formattedDate }}</td>
+                    <td class="text-center"><span class="text-dark">{{ $itemCount }} Produk</span></td>
+                    <td class="text-center font-monospace fw-semibold">{{ (int)($r->total_quantity ?? 0) }} Unit</td>
+                    <td class="text-end font-monospace text-dark fw-semibold">Rp {{ number_format($totalSales, 0, ',', '.') }}</td>
+                    <td class="text-end font-monospace text-muted">Rp {{ number_format($totalHpp, 0, ',', '.') }}</td>
+                    <td class="text-end font-monospace fw-bold text-success">Rp {{ number_format($totalMargin, 0, ',', '.') }}</td>
+                    <td class="text-center text-muted small">{{ $creatorName }}</td>
+                    <td class="text-center">
+                        <div class="d-inline-flex align-items-center gap-1">
+                            <a href="{{ route('reports.show', $r->id) }}" class="btn btn-sm btn-info text-white px-2 py-1 rounded-2 shadow-none" title="Detail" style="background-color:#0ea5e9;border-color:#0ea5e9;">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                            <button type="button" class="btn btn-sm btn-danger text-white px-2 py-1 rounded-2 shadow-none" title="Hapus Laporan"
+                                onclick="openDeleteModal({{ $r->id }}, '{{ $formattedDate }}', {{ (int)($r->total_quantity ?? 0) }}, {{ $totalSales }})"
+                                style="background-color:#ef4444;border-color:#ef4444;">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                    </td>
                 </tr>
-            </thead>
-            <tbody>
-                @foreach ($list as $r)
-                    @php
-                        $itemCount    = $r->details ? $r->details->count() : 0;
-                        $totalSales   = (float)($r->total_sales ?? 0);
-                        $totalHpp     = (float)($r->total_hpp ?? 0);
-                        $totalMargin  = (float)($r->total_margin ?? ($totalSales - $totalHpp));
-                        $formattedDate = $r->report_date ? $r->report_date->format('d M Y') : '-';
-                        $creatorName  = $r->creator->employee_name ?? '';
-                    @endphp
-                    <tr data-date="{{ $r->report_date ? $r->report_date->format('Y-m-d') : '' }}">
-                        <td class="text-center text-muted fw-medium small">{{ $loop->iteration }}</td>
-                        <td class="text-center text-dark fw-semibold">{{ $formattedDate }}</td>
-                        <td class="text-center"><span class="text-dark">{{ $itemCount }} Produk</span></td>
-                        <td class="text-center font-monospace fw-semibold">{{ (int)($r->total_quantity ?? 0) }} Unit</td>
-                        <td class="text-end font-monospace text-dark fw-semibold">Rp {{ number_format($totalSales, 0, ',', '.') }}</td>
-                        <td class="text-end font-monospace text-muted">Rp {{ number_format($totalHpp, 0, ',', '.') }}</td>
-                        <td class="text-end font-monospace fw-bold text-success">Rp {{ number_format($totalMargin, 0, ',', '.') }}</td>
-                        <td class="text-center text-muted small">{{ $creatorName }}</td>
-                        <td class="text-center">
-                            <div class="d-inline-flex align-items-center gap-1">
-                                <a href="{{ route('reports.show', $r->id) }}" class="btn btn-sm btn-outline-secondary rounded-2 px-2 py-1" title="Detail Laporan">
-                                    <i class="bi bi-eye"></i>
-                                </a>
-                                <button type="button" class="btn btn-sm btn-outline-danger rounded-2 px-2 py-1" title="Hapus Laporan"
-                                    onclick="openDeleteModal({{ $r->id }}, '{{ $formattedDate }}', {{ (int)($r->total_quantity ?? 0) }}, {{ $totalSales }})">
-                                    <i class="bi bi-trash"></i>
-                                </button>
-                            </div>
-                        </td>
-                    </tr>
-                @endforeach
-            </tbody>
-        </table>
-    </div>
-
+            @endforeach
+        </tbody>
+    </table>
 </div>
 
 
 {{-- ═══════════════════════════════════════════════════════════════
      MOBILE LAYOUT (< 768px) — Card List
-     Hanya tampil di bawah md. Sembunyikan di desktop.
+     Ditampilkan/disembunyikan via CSS (bukan d-none d-md-block)
      ═══════════════════════════════════════════════════════════════ --}}
-<div class="d-block d-md-none mb-4">
-    <!-- Mobile Wrapper Card (Menggabungkan Toolbar & Daftar Card) -->
+<div class="reports-mobile-wrapper mb-4">
     <div class="card border-0 shadow-sm rounded-3 overflow-hidden">
-        
+
         <!-- Header Card: Toolbar Search & Buat -->
         <div class="card-header bg-white my-4 d-flex flex-column gap-3 border-0">
-            <!-- Search Bar — full width -->
             <div class="position-relative w-100">
                 <i class="bi bi-search position-absolute top-50 start-0 translate-middle-y ms-3 text-muted" style="font-size:.85rem;"></i>
-                <input type="text" id="mobileSearchInput" class="form-control form-control-sm ps-5 pe-3 rounded-2 w-100" placeholder="Cari tanggal / petugas...">
+                <input type="text" id="mobileSearchInput" class="form-control form-control-sm ps-5 pe-3 rounded-2 w-100" placeholder="Cari tanggal, produk terjual, dibuat oleh...">
             </div>
-
-            <!-- Filter & Buat — sejajar di bawah search -->
             <div class="d-flex align-items-center gap-2 w-100">
-                <button type="button" class="btn btn-sm btn-outline-secondary rounded-2 d-inline-flex align-items-center justify-content-center gap-1 px-3 grow position-relative" data-bs-toggle="modal" data-bs-target="#modalFilterReport">
+                <button type="button" class="btn btn-sm btn-outline-secondary rounded-2 d-inline-flex align-items-center justify-content-center gap-1 px-3 position-relative" data-bs-toggle="modal" data-bs-target="#modalFilterReport">
                     <i class="bi bi-funnel"></i> Filter
                     <span id="activeFilterBadgeMobile" class="position-absolute top-0 start-100 translate-middle p-1 bg-primary border border-light rounded-circle d-none">
                         <span class="visually-hidden">Filter Aktif</span>
                     </span>
                 </button>
-                <a href="{{ route('reports.create') }}" class="btn btn-sm btn-success rounded-2 text-white fw-semibold d-inline-flex align-items-center justify-content-center gap-1 px-3 grow">
+                <a href="{{ route('reports.create') }}" class="btn btn-sm btn-success rounded-2 text-white fw-semibold d-inline-flex align-items-center justify-content-center gap-1 px-3">
                     <i class="bi bi-plus-lg"></i> Tambah
                 </a>
             </div>
@@ -187,19 +181,17 @@
                     $formattedDate = $r->report_date ? $r->report_date->format('d M Y') : '-';
                     $creatorName  = $r->creator->employee_name ?? 'Administrator';
                 @endphp
-                
+
                 <div class="mobile-report-card mb-3"
                      data-date="{{ $r->report_date ? $r->report_date->format('Y-m-d') : '' }}"
                      data-search="{{ strtolower($formattedDate . ' ' . $creatorName) }}">
 
-                    <!-- Card Header: Tanggal + Nomor urut -->
                     <div class="mrc-header">
                         <div class="mrc-no">{{ $loop->iteration }}</div>
                         <div class="mrc-date">{{ $formattedDate }}</div>
                         <div class="mrc-creator text-muted small">{{ $creatorName }}</div>
                     </div>
 
-                    <!-- Stats Grid -->
                     <div class="mrc-stats">
                         <div class="mrc-stat">
                             <span class="mrc-stat-label">Jumlah Produk</span>
@@ -219,20 +211,18 @@
                         </div>
                     </div>
 
-                    <!-- Margin Bar -->
                     <div class="mrc-margin-bar {{ $totalMargin < 0 ? 'negative' : '' }}">
                         <span class="mrc-margin-label">Total Margin</span>
                         <span class="mrc-margin-value font-monospace fw-bold">Rp {{ number_format($totalMargin, 0, ',', '.') }}</span>
                     </div>
 
-                    <!-- Actions -->
                     <div class="mrc-actions">
                         <a href="{{ route('reports.show', $r->id) }}" class="btn btn-sm btn-outline-secondary rounded-2 flex-grow-1">
                             <i class="bi bi-eye me-1"></i> Detail
                         </a>
                         <button type="button" class="btn btn-sm btn-outline-danger rounded-2 px-3"
                             onclick="openDeleteModal({{ $r->id }}, '{{ $formattedDate }}', {{ (int)($r->total_quantity ?? 0) }}, {{ $totalSales }})">
-                            <i class="bi bi-trash me-1"></i>
+                            <i class="bi bi-trash"></i>
                         </button>
                     </div>
                 </div>
@@ -243,17 +233,15 @@
                 </div>
             @endforelse
 
-            <!-- Mobile empty state -->
             <div id="mobileNoResult" class="text-center py-4 text-muted small d-none">
                 Tidak ada laporan yang cocok dengan pencarian.
             </div>
         </div>
-
     </div>
 </div>
 
 
-<!-- Modal Filter Laporan Penjualan -->
+<!-- Modal Filter -->
 <div class="modal fade" id="modalFilterReport" tabindex="-1" aria-labelledby="modalFilterReportLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content rounded-3 border-0 shadow">
@@ -274,18 +262,14 @@
                 </div>
             </div>
             <div class="modal-footer border-top py-2 px-4 d-flex justify-content-between">
-                <button type="button" class="btn btn-sm btn-light border rounded-2 px-3" id="btnResetFilter" data-bs-dismiss="modal">
-                    Reset
-                </button>
-                <button type="button" class="btn btn-sm btn-success text-white fw-semibold rounded-2 px-4" id="btnApplyFilter" data-bs-dismiss="modal">
-                    Terapkan
-                </button>
+                <button type="button" class="btn btn-sm btn-light border rounded-2 px-3" id="btnResetFilter" data-bs-dismiss="modal">Reset</button>
+                <button type="button" class="btn btn-sm btn-success text-white fw-semibold rounded-2 px-4" id="btnApplyFilter" data-bs-dismiss="modal">Terapkan</button>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Modal Konfirmasi Hapus & Rollback Laporan -->
+<!-- Modal Konfirmasi Hapus -->
 <div class="modal fade" id="modalDeleteReport" tabindex="-1" aria-labelledby="modalDeleteReportLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content rounded-3 border-0 shadow">
@@ -324,9 +308,10 @@
 @endsection
 
 @push('scripts')
-<!-- jQuery & DataTables JS -->
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
+<script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
+<script src="https://cdn.datatables.net/responsive/2.5.0/js/responsive.bootstrap5.min.js"></script>
 <script src="{{ asset('js/reports.js') }}"></script>
 @endpush
