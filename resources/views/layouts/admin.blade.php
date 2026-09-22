@@ -39,11 +39,7 @@
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-header">
             <a href="{{ Route::has('admin.dashboard') ? route('admin.dashboard') : '#' }}" class="brand-link text-decoration-none">
-                <i class="bi bi-shop text-success fs-4 brand-icon"></i>
-                <div class="brand-text">
-                    <h5 class="mb-0 fw-bold text-white">WARJOK</h5>
-                    <span class="subtitle">Admin Panel</span>
-                </div>
+               <img src="{{ asset('assets/warjok-logo.png') }}" alt="WARJOK Admin Panel" class="brand-image img-fluid" style="max-height: 80px; width: auto; object-fit: contain;">
             </a>
             <button class="btn btn-close-sidebar d-lg-none p-0 border-0 shadow-none text-white-50" id="closeSidebarBtn">
                 <i class="bi bi-x-lg fs-5"></i>
@@ -86,19 +82,19 @@
                             <li class="submenu-item">
                                 <a href="{{ Route::has('products.index') ? route('products.index') : '#' }}" class="submenu-link {{ request()->routeIs('products.*') ? 'active' : '' }}">
                                     <span class="submenu-dot"></span>
-                                    <span>Manajemen Produk</span>
+                                    <span>Produk</span>
                                 </a>
                             </li>
                             <li class="submenu-item">
                                 <a href="{{ Route::has('units.index') ? route('units.index') : '#' }}" class="submenu-link {{ request()->routeIs('units.*') ? 'active' : '' }}">
                                     <span class="submenu-dot"></span>
-                                    <span>Manajemen Satuan</span>
+                                    <span>Satuan</span>
                                 </a>
                             </li>
                             <li class="submenu-item">
                                 <a href="{{ Route::has('hpp.index') ? route('hpp.index') : '#' }}" class="submenu-link {{ request()->routeIs('hpp.*') ? 'active' : '' }}">
                                     <span class="submenu-dot"></span>
-                                    <span>Manajemen HPP</span>
+                                    <span>HPP</span>
                                 </a>
                             </li>
                         </ul>
