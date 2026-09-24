@@ -229,18 +229,18 @@
                 @if ($recentLogs->count() > 0)
                     <div class="d-flex flex-column gap-2">
                         @foreach ($recentLogs as $actLog)
-                            <div class="d-flex align-items-center justify-content-between p-2 bg-light rounded-2 border">
-                                <div class="d-flex align-items-center gap-2">
-                                    <span class="badge bg-secondary bg-opacity-25 text-dark font-monospace" style="font-size:0.7rem;">
+                            <div class="activity-item">
+                                <div class="activity-item-top">
+                                    <span class="badge bg-secondary bg-opacity-25 text-dark font-monospace activity-badge">
                                         {{ strtoupper($actLog->action) }}
                                     </span>
-                                    <span class="text-dark small fw-medium text-truncate" style="max-width: 380px;">
-                                        {{ $actLog->description }}
+                                    <span class="activity-time">
+                                        {{ $actLog->created_at ? $actLog->created_at->diffForHumans() : '-' }}
                                     </span>
                                 </div>
-                                <span class="text-muted small" style="font-size:0.72rem;">
-                                    {{ $actLog->created_at ? $actLog->created_at->diffForHumans() : '-' }}
-                                </span>
+                                <div class="activity-desc">
+                                    {{ $actLog->description }}
+                                </div>
                             </div>
                         @endforeach
                     </div>
