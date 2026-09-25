@@ -13,9 +13,12 @@ return new class extends Migration
     {
         Schema::create('product_hpp', function (Blueprint $table) {
             $table->id();
-            $table->foreignId("product_id")->constrained("products")->onUpdate("restrict")->onDelete("cascade");
-            $table->foreignId("hpp_id")->constrained("hpp")->onUpdate("restrict")->onDelete("cascade");
-            $table->decimal("cost", 15, 3);
+            $table->foreignId("product_id")->constrained("products")->references("id")->onUpdate("restrict")->onDelete("cascade");
+            $table->foreignId("hpp_id")->constrained("hpp")->references("id")->onUpdate("restrict")->onDelete("cascade");
+            $table->foreignId("selling_unit_id")->constrained("units")->references("id")->onUpdate("restrict")->onDelete("cascade");
+            // $table->enum("sale_method", ['UNIT', 'PACKAGE']);
+            $table->decimal("selling_price", 15, 3);
+            $table->decimal("current_hpp", 15,3);
             $table->timestamps();
         });
     }

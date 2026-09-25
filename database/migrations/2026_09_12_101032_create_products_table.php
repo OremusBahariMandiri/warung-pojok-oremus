@@ -14,15 +14,15 @@ return new class extends Migration
         Schema::create('products', function (Blueprint $table) {
             $table->id();
             $table->foreignId('unit_id')->constrained('units')->references('id')->onDelete('cascade')->onUpdate('restrict');
+            $table->string("prod_code");
             $table->string("prod_name");
             $table->string("slug");
-            $table->string("sku");
-            $table->decimal("selling_price", 15, 3);
-            $table->decimal("unit_price", 15, 3);
-            $table->enum("hpp_method", ['manual', 'calculated']);
-            $table->decimal("current_hpp", 15, 3);
+            $table->enum("hpp_method", ['MANUAL', 'CALCULATED']);
+            $table->integer("initial_stock")->default(0);
+            // $table->decimal("current_hpp", 15, 3);
             $table->integer("current_stock")->default(0);
             $table->integer("min_stock");
+            // $table->decimal("unit_price", 15, 3);
             $table->text("description")->nullable();
             $table->string("thumbnail", 255)->default('thumbnail/default.png');
             $table->timestamps();
