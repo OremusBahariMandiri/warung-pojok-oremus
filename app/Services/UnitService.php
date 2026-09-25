@@ -82,9 +82,9 @@ class UnitService
      */
     public function deleteUnit(Unit $unit): bool
     {
-        $productsCount = $unit->products()->count();
+        $productsCount = $unit->products()->count() + $unit->productHpps()->count();
         if ($productsCount > 0) {
-            throw new \Exception("Gagal menghapus! Satuan '{$unit->unit_name}' masih terhubung ke {$productsCount} produk.");
+            throw new \Exception("Gagal menghapus! Satuan '{$unit->unit_name}' masih terhubung ke {$productsCount} produk/konfigurasi penjualan.");
         }
 
         return DB::transaction(function () use ($unit) {
