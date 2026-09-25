@@ -24,4 +24,19 @@ class Unit extends Model
     {
         return $this->hasMany(Products::class, 'unit_id');
     }
+
+    public function productHpps()
+    {
+        return $this->hasMany(ProductHpp::class, 'selling_unit_id');
+    }
+
+    public function restockItems()
+    {
+        return $this->hasMany(RestockItems::class, 'restock_unit_id');
+    }
+
+    public function reportDetails()
+    {
+        return $this->hasMany(ReportDetails::class, 'selling_unit_id');
+    }
 }

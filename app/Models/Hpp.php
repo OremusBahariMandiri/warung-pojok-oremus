@@ -34,7 +34,7 @@ class Hpp extends Model
     public function products()
     {
         return $this->belongsToMany(Products::class, 'product_hpp', 'hpp_id', 'product_id')
-            ->withPivot('cost')
+            ->withPivot('selling_price', 'current_hpp')
             ->withTimestamps();
     }
 }

@@ -20,10 +20,8 @@ class Products extends Model
         'slug',
         'hpp_method',
         'initial_stock',
-        'current_hpp',
         'current_stock',
         'min_stock',
-        'unit_price',
         'description',
         'thumbnail'
     ];
@@ -32,10 +30,9 @@ class Products extends Model
     {
         return [
             'unit_id' => 'integer',
-            'unit_price' => 'decimal:3',
-            'current_hpp' => 'decimal:3',
             'current_stock' => 'integer',
             'min_stock' => 'integer',
+            'initial_stock' => 'integer',
         ];
     }
 
