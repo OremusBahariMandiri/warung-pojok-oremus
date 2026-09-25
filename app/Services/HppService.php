@@ -13,7 +13,7 @@ class HppService
      */
     public function getAllHpp()
     {
-        return Hpp::withCount('products')->orderBy('name', 'asc')->get();
+        return Hpp::withCount('productHpps')->orderBy('name', 'asc')->get();
     }
 
     /**
@@ -83,6 +83,11 @@ class HppService
      */
     public function deleteHpp(Hpp $hpp): bool
     {
+        $configsCount = $hpp->productHpps()->count();
+        if ($configsCount > 0) {
+            throw new \Exception("Gagal menghapus! Komponen HPP '{$hpp->name}' masih digunakan oleh {$configsCount} konfigurasi penjualan produk.");
+        }
+
         return DB::transaction(function () use ($hpp) {
             $oldValues = $hpp->toArray();
             $id = $hpp->id;

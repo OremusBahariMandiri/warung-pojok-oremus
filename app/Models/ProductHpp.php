@@ -18,6 +18,7 @@ class ProductHpp extends Model
         'hpp_id',
         'selling_unit_id',
         'selling_price',
+        'current_hpp',
     ];
 
     protected function casts(): array
@@ -27,6 +28,7 @@ class ProductHpp extends Model
             'hpp_id'          => 'integer',
             'selling_unit_id' => 'integer',
             'selling_price'   => 'decimal:3',
+            'current_hpp'     => 'decimal:3',
         ];
     }
 

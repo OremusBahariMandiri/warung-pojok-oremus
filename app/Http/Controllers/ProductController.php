@@ -72,7 +72,7 @@ class ProductController extends Controller
      */
     public function show(Request $request, Products $product)
     {
-        $product->load(['unit', 'productHpps.hpp', 'hpps']);
+        $product->load(['unit', 'productHpps.hpp', 'productHpps.sellingUnit']);
 
         if ($request->wantsJson()) {
             return response()->json([
@@ -89,7 +89,7 @@ class ProductController extends Controller
      */
     public function edit(Products $product)
     {
-        $product->load(['unit', 'productHpps.hpp']);
+        $product->load(['unit', 'productHpps.hpp', 'productHpps.sellingUnit']);
         $units = Unit::orderBy('unit_name', 'asc')->get();
         $hppComponents = Hpp::orderBy('name', 'asc')->get();
 
@@ -133,25 +133,23 @@ class ProductController extends Controller
     }
 
     /**
-     * Live calculate HPP based on unit_price and selected components (AJAX helper).
+     * Live calculate HPP based on base purchase price and selected HPP component (AJAX helper).
      */
     public function calculateHpp(Request $request)
     {
         $request->validate([
-            'unit_price' => 'required|numeric|min:0',
-            'components' => 'nullable|array',
-            'components.*.hpp_id' => 'required|exists:hpp,id',
-            'components.*.cost' => 'nullable|numeric|min:0',
+            'base_purchase_price' => 'required|numeric|min:0',
+            'hpp_id'              => 'nullable|exists:hpp,id',
         ]);
 
-        $unitPrice = (float) $request->input('unit_price', 0);
-        $components = $request->input('components', []);
+        $basePurchasePrice = (float) $request->input('base_purchase_price', 0);
+        $hppId             = $request->input('hpp_id');
 
-        $result = $this->productService->calculateHpp($unitPrice, $components);
+        $result = $this->productService->calculateHpp($basePurchasePrice, $hppId);
 
         return response()->json([
             'status' => 'success',
-            'data' => $result,
+            'data'   => $result,
         ]);
     }
 }

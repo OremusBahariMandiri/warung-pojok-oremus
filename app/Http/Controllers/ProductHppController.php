@@ -18,16 +18,16 @@ class ProductHppController extends Controller
     }
 
     /**
-     * Display components for a specific product.
+     * Display sales configurations for a specific product.
      */
     public function index(Request $request, Products $product)
     {
-        $components = $product->productHpps()->with(['hpp', 'sellingUnit'])->get();
+        $configurations = $product->productHpps()->with(['hpp', 'sellingUnit'])->get();
 
         if ($request->wantsJson()) {
             return response()->json([
                 'status' => 'success',
-                'data'   => $components,
+                'data'   => $configurations,
             ]);
         }
 
@@ -35,55 +35,50 @@ class ProductHppController extends Controller
     }
 
     /**
-     * Store or sync components for a product.
+     * Store or sync sales configurations (ProductHpp) for a product.
      */
     public function store(Request $request, Products $product)
     {
         $request->validate([
-            'components'                      => 'required|array',
-            'components.*.hpp_id'             => 'required|exists:hpp,id',
-            'components.*.selling_unit_id'    => 'required|exists:units,id',
-            'components.*.selling_price'      => 'nullable|numeric|min:0',
+            'configurations'                     => 'required|array',
+            'configurations.*.selling_unit_id'   => 'required|exists:units,id',
+            'configurations.*.hpp_id'            => 'nullable|exists:hpp,id',
+            'configurations.*.selling_price'     => 'required|numeric|min:0',
+            'configurations.*.current_hpp'       => 'required|numeric|min:0',
         ]);
 
-        $calculation = $this->productService->calculateHpp(
-            (float) $product->unit_price,
-            $request->input('components')
-        );
+        $configs = $request->input('configurations');
 
         ProductHpp::where('product_id', $product->id)->delete();
-        foreach ($calculation['components'] as $comp) {
-            ProductHpp::create([
+        $savedConfigs = [];
+        foreach ($configs as $config) {
+            $savedConfigs[] = ProductHpp::create([
                 'product_id'      => $product->id,
-                'hpp_id'          => $comp['hpp_id'],
-                'selling_unit_id' => $comp['selling_unit_id'],
-                'selling_price'   => $comp['selling_price'],
+                'selling_unit_id' => $config['selling_unit_id'],
+                'hpp_id'          => !empty($config['hpp_id']) ? $config['hpp_id'] : null,
+                'selling_price'   => (float) $config['selling_price'],
+                'current_hpp'     => (float) $config['current_hpp'],
             ]);
         }
 
-        $product->update([
-            'hpp_method'  => 'CALCULATED',
-            'current_hpp' => $calculation['total_hpp'],
-        ]);
-
         ActivityLogService::log(
-            action:      'UPDATE_HPP_COMPONENTS',
+            action:      'UPDATE_HPP_CONFIGURATIONS',
             module:      'PRODUCT_HPP',
             entityType:  Products::class,
             entityId:    $product->id,
-            description: "Updated HPP components for product: {$product->prod_name} (New HPP: {$calculation['total_hpp']})",
+            description: "Updated HPP sales configurations for product: {$product->prod_name}",
             oldValues:   null,
-            newValues:   $calculation
+            newValues:   $savedConfigs
         );
 
         if ($request->wantsJson()) {
             return response()->json([
                 'status'  => 'success',
-                'message' => 'Komposisi HPP produk berhasil diperbarui.',
+                'message' => 'Konfigurasi penjualan produk berhasil diperbarui.',
                 'data'    => $product->fresh()->load(['productHpps.hpp', 'productHpps.sellingUnit']),
             ]);
         }
 
-        return redirect()->route('products.show', $product->id)->with('success', 'Komposisi HPP produk berhasil diperbarui.');
+        return redirect()->route('products.show', $product->id)->with('success', 'Konfigurasi penjualan produk berhasil diperbarui.');
     }
 }

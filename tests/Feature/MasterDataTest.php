@@ -2,7 +2,6 @@
 
 namespace Tests\Feature;
 
-
 use App\Models\Hpp;
 use App\Models\Products;
 use App\Models\Unit;
@@ -16,6 +15,7 @@ class MasterDataTest extends TestCase
 
     protected User $adminUser;
     protected Unit $defaultUnit;
+    protected Unit $gelasUnit;
 
     protected function setUp(): void
     {
@@ -33,6 +33,12 @@ class MasterDataTest extends TestCase
             'unit_name' => 'Sachet',
             'type' => 'Kemasan',
             'short_name' => 'sct',
+        ]);
+
+        $this->gelasUnit = Unit::create([
+            'unit_name' => 'Gelas',
+            'type' => 'Porsi',
+            'short_name' => 'gls',
         ]);
     }
 
@@ -91,41 +97,45 @@ class MasterDataTest extends TestCase
     }
 
     /**
-     * Test Product Creation with Calculated HPP method (Nutrisari Example).
+     * Test Product Creation with multiple sales configurations (Nutrisari Sachet & Gelas).
      */
-    public function test_product_calculated_hpp_method(): void
+    public function test_product_with_multiple_sales_configurations(): void
     {
         $this->actingAs($this->adminUser);
 
-        $hppAirEs = Hpp::create(['name' => 'Air dan Es', 'unit' => 'Porsi', 'unit_cost' => 900]);
-        $hppGula = Hpp::create(['name' => 'Gula', 'unit' => 'Porsi', 'unit_cost' => 300]);
-        $hppKemasan = Hpp::create(['name' => 'Kemasan', 'unit' => 'Pcs', 'unit_cost' => 350]);
+        $hppRacikanEs = Hpp::create(['name' => 'Racikan Es & Gula', 'unit' => 'Porsi', 'unit_cost' => 1550]);
 
         $payload = [
-            'prod_name' => 'Nutrisari Florida Orange',
+            'prod_name' => 'Nutrisari Cincau',
             'unit_id' => $this->defaultUnit->id,
-            'selling_price' => 5000,
-            'unit_price' => 1400,
-            'hpp_method' => 'calculated',
-            'min_stock' => 10,
-            'current_stock' => 50,
-            'description' => 'Nutrisari dingin segar',
-            'components' => [
-                ['hpp_id' => $hppAirEs->id, 'cost' => 900],
-                ['hpp_id' => $hppGula->id, 'cost' => 300],
-                ['hpp_id' => $hppKemasan->id, 'cost' => 350],
+            'hpp_method' => 'CALCULATED',
+            'initial_stock' => 40,
+            'min_stock' => 5,
+            'description' => 'Nutrisari rasa cincau',
+            'configurations' => [
+                [
+                    'selling_unit_id' => $this->defaultUnit->id,
+                    'hpp_id' => null,
+                    'current_hpp' => 1400,
+                    'selling_price' => 1800,
+                ],
+                [
+                    'selling_unit_id' => $this->gelasUnit->id,
+                    'hpp_id' => $hppRacikanEs->id,
+                    'current_hpp' => 2950,
+                    'selling_price' => 5000,
+                ],
             ],
         ];
 
         $response = $this->postJson(route('products.store'), $payload);
         $response->assertStatus(201);
 
-        $product = Products::where('prod_name', 'Nutrisari Florida Orange')->first();
+        $product = Products::where('prod_name', 'Nutrisari Cincau')->first();
         $this->assertNotNull($product);
-
-        // Expected HPP = 1400 (unit_price) + 900 + 300 + 350 = 2950
-        $this->assertEquals(2950.000, (float)$product->current_hpp);
-        $this->assertCount(3, $product->productHpps);
+        $this->assertEquals(40, $product->initial_stock);
+        $this->assertEquals(40, $product->current_stock);
+        $this->assertCount(2, $product->productHpps);
 
         // Verify Activity Log
         $this->assertDatabaseHas('activity_logs', [
@@ -136,61 +146,26 @@ class MasterDataTest extends TestCase
     }
 
     /**
-     * Test Product Creation with Manual HPP method (Gorengan Example).
-     */
-    public function test_product_manual_hpp_method(): void
-    {
-        $this->actingAs($this->adminUser);
-
-        $payload = [
-            'prod_name' => 'Gorengan Ote-ote',
-            'unit_id' => $this->defaultUnit->id,
-            'selling_price' => 101500,
-            'unit_price' => 53000,
-            'hpp_method' => 'manual',
-            'current_hpp' => 53000,
-            'min_stock' => 2,
-            'current_stock' => 10,
-            'description' => 'Gorengan tanpa breakdown HPP',
-        ];
-
-        $response = $this->postJson(route('products.store'), $payload);
-        $response->assertStatus(201);
-
-        $product = Products::where('prod_name', 'Gorengan Ote-ote')->first();
-        $this->assertNotNull($product);
-        $this->assertEquals(53000.000, (float)$product->current_hpp);
-        $this->assertCount(0, $product->productHpps);
-    }
-
-    /**
      * Test Live HPP Calculation AJAX endpoint.
      */
     public function test_live_calculate_hpp_endpoint(): void
     {
         $this->actingAs($this->adminUser);
 
-        $hppAir = Hpp::create(['name' => 'Air', 'unit' => 'Porsi', 'unit_cost' => 500]);
-        $hppGula = Hpp::create(['name' => 'Gula', 'unit' => 'Porsi', 'unit_cost' => 300]);
-        $hppKemasan = Hpp::create(['name' => 'Kemasan', 'unit' => 'Pcs', 'unit_cost' => 350]);
-        $hppGas = Hpp::create(['name' => 'Gas', 'unit' => 'Porsi', 'unit_cost' => 200]);
+        $hppAir = Hpp::create(['name' => 'Air & Es', 'unit' => 'Porsi', 'unit_cost' => 1550]);
 
-        // Energen Kacang Ijo: Unit Price 2050 + Air 500 + Gula 300 + Kemasan 350 + Gas 200 = 3400
         $response = $this->postJson(route('products.calculate_hpp'), [
-            'unit_price' => 2050,
-            'components' => [
-                ['hpp_id' => $hppAir->id, 'cost' => 500],
-                ['hpp_id' => $hppGula->id, 'cost' => 300],
-                ['hpp_id' => $hppKemasan->id, 'cost' => 350],
-                ['hpp_id' => $hppGas->id, 'cost' => 200],
-            ],
+            'base_purchase_price' => 1400,
+            'hpp_id' => $hppAir->id,
         ]);
 
         $response->assertStatus(200);
         $response->assertJson([
             'status' => 'success',
             'data' => [
-                'total_hpp' => 3400,
+                'base_purchase_price' => 1400,
+                'additional_cost'     => 1550,
+                'current_hpp'         => 2950,
             ],
         ]);
     }
