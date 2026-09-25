@@ -15,7 +15,10 @@ return new class extends Migration
             $table->id();
             $table->foreignId("restock_id")->constrained("restock")->onUpdate("restrict")->onDelete("cascade");
             $table->foreignId("product_id")->constrained("products")->onUpdate("restrict")->onDelete("cascade");
+            $table->foreignId("restock_unit_id")->constrained("units")->onUpdate("restrict")->onDelete("cascade");
             $table->integer("quantity");
+            $table->decimal("purchase_price", 15, 3);
+            $table->decimal('total_price', 15, 3);
             $table->timestamps();
         });
     }

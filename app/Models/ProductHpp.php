@@ -16,13 +16,17 @@ class ProductHpp extends Model
     protected $fillable = [
         'product_id',
         'hpp_id',
-        'cost',
+        'selling_unit_id',
+        'selling_price',
     ];
 
     protected function casts(): array
     {
         return [
-            'cost' => 'decimal:3',
+            'product_id'      => 'integer',
+            'hpp_id'          => 'integer',
+            'selling_unit_id' => 'integer',
+            'selling_price'   => 'decimal:3',
         ];
     }
 
@@ -34,5 +38,10 @@ class ProductHpp extends Model
     public function hpp()
     {
         return $this->belongsTo(Hpp::class, 'hpp_id');
+    }
+
+    public function sellingUnit()
+    {
+        return $this->belongsTo(Unit::class, 'selling_unit_id');
     }
 }

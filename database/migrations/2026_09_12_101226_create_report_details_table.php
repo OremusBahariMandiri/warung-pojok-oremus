@@ -15,7 +15,10 @@ return new class extends Migration
             $table->id();
             $table->foreignId("report_id")->constrained("reports")->onUpdate("restrict")->onDelete("cascade");
             $table->foreignId("product_id")->constrained("products")->onUpdate("restrict")->onDelete("cascade");
+            $table->foreignId("selling_unit_id")->constrained("units")->onUpdate("restrict")->onDelete("cascade");
+            // $table->enum("sale_method", ['UNIT', 'PACKAGE']);
             $table->integer("quantity");
+            $table->integer("stock_final")->default(0);
             $table->decimal("selling_price", 15, 3);
             $table->decimal("hpp", 15, 3);
             $table->decimal("total_price",15,3);

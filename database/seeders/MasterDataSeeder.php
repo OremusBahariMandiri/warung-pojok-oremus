@@ -3,7 +3,6 @@
 namespace Database\Seeders;
 
 use App\Models\Hpp;
-use App\Models\Products;
 use App\Models\Unit;
 use App\Models\User;
 use App\Services\ProductService;
@@ -19,10 +18,10 @@ class MasterDataSeeder extends Seeder
 
         // 1. Seed Users & Access
         $admin = $userService->createUser([
-            'nrk' => 'ADM001',
+            'nrk' => '1111',
             'email' => 'admin@oremus.com',
-            'employee_name' => 'Administrator Warjok',
-            'password' => 'admin123',
+            'employee_name' => 'Administrator',
+            'password' => '11111111',
             'is_admin' => true,
             'accesses' => [
                 'dashboard' => ['index' => 1, 'show' => 1, 'create' => 1, 'edit' => 1, 'delete' => 1],
@@ -36,11 +35,13 @@ class MasterDataSeeder extends Seeder
             ],
         ]);
 
-        $kasir = $userService->createUser([
-            'nrk' => 'KAS001',
-            'email' => 'kasir@oremus.com',
-            'employee_name' => 'Petugas Kasir',
-            'password' => 'kasir123',
+        User::updateOrCreate($admin);
+
+        $user = $userService->createUser([
+            'nrk' => '0000',
+            'email' => 'afandi@oremus.com',
+            'employee_name' => 'Afandi',
+            'password' => '00000000',
             'is_admin' => false,
             'accesses' => [
                 'dashboard' => ['index' => 1, 'show' => 1, 'create' => 0, 'edit' => 0, 'delete' => 0],
@@ -51,6 +52,8 @@ class MasterDataSeeder extends Seeder
                 'reports' => ['index' => 1, 'show' => 1, 'create' => 1, 'edit' => 0, 'delete' => 0],
             ],
         ]);
+
+        User::updateOrCreate($user);
 
         // 2. Seed Units (Satuan)
         $unitSachet = Unit::create(['unit_name' => 'Sachet', 'type' => 'Kemasan Minuman', 'short_name' => 'sct']);
