@@ -22,12 +22,12 @@ class ProductHppController extends Controller
      */
     public function index(Request $request, Products $product)
     {
-        $components = $product->productHpps()->with('hpp')->get();
+        $components = $product->productHpps()->with(['hpp', 'sellingUnit'])->get();
 
         if ($request->wantsJson()) {
             return response()->json([
                 'status' => 'success',
-                'data' => $components,
+                'data'   => $components,
             ]);
         }
 
@@ -40,42 +40,47 @@ class ProductHppController extends Controller
     public function store(Request $request, Products $product)
     {
         $request->validate([
-            'components' => 'required|array',
-            'components.*.hpp_id' => 'required|exists:hpp,id',
-            'components.*.cost' => 'nullable|numeric|min:0',
+            'components'                      => 'required|array',
+            'components.*.hpp_id'             => 'required|exists:hpp,id',
+            'components.*.selling_unit_id'    => 'required|exists:units,id',
+            'components.*.selling_price'      => 'nullable|numeric|min:0',
         ]);
 
-        $calculation = $this->productService->calculateHpp((float)$product->unit_price, $request->input('components'));
-        
+        $calculation = $this->productService->calculateHpp(
+            (float) $product->unit_price,
+            $request->input('components')
+        );
+
         ProductHpp::where('product_id', $product->id)->delete();
         foreach ($calculation['components'] as $comp) {
             ProductHpp::create([
-                'product_id' => $product->id,
-                'hpp_id' => $comp['hpp_id'],
-                'cost' => $comp['cost'],
+                'product_id'      => $product->id,
+                'hpp_id'          => $comp['hpp_id'],
+                'selling_unit_id' => $comp['selling_unit_id'],
+                'selling_price'   => $comp['selling_price'],
             ]);
         }
 
         $product->update([
-            'hpp_method' => 'calculated',
+            'hpp_method'  => 'CALCULATED',
             'current_hpp' => $calculation['total_hpp'],
         ]);
 
         ActivityLogService::log(
-            action: 'UPDATE_HPP_COMPONENTS',
-            module: 'PRODUCT_HPP',
-            entityType: Products::class,
-            entityId: $product->id,
+            action:      'UPDATE_HPP_COMPONENTS',
+            module:      'PRODUCT_HPP',
+            entityType:  Products::class,
+            entityId:    $product->id,
             description: "Updated HPP components for product: {$product->prod_name} (New HPP: {$calculation['total_hpp']})",
-            oldValues: null,
-            newValues: $calculation
+            oldValues:   null,
+            newValues:   $calculation
         );
 
         if ($request->wantsJson()) {
             return response()->json([
-                'status' => 'success',
+                'status'  => 'success',
                 'message' => 'Komposisi HPP produk berhasil diperbarui.',
-                'data' => $product->fresh()->load('productHpps.hpp'),
+                'data'    => $product->fresh()->load(['productHpps.hpp', 'productHpps.sellingUnit']),
             ]);
         }
 

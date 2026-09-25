@@ -15,8 +15,13 @@ return new class extends Migration
             $table->id();
             $table->foreignId("created_by")->constrained("users")->onUpdate("restrict")->onDelete("cascade");
             $table->string("restock_code");
+            $table->string("invoice_number");
             $table->timestamp("restock_date");
             $table->string("supplier_name", 180);
+            $table->enum("status_restock", ['DRAFT', 'CONFIRMED']);
+            $table->decimal("subtotal", 15, 3);
+            $table->decimal("discount", 15,3);
+            $table->decimal("grand_total", 15,3);
             $table->text("notes")->nullable();
             $table->timestamps();
         });

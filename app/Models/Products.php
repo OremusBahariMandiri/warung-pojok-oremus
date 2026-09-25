@@ -15,15 +15,15 @@ class Products extends Model
 
     protected $fillable = [
         'unit_id',
+        'prod_code',
         'prod_name',
         'slug',
-        'sku',
-        'selling_price',
-        'unit_price',
         'hpp_method',
+        'initial_stock',
         'current_hpp',
         'current_stock',
         'min_stock',
+        'unit_price',
         'description',
         'thumbnail'
     ];
@@ -32,7 +32,6 @@ class Products extends Model
     {
         return [
             'unit_id' => 'integer',
-            'selling_price' => 'decimal:3',
             'unit_price' => 'decimal:3',
             'current_hpp' => 'decimal:3',
             'current_stock' => 'integer',

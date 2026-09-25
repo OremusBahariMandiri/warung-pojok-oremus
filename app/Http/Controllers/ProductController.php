@@ -44,6 +44,7 @@ class ProductController extends Controller
     {
         $units = Unit::orderBy('unit_name', 'asc')->get();
         $hppComponents = Hpp::orderBy('name', 'asc')->get();
+
         return view('pages.products.create', compact('units', 'hppComponents'));
     }
 
@@ -143,7 +144,7 @@ class ProductController extends Controller
             'components.*.cost' => 'nullable|numeric|min:0',
         ]);
 
-        $unitPrice = (float)$request->input('unit_price', 0);
+        $unitPrice = (float) $request->input('unit_price', 0);
         $components = $request->input('components', []);
 
         $result = $this->productService->calculateHpp($unitPrice, $components);
