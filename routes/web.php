@@ -8,6 +8,7 @@ use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProductHppController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\RestockController;
+use App\Http\Controllers\StockOpnameController;
 use App\Http\Controllers\UnitController;
 use App\Http\Controllers\UserAccessController;
 use App\Http\Controllers\UserController;
@@ -60,7 +61,18 @@ Route::middleware(['auth', 'remember'])->group(function () {
     ])->middleware('user.access:users');
 
     // Transaksi: Restock
+    Route::patch('restock/{restock}/status', [RestockController::class, 'updateStatus'])
+        ->name('restock.update_status')
+        ->middleware('user.access:restock,edit');
     Route::resource('restock', RestockController::class)->middleware('user.access:restock');
+
+    // Transaksi & Audit: Stock Opname
+    Route::patch('stock-opname/{stock_opname}/status', [StockOpnameController::class, 'updateStatus'])
+        ->name('stock_opname.update_status')
+        ->middleware('user.access:products,edit');
+    Route::resource('stock-opname', StockOpnameController::class, [
+        'parameters' => ['stock-opname' => 'stockOpname']
+    ])->middleware('user.access:products');
 
     // Transaksi & Monitoring: Laporan Penjualan & Margin
     Route::get('reports/summary', [ReportController::class, 'summary'])

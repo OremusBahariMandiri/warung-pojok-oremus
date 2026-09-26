@@ -12,18 +12,23 @@ use Illuminate\Support\Str;
 class RestockService
 {
     /**
-     * Get all restock transactions with relations and computed summary.
+     * Get all restock transactions with relations.
      */
     public function getAllRestocks(array $filters = [])
     {
-        $query = Restock::with(['creator', 'items.product'])->orderBy('restock_date', 'desc');
+        $query = Restock::with(['creator', 'items.product', 'items.unit'])->orderBy('restock_date', 'desc');
 
         if (!empty($filters['search'])) {
             $search = $filters['search'];
             $query->where(function ($q) use ($search) {
                 $q->where('restock_code', 'like', "%{$search}%")
+                  ->orWhere('invoice_number', 'like', "%{$search}%")
                   ->orWhere('supplier_name', 'like', "%{$search}%");
             });
+        }
+
+        if (!empty($filters['status_restock'])) {
+            $query->where('status_restock', strtoupper($filters['status_restock']));
         }
 
         if (!empty($filters['start_date']) && !empty($filters['end_date'])) {
@@ -33,199 +38,185 @@ class RestockService
             ]);
         }
 
-        return $query->get()->map(function ($restock) {
-            $totalQuantity = 0;
-            $totalValue = 0.0;
-
-            foreach ($restock->items as $item) {
-                $product = $item->product;
-                $priceUsed = $product ? (float)$product->current_hpp : 0.0;
-                $itemSubtotal = $item->quantity * $priceUsed;
-
-                $item->price_used = $priceUsed;
-                $item->subtotal = $itemSubtotal;
-
-                $totalQuantity += $item->quantity;
-                $totalValue += $itemSubtotal;
-            }
-
-            $restock->total_quantity = $totalQuantity;
-            $restock->total_value = $totalValue;
-
-            return $restock;
-        });
+        return $query->get();
     }
 
     /**
-     * Get single restock detail with computed summary.
+     * Get single restock detail with relations.
      */
     public function getRestockById(int $id): Restock
     {
-        $restock = Restock::with(['creator', 'items.product.productHpps.hpp'])->findOrFail($id);
-
-        $totalQuantity = 0;
-        $totalValue = 0.0;
-
-        foreach ($restock->items as $item) {
-            $product = $item->product;
-            $priceUsed = $product ? (float)$product->current_hpp : 0.0;
-            $itemSubtotal = $item->quantity * $priceUsed;
-
-            $item->price_used = $priceUsed;
-            $item->subtotal = $itemSubtotal;
-
-            $totalQuantity += $item->quantity;
-            $totalValue += $itemSubtotal;
-        }
-
-        $restock->total_quantity = $totalQuantity;
-        $restock->total_value = $totalValue;
-
-        return $restock;
+        return Restock::with(['creator', 'items.product', 'items.unit'])->findOrFail($id);
     }
 
     /**
-     * Create a new restock transaction, update product stock, and log activity.
+     * Create a new restock transaction.
+     * If status_restock is CONFIRMED, current_stock on master product is incremented.
      */
     public function createRestock(array $data, int $userId): Restock
     {
         return DB::transaction(function () use ($data, $userId) {
             $restockCode = !empty($data['restock_code']) ? $data['restock_code'] : $this->generateRestockCode();
+            $invoiceNum  = !empty($data['invoice_number']) ? $data['invoice_number'] : "INV-" . Carbon::now()->format('YmdHis');
             $restockDate = !empty($data['restock_date']) ? Carbon::parse($data['restock_date']) : Carbon::now();
+            $status      = strtoupper($data['status_restock'] ?? 'DRAFT');
 
-            $restock = Restock::create([
-                'created_by' => $userId,
-                'restock_code' => $restockCode,
-                'restock_date' => $restockDate,
-                'supplier_name' => $data['supplier_name'] ?? 'Supplier Umum',
-                'notes' => $data['notes'] ?? '',
-            ]);
-
-            $itemsSummary = [];
-            $totalRestockValue = 0.0;
-            $totalQuantity = 0;
+            $subtotal = 0.0;
+            $itemsToCreate = [];
 
             foreach ($data['items'] as $itemData) {
-                $productId = $itemData['product_id'];
-                $quantity = (int)$itemData['quantity'];
-                
-                // Lock product row for update to avoid race conditions
-                $product = Products::lockForUpdate()->findOrFail($productId);
-                $oldStock = $product->current_stock;
-                $newStock = $oldStock + $quantity;
+                $productId     = (int) $itemData['product_id'];
+                $restockUnitId = (int) $itemData['restock_unit_id'];
+                $quantity      = (int) $itemData['quantity'];
+                $purchasePrice = (float) $itemData['purchase_price'];
+                $itemTotal     = $quantity * $purchasePrice;
 
-                // Price determination based on HPP rules
-                if ($product->hpp_method === 'calculated') {
-                    // Calculated products use current_hpp from its components
-                    $priceUsed = (float)$product->current_hpp;
-                } else {
-                    // Manual products can update purchase price if provided
-                    if (isset($itemData['unit_price']) && $itemData['unit_price'] !== '' && $itemData['unit_price'] !== null) {
-                        $priceUsed = (float)$itemData['unit_price'];
-                        $product->unit_price = $priceUsed;
-                        $product->current_hpp = $priceUsed;
-                    } else {
-                        $priceUsed = (float)$product->current_hpp;
-                    }
-                }
+                $subtotal += $itemTotal;
 
-                // Update product stock
-                $product->current_stock = $newStock;
-                $product->save();
-
-                // Save restock item
-                $restockItem = RestockItems::create([
-                    'restock_id' => $restock->id,
-                    'product_id' => $productId,
-                    'quantity' => $quantity,
-                ]);
-
-                $subtotal = $quantity * $priceUsed;
-                $totalQuantity += $quantity;
-                $totalRestockValue += $subtotal;
-
-                $itemsSummary[] = [
-                    'product_id' => $productId,
-                    'product_name' => $product->prod_name,
-                    'sku' => $product->sku,
-                    'hpp_method' => $product->hpp_method,
-                    'quantity' => $quantity,
-                    'price_used' => $priceUsed,
-                    'subtotal' => $subtotal,
-                    'old_stock' => $oldStock,
-                    'new_stock' => $newStock,
+                $itemsToCreate[] = [
+                    'product_id'      => $productId,
+                    'restock_unit_id' => $restockUnitId,
+                    'quantity'        => $quantity,
+                    'purchase_price'  => $purchasePrice,
+                    'total_price'     => $itemTotal,
                 ];
             }
 
-            // Log activity
+            $discount   = (float) ($data['discount'] ?? 0);
+            $grandTotal = max(0.0, $subtotal - $discount);
+
+            $restock = Restock::create([
+                'created_by'     => $userId,
+                'restock_code'   => $restockCode,
+                'invoice_number' => $invoiceNum,
+                'restock_date'   => $restockDate,
+                'supplier_name'  => $data['supplier_name'] ?? 'Supplier Umum',
+                'status_restock' => $status,
+                'subtotal'       => $subtotal,
+                'discount'       => $discount,
+                'grand_total'    => $grandTotal,
+                'notes'          => $data['notes'] ?? '',
+            ]);
+
+            foreach ($itemsToCreate as $itemData) {
+                RestockItems::create([
+                    'restock_id'      => $restock->id,
+                    'product_id'      => $itemData['product_id'],
+                    'restock_unit_id' => $itemData['restock_unit_id'],
+                    'quantity'        => $itemData['quantity'],
+                    'purchase_price'  => $itemData['purchase_price'],
+                    'total_price'     => $itemData['total_price'],
+                ]);
+
+                // If transaction is CONFIRMED, add to product current_stock
+                if ($status === 'CONFIRMED') {
+                    $product = Products::lockForUpdate()->find($itemData['product_id']);
+                    if ($product) {
+                        $product->current_stock = $product->current_stock + $itemData['quantity'];
+                        $product->save();
+                    }
+                }
+            }
+
             ActivityLogService::log(
-                action: 'CREATE',
-                module: 'RESTOCK',
-                entityType: Restock::class,
-                entityId: $restock->id,
-                description: "Created Restock {$restock->restock_code} with {$totalQuantity} items (Total Nilai: Rp " . number_format($totalRestockValue, 0, ',', '.') . ") from {$restock->supplier_name}",
-                oldValues: null,
-                newValues: [
-                    'restock' => $restock->toArray(),
-                    'total_quantity' => $totalQuantity,
-                    'total_value' => $totalRestockValue,
-                    'items' => $itemsSummary,
-                ],
-                userId: $userId
+                action:      'CREATE',
+                module:      'RESTOCK',
+                entityType:  Restock::class,
+                entityId:    $restock->id,
+                description: "Created Restock {$restock->restock_code} (Status: {$status}, Grand Total: Rp " . number_format($grandTotal, 0, ',', '.') . ")",
+                oldValues:   null,
+                newValues:   $restock->load(['creator', 'items.product', 'items.unit'])->toArray(),
+                userId:      $userId
             );
 
-            $restock->total_quantity = $totalQuantity;
-            $restock->total_value = $totalRestockValue;
-
-            return $restock->load(['creator', 'items.product']);
+            return $restock->load(['creator', 'items.product', 'items.unit']);
         });
     }
 
     /**
-     * Cancel / Delete a restock transaction and rollback stock additions.
+     * Update status of restock transaction (e.g. from DRAFT to CONFIRMED).
+     */
+    public function updateStatus(Restock $restock, string $newStatus, int $userId): Restock
+    {
+        return DB::transaction(function () use ($restock, $newStatus, $userId) {
+            $oldStatus = $restock->status_restock;
+            $newStatus = strtoupper($newStatus);
+
+            if ($oldStatus === $newStatus) {
+                return $restock;
+            }
+
+            $restock->load('items');
+
+            // If changing DRAFT -> CONFIRMED: add stock
+            if ($oldStatus === 'DRAFT' && $newStatus === 'CONFIRMED') {
+                foreach ($restock->items as $item) {
+                    $product = Products::lockForUpdate()->find($item->product_id);
+                    if ($product) {
+                        $product->current_stock = $product->current_stock + $item->quantity;
+                        $product->save();
+                    }
+                }
+            }
+            // If changing CONFIRMED -> DRAFT: rollback stock addition
+            elseif ($oldStatus === 'CONFIRMED' && $newStatus === 'DRAFT') {
+                foreach ($restock->items as $item) {
+                    $product = Products::lockForUpdate()->find($item->product_id);
+                    if ($product) {
+                        $product->current_stock = max(0, $product->current_stock - $item->quantity);
+                        $product->save();
+                    }
+                }
+            }
+
+            $restock->update(['status_restock' => $newStatus]);
+
+            ActivityLogService::log(
+                action:      'UPDATE_STATUS',
+                module:      'RESTOCK',
+                entityType:  Restock::class,
+                entityId:    $restock->id,
+                description: "Updated Restock {$restock->restock_code} status from {$oldStatus} to {$newStatus}",
+                oldValues:   ['status_restock' => $oldStatus],
+                newValues:   ['status_restock' => $newStatus],
+                userId:      $userId
+            );
+
+            return $restock->fresh()->load(['creator', 'items.product', 'items.unit']);
+        });
+    }
+
+    /**
+     * Delete a restock transaction and rollback stock additions if CONFIRMED.
      */
     public function deleteRestock(Restock $restock): bool
     {
         return DB::transaction(function () use ($restock) {
-            $restock->load('items.product');
+            $restock->load('items');
             $oldValues = $restock->toArray();
-            $rollbackSummary = [];
+            $code = $restock->restock_code;
 
-            foreach ($restock->items as $item) {
-                $product = Products::lockForUpdate()->find($item->product_id);
-                if ($product) {
-                    $oldStock = $product->current_stock;
-                    $newStock = max(0, $oldStock - $item->quantity);
-                    $product->current_stock = $newStock;
-                    $product->save();
-
-                    $rollbackSummary[] = [
-                        'product_id' => $product->id,
-                        'product_name' => $product->prod_name,
-                        'rolled_back_quantity' => $item->quantity,
-                        'old_stock' => $oldStock,
-                        'new_stock' => $newStock,
-                    ];
+            // Rollback stock additions if was CONFIRMED
+            if ($restock->status_restock === 'CONFIRMED') {
+                foreach ($restock->items as $item) {
+                    $product = Products::lockForUpdate()->find($item->product_id);
+                    if ($product) {
+                        $product->current_stock = max(0, $product->current_stock - $item->quantity);
+                        $product->save();
+                    }
                 }
             }
 
-            $id = $restock->id;
-            $code = $restock->restock_code;
-
-            // Restock items will be cascade deleted by FK constraint
             $deleted = $restock->delete();
 
             ActivityLogService::log(
-                action: 'DELETE',
-                module: 'RESTOCK',
-                entityType: Restock::class,
-                entityId: $id,
-                description: "Deleted & rolled back Restock transaction: {$code}",
-                oldValues: [
-                    'restock' => $oldValues,
-                    'stock_rollback' => $rollbackSummary,
-                ],
-                newValues: null
+                action:      'DELETE',
+                module:      'RESTOCK',
+                entityType:  Restock::class,
+                entityId:    $restock->id,
+                description: "Deleted Restock transaction: {$code}",
+                oldValues:   $oldValues,
+                newValues:   null
             );
 
             return $deleted;

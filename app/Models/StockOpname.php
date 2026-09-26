@@ -7,32 +7,25 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 
-class Restock extends Model
+class StockOpname extends Model
 {
     use HasFactory, HasApiTokens, Notifiable;
 
-    protected $table = 'restock';
+    protected $table = 'stock_opname';
 
     protected $fillable = [
         'created_by',
-        'restock_code',
-        'invoice_number',
-        'restock_date',
-        'supplier_name',
-        'status_restock',
-        'subtotal',
-        'discount',
-        'grand_total',
+        'opname_code',
+        'opname_date',
         'notes',
+        'status_opname',
     ];
 
     protected function casts(): array
     {
         return [
-            'restock_date' => 'datetime',
-            'subtotal'     => 'decimal:3',
-            'discount'     => 'decimal:3',
-            'grand_total'  => 'decimal:3',
+            'created_by'  => 'integer',
+            'opname_date' => 'datetime',
         ];
     }
 
@@ -43,6 +36,6 @@ class Restock extends Model
 
     public function items()
     {
-        return $this->hasMany(RestockItems::class, 'restock_id');
+        return $this->hasMany(StockOpnameItem::class, 'opname_id');
     }
 }

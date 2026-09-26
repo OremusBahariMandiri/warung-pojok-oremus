@@ -16,23 +16,29 @@ class ReportDetails extends Model
     protected $fillable = [
         'report_id',
         'product_id',
+        'selling_unit_id',
         'quantity',
+        'stock_final',
         'selling_price',
         'hpp',
         'total_price',
         'total_hpp',
-        'margin'
+        'margin',
     ];
 
     protected function casts(): array
     {
         return [
-            'quantity' => 'integer',
-            'selling_price' => 'decimal:3',
-            'hpp' => 'decimal:3',
-            'total_price' => 'decimal:3',
-            'total_hpp' => 'decimal:3',
-            'margin' => 'decimal:3',
+            'report_id'       => 'integer',
+            'product_id'      => 'integer',
+            'selling_unit_id' => 'integer',
+            'quantity'        => 'integer',
+            'stock_final'     => 'integer',
+            'selling_price'   => 'decimal:3',
+            'hpp'             => 'decimal:3',
+            'total_price'     => 'decimal:3',
+            'total_hpp'       => 'decimal:3',
+            'margin'          => 'decimal:3',
         ];
     }
 
@@ -44,5 +50,10 @@ class ReportDetails extends Model
     public function product()
     {
         return $this->belongsTo(Products::class, 'product_id');
+    }
+
+    public function sellingUnit()
+    {
+        return $this->belongsTo(Unit::class, 'selling_unit_id');
     }
 }
