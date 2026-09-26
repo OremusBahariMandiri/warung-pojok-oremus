@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreRestockRequest;
 use App\Models\Products;
 use App\Models\Restock;
+use App\Models\Unit;
 use App\Services\RestockService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -23,13 +24,13 @@ class RestockController extends Controller
      */
     public function index(Request $request)
     {
-        $filters = $request->only(['search', 'start_date', 'end_date']);
+        $filters = $request->only(['search', 'status_restock', 'start_date', 'end_date']);
         $restocks = $this->restockService->getAllRestocks($filters);
 
         if ($request->wantsJson()) {
             return response()->json([
                 'status' => 'success',
-                'data' => $restocks,
+                'data'   => $restocks,
             ]);
         }
 
@@ -41,11 +42,10 @@ class RestockController extends Controller
      */
     public function create()
     {
-        $products = Products::with('unit')->select([
-            'id', 'unit_id', 'prod_name', 'sku', 'hpp_method', 'unit_price', 'current_hpp', 'current_stock'
-        ])->orderBy('prod_name', 'asc')->get();
+        $products = Products::with('unit')->orderBy('prod_name', 'asc')->get();
+        $units    = Unit::orderBy('unit_name', 'asc')->get();
 
-        return view('pages.restock.create', compact('products'));
+        return view('pages.restock.create', compact('products', 'units'));
     }
 
     /**
@@ -58,9 +58,9 @@ class RestockController extends Controller
 
         if ($request->wantsJson()) {
             return response()->json([
-                'status' => 'success',
-                'message' => 'Transaksi restock berhasil dicatat dan stok telah ditambahkan.',
-                'data' => $restock,
+                'status'  => 'success',
+                'message' => 'Transaksi restock berhasil dicatat.',
+                'data'    => $restock,
             ], 201);
         }
 
@@ -77,11 +77,34 @@ class RestockController extends Controller
         if ($request->wantsJson()) {
             return response()->json([
                 'status' => 'success',
-                'data' => $detailedRestock,
+                'data'   => $detailedRestock,
             ]);
         }
 
         return view('pages.restock.show', compact('detailedRestock'));
+    }
+
+    /**
+     * Update status of restock transaction (DRAFT -> CONFIRMED).
+     */
+    public function updateStatus(Request $request, Restock $restock)
+    {
+        $request->validate([
+            'status_restock' => 'required|in:DRAFT,CONFIRMED',
+        ]);
+
+        $userId = Auth::id() ?? 1;
+        $updatedRestock = $this->restockService->updateStatus($restock, $request->input('status_restock'), $userId);
+
+        if ($request->wantsJson()) {
+            return response()->json([
+                'status'  => 'success',
+                'message' => 'Status restock berhasil diperbarui.',
+                'data'    => $updatedRestock,
+            ]);
+        }
+
+        return redirect()->route('restock.show', $restock->id)->with('success', 'Status restock berhasil diperbarui.');
     }
 
     /**
@@ -93,7 +116,7 @@ class RestockController extends Controller
 
         if ($request->wantsJson()) {
             return response()->json([
-                'status' => 'success',
+                'status'  => 'success',
                 'message' => 'Transaksi restock berhasil dibatalkan dan penambahan stok telah di-rollback.',
             ]);
         }

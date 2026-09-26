@@ -16,13 +16,18 @@ class RestockItems extends Model
     protected $fillable = [
         'restock_id',
         'product_id',
+        'restock_unit_id',
         'quantity',
+        'purchase_price',
+        'total_price',
     ];
 
     protected function casts(): array
     {
         return [
-            'quantity' => 'integer',
+            'quantity'       => 'integer',
+            'purchase_price' => 'decimal:3',
+            'total_price'    => 'decimal:3',
         ];
     }
 
@@ -34,5 +39,10 @@ class RestockItems extends Model
     public function product()
     {
         return $this->belongsTo(Products::class, 'product_id');
+    }
+
+    public function unit()
+    {
+        return $this->belongsTo(Unit::class, 'restock_unit_id');
     }
 }
