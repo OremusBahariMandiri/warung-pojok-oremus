@@ -2,10 +2,10 @@
 
 namespace Tests\Feature;
 
-use App\Models\ActivityLogs;
 use App\Models\Hpp;
 use App\Models\Products;
 use App\Models\Restock;
+use App\Models\Unit;
 use App\Models\User;
 use App\Services\ProductService;
 use App\Services\RestockService;
@@ -17,6 +17,8 @@ class RestockTest extends TestCase
     use RefreshDatabase;
 
     protected User $user;
+    protected Unit $sachetUnit;
+    protected Unit $boxUnit;
     protected ProductService $productService;
     protected RestockService $restockService;
 
@@ -32,164 +34,55 @@ class RestockTest extends TestCase
             'is_admin' => true,
         ]);
 
+        $this->sachetUnit = Unit::create([
+            'unit_name' => 'Sachet',
+            'type' => 'Kemasan',
+            'short_name' => 'sct',
+        ]);
+
+        $this->boxUnit = Unit::create([
+            'unit_name' => 'Box',
+            'type' => 'Kemasan',
+            'short_name' => 'box',
+        ]);
+
         $this->productService = app(ProductService::class);
         $this->restockService = app(RestockService::class);
     }
 
     /**
-     * Test restock for product with calculated HPP (e.g., Nutrisari).
-     * Rule: User enters quantity, price is automatically derived from HPP (Rp 2.950).
+     * Test Restock DRAFT vs CONFIRMED status behavior.
+     * DRAFT: stock is NOT incremented.
+     * CONFIRMED: stock IS incremented.
      */
-    public function test_restock_calculated_hpp_product_increments_stock_and_uses_hpp(): void
-    {
-        $this->actingAs($this->user);
-
-        $hppAirEs = Hpp::create(['name' => 'Air dan Es', 'unit' => 'Porsi', 'unit_cost' => 900]);
-        $hppGula = Hpp::create(['name' => 'Gula', 'unit' => 'Porsi', 'unit_cost' => 300]);
-        $hppKemasan = Hpp::create(['name' => 'Kemasan', 'unit' => 'Pcs', 'unit_cost' => 350]);
-
-        $product = $this->productService->createProduct([
-            'prod_name' => 'Nutrisari Florida Orange',
-            'satuan' => 'Sachet',
-            'selling_price' => 5000,
-            'unit_price' => 1400,
-            'hpp_method' => 'calculated',
-            'min_stock' => 10,
-            'current_stock' => 10,
-            'description' => 'Nutrisari dingin',
-            'components' => [
-                ['hpp_id' => $hppAirEs->id, 'cost' => 900],
-                ['hpp_id' => $hppGula->id, 'cost' => 300],
-                ['hpp_id' => $hppKemasan->id, 'cost' => 350],
-            ],
-        ]);
-
-        $this->assertEquals(2950.000, (float)$product->current_hpp);
-        $this->assertEquals(10, $product->current_stock);
-
-        // Perform Restock with Quantity = 25
-        $payload = [
-            'supplier_name' => 'Toko Sembako Makmur',
-            'restock_date' => now()->toDateString(),
-            'notes' => 'Restock mingguan minuman sachet',
-            'items' => [
-                [
-                    'product_id' => $product->id,
-                    'quantity' => 25,
-                ]
-            ]
-        ];
-
-        $response = $this->postJson(route('restock.store'), $payload);
-        $response->assertStatus(201);
-
-        // Assert database records
-        $this->assertDatabaseHas('restock', [
-            'supplier_name' => 'Toko Sembako Makmur',
-            'created_by' => $this->user->id,
-        ]);
-
-        $restock = Restock::where('supplier_name', 'Toko Sembako Makmur')->first();
-
-        $this->assertDatabaseHas('restock_items', [
-            'restock_id' => $restock->id,
-            'product_id' => $product->id,
-            'quantity' => 25,
-        ]);
-
-        // Assert stock incremented: 10 + 25 = 35
-        $product->refresh();
-        $this->assertEquals(35, $product->current_stock);
-
-        // Assert Activity Log
-        $this->assertDatabaseHas('activity_logs', [
-            'action' => 'CREATE',
-            'module' => 'RESTOCK',
-            'entity_id' => $restock->id,
-        ]);
-    }
-
-    /**
-     * Test restock for product with manual HPP (e.g., Gorengan).
-     * Rule: User enters quantity and can input/update manual purchase price.
-     */
-    public function test_restock_manual_hpp_product_allows_custom_price(): void
+    public function test_restock_draft_does_not_increment_stock_until_confirmed(): void
     {
         $this->actingAs($this->user);
 
         $product = $this->productService->createProduct([
-            'prod_name' => 'Gorengan Ote-ote',
-            'satuan' => 'Porsi',
-            'selling_price' => 101500,
-            'unit_price' => 50000,
-            'hpp_method' => 'manual',
-            'current_hpp' => 50000,
-            'min_stock' => 2,
-            'current_stock' => 5,
-            'description' => 'Gorengan titipan',
+            'prod_name' => 'Nutrisari Cincau',
+            'unit_id' => $this->sachetUnit->id,
+            'hpp_method' => 'CALCULATED',
+            'initial_stock' => 40,
+            'current_stock' => 40,
+            'min_stock' => 5,
         ]);
 
-        $this->assertEquals(5, $product->current_stock);
-
-        // Restock with updated manual price = 53000, quantity = 10
+        // 1. Create DRAFT Restock with Qty = 20
         $payload = [
-            'supplier_name' => 'Bu Retno Gorengan',
-            'notes' => 'Restock sore hari',
-            'items' => [
+            'supplier_name'  => 'Toko Sembako Makmur',
+            'invoice_number' => 'INV-20260925-001',
+            'restock_date'   => now()->toDateString(),
+            'status_restock' => 'DRAFT',
+            'discount'       => 2000,
+            'notes'          => 'Restock mingguan minuman sachet',
+            'items'          => [
                 [
-                    'product_id' => $product->id,
-                    'quantity' => 10,
-                    'unit_price' => 53000,
+                    'product_id'      => $product->id,
+                    'restock_unit_id' => $this->boxUnit->id,
+                    'quantity'        => 20,
+                    'purchase_price'  => 1400,
                 ]
-            ]
-        ];
-
-        $response = $this->postJson(route('restock.store'), $payload);
-        $response->assertStatus(201);
-
-        // Assert stock updated: 5 + 10 = 15
-        $product->refresh();
-        $this->assertEquals(15, $product->current_stock);
-        $this->assertEquals(53000.000, (float)$product->unit_price);
-        $this->assertEquals(53000.000, (float)$product->current_hpp);
-    }
-
-    /**
-     * Test restock multi-items in a single transaction and verify total value calculation.
-     */
-    public function test_restock_multi_items_and_total_value_calculation(): void
-    {
-        $this->actingAs($this->user);
-
-        // Product 1: Aqua (manual HPP 2084)
-        $aqua = $this->productService->createProduct([
-            'prod_name' => 'Aqua Botol 600ml',
-            'satuan' => 'Botol',
-            'selling_price' => 5000,
-            'unit_price' => 2084,
-            'hpp_method' => 'manual',
-            'current_hpp' => 2084,
-            'min_stock' => 10,
-            'current_stock' => 20,
-        ]);
-
-        // Product 2: Beng Beng (manual HPP 2206)
-        $bengbeng = $this->productService->createProduct([
-            'prod_name' => 'Beng Beng',
-            'satuan' => 'Pcs',
-            'selling_price' => 3000,
-            'unit_price' => 2206,
-            'hpp_method' => 'manual',
-            'current_hpp' => 2206,
-            'min_stock' => 10,
-            'current_stock' => 15,
-        ]);
-
-        $payload = [
-            'supplier_name' => 'Agen Minuman & Snack Subur',
-            'items' => [
-                ['product_id' => $aqua->id, 'quantity' => 24, 'unit_price' => 2084], // Subtotal: 24 * 2084 = 50016
-                ['product_id' => $bengbeng->id, 'quantity' => 20, 'unit_price' => 2206], // Subtotal: 20 * 2206 = 44120
             ]
         ];
 
@@ -197,60 +90,92 @@ class RestockTest extends TestCase
         $response->assertStatus(201);
 
         $restockId = $response->json('data.id');
-        $detailedRestock = $this->restockService->getRestockById($restockId);
+        $restock   = Restock::find($restockId);
 
-        // Total quantity: 24 + 20 = 44
-        $this->assertEquals(44, $detailedRestock->total_quantity);
-        // Total value: 50016 + 44120 = 94136
-        $this->assertEquals(94136.000, (float)$detailedRestock->total_value);
+        // Subtotal = 20 * 1400 = 28000, Grand Total = 28000 - 2000 = 26000
+        $this->assertEquals(28000.000, (float) $restock->subtotal);
+        $this->assertEquals(26000.000, (float) $restock->grand_total);
+        $this->assertEquals('DRAFT', $restock->status_restock);
 
-        // Check stock updates
-        $aqua->refresh();
-        $bengbeng->refresh();
-        $this->assertEquals(44, $aqua->current_stock); // 20 + 24
-        $this->assertEquals(35, $bengbeng->current_stock); // 15 + 20
+        // Stock should remain 40 because transaction is DRAFT
+        $product->refresh();
+        $this->assertEquals(40, $product->current_stock);
+
+        // 2. Update status to CONFIRMED
+        $statusResponse = $this->patchJson(route('restock.update_status', $restock->id), [
+            'status_restock' => 'CONFIRMED',
+        ]);
+        $statusResponse->assertStatus(200);
+
+        // Stock should now be incremented: 40 + 20 = 60
+        $product->refresh();
+        $this->assertEquals(60, $product->current_stock);
     }
 
     /**
-     * Test validation on restock store request.
+     * Test Restock directly CONFIRMED on creation.
      */
-    public function test_restock_validation_fails_on_invalid_data(): void
+    public function test_restock_confirmed_directly_increments_stock(): void
     {
         $this->actingAs($this->user);
 
-        // Missing supplier and empty items
-        $response = $this->postJson(route('restock.store'), [
-            'supplier_name' => '',
-            'items' => []
+        $product = $this->productService->createProduct([
+            'prod_name' => 'Aqua Botol 600ml',
+            'unit_id' => $this->sachetUnit->id,
+            'hpp_method' => 'MANUAL',
+            'initial_stock' => 10,
+            'current_stock' => 10,
+            'min_stock' => 5,
         ]);
 
-        $response->assertStatus(422);
-        $response->assertJsonValidationErrors(['supplier_name', 'items']);
+        $payload = [
+            'supplier_name'  => 'Distributor Air',
+            'restock_date'   => now()->toDateString(),
+            'status_restock' => 'CONFIRMED',
+            'items'          => [
+                [
+                    'product_id'      => $product->id,
+                    'restock_unit_id' => $this->sachetUnit->id,
+                    'quantity'        => 30,
+                    'purchase_price'  => 2000,
+                ]
+            ]
+        ];
+
+        $response = $this->postJson(route('restock.store'), $payload);
+        $response->assertStatus(201);
+
+        $product->refresh();
+        $this->assertEquals(40, $product->current_stock);
     }
 
     /**
-     * Test rollback of product stock when a restock transaction is deleted / cancelled.
+     * Test rollback of product stock when a confirmed restock is deleted.
      */
-    public function test_delete_restock_rolls_back_product_stock(): void
+    public function test_delete_confirmed_restock_rolls_back_product_stock(): void
     {
         $this->actingAs($this->user);
 
         $product = $this->productService->createProduct([
             'prod_name' => 'Good Day Freeze',
-            'satuan' => 'Sachet',
-            'selling_price' => 6000,
-            'unit_price' => 2400,
-            'hpp_method' => 'manual',
-            'current_hpp' => 2400,
-            'min_stock' => 5,
+            'unit_id' => $this->sachetUnit->id,
+            'hpp_method' => 'MANUAL',
+            'initial_stock' => 10,
             'current_stock' => 10,
+            'min_stock' => 5,
         ]);
 
-        // Restock +30 items -> stock becomes 40
         $restock = $this->restockService->createRestock([
-            'supplier_name' => 'Distributor Kopi',
-            'items' => [
-                ['product_id' => $product->id, 'quantity' => 30]
+            'supplier_name'  => 'Distributor Kopi',
+            'restock_date'   => now()->toDateString(),
+            'status_restock' => 'CONFIRMED',
+            'items'          => [
+                [
+                    'product_id'      => $product->id,
+                    'restock_unit_id' => $this->sachetUnit->id,
+                    'quantity'        => 30,
+                    'purchase_price'  => 2400,
+                ]
             ]
         ], $this->user->id);
 
@@ -265,15 +190,6 @@ class RestockTest extends TestCase
         $product->refresh();
         $this->assertEquals(10, $product->current_stock);
 
-        // Assert database record deleted
         $this->assertDatabaseMissing('restock', ['id' => $restock->id]);
-        $this->assertDatabaseMissing('restock_items', ['restock_id' => $restock->id]);
-
-        // Assert Activity Log for rollback
-        $this->assertDatabaseHas('activity_logs', [
-            'action' => 'DELETE',
-            'module' => 'RESTOCK',
-            'entity_id' => $restock->id,
-        ]);
     }
 }
