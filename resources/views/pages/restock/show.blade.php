@@ -1,4 +1,4 @@
-﻿@extends('layouts.admin')
+@extends('layouts.admin')
 
 @section('title', 'Detail Restock — Warung Pojok Oremus')
 
@@ -26,14 +26,19 @@
 <!-- Header Title di atas Card -->
 <div class="d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-3 mb-4">
     <div>
-        <h4 class="fw-bold text-dark mb-1">Detail Transaksi Restock</h4>
+        <h4 class="fw-bold text-dark mb-1">Detail Transaksi Restock: {{ $restockObj->restock_code }}</h4>
     </div>
     <div class="d-flex align-items-center gap-2">
         <a href="{{ route('restock.index') }}" class="btn btn-sm btn-outline-secondary rounded-2 px-3 d-inline-flex align-items-center gap-2">
             <i class="bi bi-arrow-left"></i> Kembali
         </a>
-        <button type="button" class="btn btn-sm btn-danger text-white rounded-2 px-3 d-inline-flex align-items-center gap-2" onclick="openDeleteModal({{ $restockObj->id }}, '{{ addslashes($restockObj->restock_code) }}', {{ (int)($restockObj->total_quantity ?? 0) }}, {{ (float)($restockObj->total_value ?? 0) }})">
-            <i class="bi bi-arrow-counterclockwise"></i> Batalkan
+        @if ($restockObj->status_restock === 'DRAFT')
+            <a href="{{ route('restock.edit', $restockObj->id) }}" class="btn btn-sm btn-warning text-white rounded-2 px-3 d-inline-flex align-items-center gap-2" style="background-color: #f59e0b; border-color: #f59e0b;">
+                <i class="bi bi-pencil"></i> Edit Draft
+            </a>
+        @endif
+        <button type="button" class="btn btn-sm btn-danger text-white rounded-2 px-3 d-inline-flex align-items-center gap-2" onclick="openDeleteModal({{ $restockObj->id }}, '{{ addslashes($restockObj->restock_code) }}', {{ (int)($itemsList->sum('quantity')) }}, {{ (float)($restockObj->grand_total ?? 0) }})">
+            <i class="bi bi-trash"></i> Batalkan
         </button>
     </div>
 </div>
@@ -47,6 +52,20 @@
                 <div>
                     <div class="text-muted small">Kode Restock</div>
                     <div class="fw-semibold font-monospace text-dark fs-6">{{ $restockObj->restock_code }}</div>
+                </div>
+                <div>
+                    <div class="text-muted small">Nomor Invoice</div>
+                    <div class="fw-semibold font-monospace text-dark">{{ $restockObj->invoice_number }}</div>
+                </div>
+                <div>
+                    <div class="text-muted small">Status Transaksi</div>
+                    <div>
+                        @if ($restockObj->status_restock === 'DRAFT')
+                            <span class="badge bg-warning text-dark px-2 py-1">DRAFT</span>
+                        @else
+                            <span class="badge bg-success text-white px-2 py-1">CONFIRMED</span>
+                        @endif
+                    </div>
                 </div>
                 <div>
                     <div class="text-muted small">Supplier / Sumber Barang</div>
@@ -67,13 +86,23 @@
                     </div>
                     <div class="col-6">
                         <div class="text-muted small">Total Kuantitas Masuk</div>
-                        <div class="fw-semibold text-dark">{{ (int)($restockObj->total_quantity ?? 0) }} Unit</div>
+                        <div class="fw-semibold text-dark">{{ (int)($itemsList->sum('quantity')) }} Unit</div>
                     </div>
                 </div>
                 <div class="pt-2 border-top">
-                    <div class="text-muted small">Total Nilai Pembelian</div>
-                    <div class="fw-bold font-monospace text-dark fs-5">
-                        Rp {{ number_format($restockObj->total_value ?? 0, 0, ',', '.') }}
+                    <div class="d-flex justify-content-between small text-muted mb-1">
+                        <span>Subtotal:</span>
+                        <span class="font-monospace text-dark">Rp {{ number_format($restockObj->subtotal ?? 0, 0, ',', '.') }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between small text-muted mb-1">
+                        <span>Diskon / Potongan:</span>
+                        <span class="font-monospace text-danger">- Rp {{ number_format($restockObj->discount ?? 0, 0, ',', '.') }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between fw-bold pt-1 border-top">
+                        <span class="text-dark">Grand Total:</span>
+                        <span class="font-monospace text-success fs-6">
+                            Rp {{ number_format($restockObj->grand_total ?? 0, 0, ',', '.') }}
+                        </span>
                     </div>
                 </div>
                 <div>

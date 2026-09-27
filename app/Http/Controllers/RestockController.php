@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\CodeGenerator;
 use App\Http\Requests\StoreRestockRequest;
+use App\Http\Requests\UpdateRestockRequest;
 use App\Models\Products;
 use App\Models\Restock;
 use App\Models\Unit;
@@ -42,10 +44,12 @@ class RestockController extends Controller
      */
     public function create()
     {
-        $products = Products::with('unit')->orderBy('prod_name', 'asc')->get();
-        $units    = Unit::orderBy('unit_name', 'asc')->get();
+        $products         = Products::with('unit')->orderBy('prod_name', 'asc')->get();
+        $units            = Unit::orderBy('unit_name', 'asc')->get();
+        $generatedInvoice = CodeGenerator::generateInvoiceNumber(Restock::class);
+        $generatedCode    = CodeGenerator::generateRestockCode(Restock::class);
 
-        return view('pages.restock.create', compact('products', 'units'));
+        return view('pages.restock.create', compact('products', 'units', 'generatedInvoice', 'generatedCode'));
     }
 
     /**
@@ -82,6 +86,37 @@ class RestockController extends Controller
         }
 
         return view('pages.restock.show', compact('detailedRestock'));
+    }
+
+    /**
+     * Show the form for editing the specified restock transaction.
+     */
+    public function edit(Restock $restock)
+    {
+        $restock->load(['creator', 'items.product.unit', 'items.unit']);
+        $products = Products::with('unit')->orderBy('prod_name', 'asc')->get();
+        $units    = Unit::orderBy('unit_name', 'asc')->get();
+
+        return view('pages.restock.edit', compact('restock', 'products', 'units'));
+    }
+
+    /**
+     * Update the specified restock transaction in storage.
+     */
+    public function update(UpdateRestockRequest $request, Restock $restock)
+    {
+        $userId = Auth::id() ?? 1;
+        $updatedRestock = $this->restockService->updateRestock($restock, $request->validated(), $userId);
+
+        if ($request->wantsJson()) {
+            return response()->json([
+                'status'  => 'success',
+                'message' => 'Transaksi restock berhasil diperbarui.',
+                'data'    => $updatedRestock,
+            ]);
+        }
+
+        return redirect()->route('restock.index')->with('success', 'Transaksi restock berhasil diperbarui.');
     }
 
     /**

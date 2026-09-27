@@ -1,0 +1,261 @@
+/* =============================================================
+   WARJOK — Manajemen Stock Opname Stylesheet
+   Warung Pojok Oremus | PT Oremus Bahari Mandiri
+   ============================================================= */
+
+/* ── Table Bordered & Grid ───────────────────── */
+#opnameDataTable.table-bordered,
+#opnameItemsTable.table-bordered,
+#opnameShowTable.table-bordered {
+    border: 1px solid #dee2e6;
+}
+#opnameDataTable.table-bordered th,
+#opnameDataTable.table-bordered td,
+#opnameItemsTable.table-bordered th,
+#opnameItemsTable.table-bordered td,
+#opnameShowTable.table-bordered th,
+#opnameShowTable.table-bordered td {
+    border: 1px solid #dee2e6;
+    padding: 0.65rem 0.85rem;
+}
+#opnameDataTable thead th,
+#opnameItemsTable thead th,
+#opnameShowTable thead th {
+    background-color: #f8f9fa;
+    font-weight: 700 !important;
+    color: #334155;
+    font-size: 0.8rem;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    vertical-align: middle;
+}
+
+/* ── Summary & Stat Cards ────────────────────── */
+.opname-stat-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 1.1rem 1.25rem;
+    transition: all 0.2s ease-in-out;
+}
+.opname-stat-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    border-color: #cbd5e1;
+}
+.opname-stat-card .stat-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+}
+.opname-stat-card .stat-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #64748b;
+    margin-bottom: 2px;
+}
+.opname-stat-card .stat-value {
+    font-size: 1.45rem;
+    font-weight: 700;
+    color: #0f172a;
+    line-height: 1.2;
+}
+
+/* ── Difference Badges (index/show page only) ─ */
+.diff-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.3rem 0.65rem;
+    border-radius: 6px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    font-family:
+        ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+.diff-badge.zero {
+    background-color: #f1f5f9;
+    color: #475569;
+    border: 1px solid #e2e8f0;
+}
+.diff-badge.surplus {
+    background-color: #ecfdf5;
+    color: #059669;
+    border: 1px solid #a7f3d0;
+}
+.diff-badge.deficit {
+    background-color: #fef2f2;
+    color: #dc2626;
+    border: 1px solid #fecaca;
+}
+
+/* ── Search Box (index page) ─────────────────── */
+.opname-search-box {
+    flex-grow: 1;
+    min-width: 240px;
+    max-width: 400px;
+}
+.opname-search-box .form-control {
+    font-size: 0.85rem;
+    border-color: #e2e8f0;
+}
+.opname-search-box .form-control:focus {
+    border-color: #0ea5e9;
+    box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.15);
+}
+
+/* ── Item Form Table Layout (desktop) ───────── */
+#opnameItemsTable {
+    width: 100% !important;
+    table-layout: fixed;
+}
+#opnameItemsTable .col-no {
+    width: 5%;
+}
+#opnameItemsTable .col-product {
+    width: 35%;
+}
+#opnameItemsTable .col-unit {
+    width: 12%;
+}
+#opnameItemsTable .col-sys-stock {
+    width: 14%;
+}
+#opnameItemsTable .col-phys-stock {
+    width: 16%;
+}
+#opnameItemsTable .col-diff {
+    width: 12%;
+}
+#opnameItemsTable .col-action {
+    width: 6%;
+}
+
+/* ── Delete Row Button ───────────────────────── */
+.btn-delete-row {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    border: 1px solid #fecaca;
+    background: #fff5f5;
+    color: #dc2626;
+    transition:
+        background 0.15s,
+        color 0.15s,
+        border-color 0.15s;
+    cursor: pointer;
+    padding: 0;
+}
+.btn-delete-row:hover {
+    background: #dc2626;
+    color: #fff;
+    border-color: #dc2626;
+}
+
+/* ── Mobile Card View (index page) ──────────── */
+.opname-mobile-card {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 1rem 1.1rem;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+    transition: box-shadow 0.2s ease;
+}
+.opname-mobile-card:hover {
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.09);
+}
+
+.opname-mobile-info-chip {
+    display: inline-flex;
+    align-items: center;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 0.2rem 0.55rem;
+    font-size: 0.8rem;
+    color: #475569;
+    max-width: 100%;
+}
+
+/* ── Mobile Item Cards (create / edit form) ──── */
+.opname-item-card {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 0.9rem 1rem;
+    margin-bottom: 0.75rem;
+    position: relative;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+    transition: box-shadow 0.2s ease;
+}
+.opname-item-card:last-child {
+    margin-bottom: 0;
+}
+.opname-item-card:hover {
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.09);
+}
+
+.opname-item-card .card-header-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.6rem;
+    margin-bottom: 0.85rem;
+}
+.opname-item-card .card-num-badge {
+    flex-shrink: 0;
+    min-width: 24px;
+    height: 24px;
+    background: #f1f5f9;
+    color: #64748b;
+    border-radius: 5px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 2px;
+}
+.opname-item-card .mobile-product-name {
+    line-height: 1.4;
+    margin-bottom: 2px;
+}
+
+/* Mobile field label (Produk, Stok Sistem, dll) */
+.mobile-field-label {
+    display: block;
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #64748b;
+    margin-bottom: 4px;
+}
+
+/* Mobile physical stock input */
+.mobile-phys-input {
+    text-align: center;
+    font-weight: 700;
+    font-size: 0.9rem;
+    border-color: #e2e8f0;
+    border-radius: 6px;
+    padding: 0.3rem 0.5rem;
+    width: 100%;
+}
+.mobile-phys-input:focus {
+    border-color: #0ea5e9;
+    box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.15);
+    outline: none;
+}
+
+/* text-navy helper (kalau belum ada di layout) */
+.text-navy {
+    color: #0f172a;
+}
