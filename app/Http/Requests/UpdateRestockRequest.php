@@ -4,7 +4,7 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class StoreRestockRequest extends FormRequest
+class UpdateRestockRequest extends FormRequest
 {
     public function authorize(): bool
     {
@@ -42,8 +42,6 @@ class StoreRestockRequest extends FormRequest
             'items.min'                        => 'Minimal satu produk harus dipilih untuk direstock.',
             'items.*.product_id.required'      => 'Produk wajib dipilih.',
             'items.*.product_id.exists'        => 'Produk yang dipilih tidak valid.',
-            'items.*.restock_unit_id.required' => 'Satuan pembelian wajib dipilih.',
-            'items.*.restock_unit_id.exists'   => 'Satuan pembelian yang dipilih tidak valid.',
             'items.*.quantity.required'        => 'Jumlah restock wajib diisi.',
             'items.*.quantity.min'             => 'Jumlah restock minimal 1.',
             'items.*.purchase_price.required'  => 'Harga beli wajib diisi.',

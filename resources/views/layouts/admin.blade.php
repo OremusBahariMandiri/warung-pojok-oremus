@@ -73,7 +73,7 @@
                        role="button" 
                        aria-expanded="{{ $isMasterDataActive ? 'true' : 'false' }}" 
                        aria-controls="menuMasterData">
-                        <i class="bi bi-box-seam menu-icon"></i>
+                        <i class="bi bi-database menu-icon"></i>
                         <span class="nav-text">Master Data</span>
                         <i class="bi bi-chevron-down submenu-arrow"></i>
                     </a>
@@ -101,15 +101,40 @@
                     </div>
                 </li>
 
-                <!-- ── 3. INVENTORI / RESTOCK ── -->
+                <!-- ── 3. INVENTORI ── -->
+                @php
+                    $isInventoryActive = request()->routeIs('restock.*') || request()->routeIs('stock-opname.*') || request()->routeIs('stock_opname.*');
+                @endphp
                 <li class="nav-item nav-category">
                     <span class="nav-text">Inventori</span>
                 </li>
                 <li class="nav-item">
-                    <a href="{{ Route::has('restock.index') ? route('restock.index') : '#' }}" class="nav-link {{ request()->routeIs('restock.*') ? 'active' : '' }}">
-                        <i class="bi bi-arrow-repeat menu-icon"></i>
-                        <span class="nav-text">Restock Barang</span>
+                    <a class="nav-link nav-toggle {{ $isInventoryActive ? 'active' : 'collapsed' }}" 
+                       data-bs-toggle="collapse" 
+                       href="#menuInventory" 
+                       role="button" 
+                       aria-expanded="{{ $isInventoryActive ? 'true' : 'false' }}" 
+                       aria-controls="menuInventory">
+                        <i class="bi bi-box-seam menu-icon"></i>
+                        <span class="nav-text">Inventori</span>
+                        <i class="bi bi-chevron-down submenu-arrow"></i>
                     </a>
+                    <div class="collapse {{ $isInventoryActive ? 'show' : '' }}" id="menuInventory">
+                        <ul class="submenu-list">
+                            <li class="submenu-item">
+                                <a href="{{ Route::has('restock.index') ? route('restock.index') : '#' }}" class="submenu-link {{ request()->routeIs('restock.*') ? 'active' : '' }}">
+                                    <span class="submenu-dot"></span>
+                                    <span>Restock Barang</span>
+                                </a>
+                            </li>
+                            <li class="submenu-item">
+                                <a href="{{ Route::has('stock-opname.index') ? route('stock-opname.index') : '#' }}" class="submenu-link {{ (request()->routeIs('stock-opname.*') || request()->routeIs('stock_opname.*')) ? 'active' : '' }}">
+                                    <span class="submenu-dot"></span>
+                                    <span>Stock Opname</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
                 </li>
 
                 <!-- ── 4. LAPORAN ── -->

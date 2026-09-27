@@ -68,7 +68,7 @@ Route::middleware(['auth', 'remember'])->group(function () {
 
     // Transaksi & Audit: Stock Opname
     Route::patch('stock-opname/{stock_opname}/status', [StockOpnameController::class, 'updateStatus'])
-        ->name('stock_opname.update_status')
+        ->name('stock-opname.update_status')
         ->middleware('user.access:products,edit');
     Route::resource('stock-opname', StockOpnameController::class, [
         'parameters' => ['stock-opname' => 'stockOpname']

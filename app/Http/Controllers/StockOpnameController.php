@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\CodeGenerator;
 use App\Http\Requests\StoreStockOpnameRequest;
+use App\Http\Requests\UpdateStockOpnameRequest;
 use App\Models\Products;
 use App\Models\StockOpname;
 use App\Services\StockOpnameService;
@@ -41,9 +43,10 @@ class StockOpnameController extends Controller
      */
     public function create()
     {
+        $generatedCode = CodeGenerator::generateStockOpnameCode(StockOpname::class);
         $products = Products::with('unit')->orderBy('prod_name', 'asc')->get();
 
-        return view('pages.stock_opname.create', compact('products'));
+        return view('pages.stock_opname.create', compact('products', 'generatedCode'));
     }
 
     /**
@@ -62,7 +65,11 @@ class StockOpnameController extends Controller
             ], 201);
         }
 
-        return redirect()->route('stock_opname.index')->with('success', 'Transaksi Stock Opname berhasil disimpan.');
+        $msg = $opname->status_opname === 'COMPLETED' 
+            ? 'Transaksi Stock Opname berhasil diselesaikan dan stok produk telah diperbarui.'
+            : 'Draft Stock Opname berhasil disimpan.';
+
+        return redirect()->route('stock-opname.index')->with('success', $msg);
     }
 
     /**
@@ -83,12 +90,46 @@ class StockOpnameController extends Controller
     }
 
     /**
-     * Update status of stock opname transaction (e.g. DRAFT -> CONFIRMED).
+     * Show form for editing a draft stock opname.
+     */
+    public function edit(StockOpname $stockOpname)
+    {
+        $stockOpname->load(['creator', 'items.product.unit']);
+        $products = Products::with('unit')->orderBy('prod_name', 'asc')->get();
+
+        return view('pages.stock_opname.edit', compact('stockOpname', 'products'));
+    }
+
+    /**
+     * Update an existing stock opname in storage.
+     */
+    public function update(UpdateStockOpnameRequest $request, StockOpname $stockOpname)
+    {
+        $userId = Auth::id() ?? 1;
+        $updatedOpname = $this->opnameService->updateStockOpname($stockOpname, $request->validated(), $userId);
+
+        if ($request->wantsJson()) {
+            return response()->json([
+                'status'  => 'success',
+                'message' => 'Transaksi Stock Opname berhasil diperbarui.',
+                'data'    => $updatedOpname,
+            ]);
+        }
+
+        $msg = $updatedOpname->status_opname === 'COMPLETED' 
+            ? 'Transaksi Stock Opname berhasil diselesaikan dan stok produk telah diperbarui.'
+            : 'Draft Stock Opname berhasil diperbarui.';
+
+        return redirect()->route('stock-opname.index')->with('success', $msg);
+    }
+
+    /**
+     * Update status of stock opname transaction (e.g. DRAFT -> COMPLETED).
      */
     public function updateStatus(Request $request, StockOpname $stockOpname)
     {
         $request->validate([
-            'status_opname' => 'required|in:DRAFT,CONFIRMED',
+            'status_opname' => 'required|in:DRAFT,REVIEW,AWAITING CONFIRMATION,COMPLETED,CONFIRMED',
         ]);
 
         $userId = Auth::id() ?? 1;
@@ -102,7 +143,7 @@ class StockOpnameController extends Controller
             ]);
         }
 
-        return redirect()->route('stock_opname.show', $stockOpname->id)->with('success', 'Status Stock Opname berhasil diperbarui.');
+        return redirect()->route('stock-opname.show', $stockOpname->id)->with('success', 'Status Stock Opname berhasil diperbarui.');
     }
 
     /**
@@ -119,6 +160,6 @@ class StockOpnameController extends Controller
             ]);
         }
 
-        return redirect()->route('stock_opname.index')->with('success', 'Transaksi Stock Opname berhasil dihapus.');
+        return redirect()->route('stock-opname.index')->with('success', 'Transaksi Stock Opname berhasil dihapus.');
     }
 }

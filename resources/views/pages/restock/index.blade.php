@@ -1,4 +1,4 @@
-﻿@extends('layouts.admin')
+@extends('layouts.admin')
 
 @section('title', 'Riwayat Restock — Warung Pojok Oremus')
 
@@ -86,40 +86,52 @@
         <thead>
             <tr>
                 <th style="width: 50px;" class="text-center">No</th>
-                <th style="width: 170px;">Kode Restock</th>
-                <th class="text-center" style="width: 150px;">Tanggal Restock</th>
-                <th class="text-center">Supplier</th>
-                <th class="text-center" style="width: 160px;">Total Item Masuk</th>
-                <th class="text-end" style="width: 160px;">Total Nilai Biaya</th>
-                <th class="text-center" style="width: 140px;">Petugas</th>
-                <th class="text-center no-sort" style="width: 110px;">Aksi</th>
+                <th style="width: 150px;">Kode & Invoice</th>
+                <th class="text-center" style="width: 140px;">Tanggal</th>
+                <th>Supplier</th>
+                <th class="text-center" style="width: 110px;">Status</th>
+                <th class="text-center" style="width: 140px;">Total Item</th>
+                <th class="text-end" style="width: 150px;">Grand Total</th>
+                <th class="text-center" style="width: 130px;">Petugas</th>
+                <th class="text-center no-sort" style="width: 130px;">Aksi</th>
             </tr>
         </thead>
         <tbody>
             @foreach ($list as $item)
                 @php
                     $rawDate = $item->restock_date ? $item->restock_date->format('Y-m-d') : '';
+                    $isDraft = $item->status_restock === 'DRAFT';
+                    $totalQty = $item->items->sum('quantity');
+                    $grandTotal = $item->grand_total ?? $item->total_value ?? 0;
                 @endphp
                 <tr data-date="{{ $rawDate }}">
                     <td class="text-center text-muted fw-medium">{{ $loop->iteration }}</td>
                     <td>
-                        <span class="text-dark">{{ $item->restock_code }}</span>
+                        <div class="fw-bold text-dark font-monospace">{{ $item->restock_code }}</div>
+                        <div class="text-muted small font-monospace">{{ $item->invoice_number }}</div>
                     </td>
                     <td class="text-center text-secondary small">
                         {{ $item->restock_date ? $item->restock_date->format('d M Y, H:i') : '-' }}
                     </td>
                     <td>
-                        <div class="text-dark">{{ $item->supplier_name }}</div>
+                        <div class="text-dark fw-semibold">{{ $item->supplier_name }}</div>
                         @if ($item->notes)
-                            <div class="text-muted small text-truncate" style="max-width: 260px;">{{ $item->notes }}</div>
+                            <div class="text-muted small text-truncate" style="max-width: 220px;">{{ $item->notes }}</div>
                         @endif
                     </td>
                     <td class="text-center">
-                        <span class="text-dark">{{ (int)($item->items->count()) }} Produk</span>
-                        <span class="text-muted small">({{ (int)($item->total_quantity ?? 0) }} Unit)</span>
+                        @if ($isDraft)
+                            <span class="badge bg-warning text-dark px-2 py-1">DRAFT</span>
+                        @else
+                            <span class="badge bg-success text-white px-2 py-1">CONFIRMED</span>
+                        @endif
                     </td>
-                    <td class="text-end text-dark">
-                        Rp {{ number_format($item->total_value ?? 0, 0, ',', '.') }}
+                    <td class="text-center">
+                        <span class="text-dark">{{ $item->items->count() }} Produk</span>
+                        <span class="text-muted small d-block">({{ $totalQty }} Unit)</span>
+                    </td>
+                    <td class="text-end font-monospace fw-bold text-dark">
+                        Rp {{ number_format($grandTotal, 0, ',', '.') }}
                     </td>
                     <td class="text-center text-secondary small">
                         {{ $item->creator->employee_name ?? 'Admin' }}
@@ -129,9 +141,14 @@
                             <a href="{{ route('restock.show', $item->id) }}" class="btn btn-sm btn-info text-white px-2 py-1 rounded-2 shadow-none" title="Detail" style="background-color: #0ea5e9; border-color: #0ea5e9;">
                                 <i class="bi bi-eye"></i>
                             </a>
-                            <button type="button" class="btn btn-sm btn-danger text-white px-2 py-1 rounded-2 shadow-none" title="Batalkan Stok" style="background-color: #ef4444; border-color: #ef4444;"
-                                onclick="openDeleteModal({{ $item->id }}, '{{ addslashes($item->restock_code) }}', {{ (int)($item->total_quantity ?? 0) }}, {{ (float)($item->total_value ?? 0) }})">
-                                <i class="bi bi-x-lg"></i>
+                            @if ($isDraft)
+                                <a href="{{ route('restock.edit', $item->id) }}" class="btn btn-sm btn-warning text-white px-2 py-1 rounded-2 shadow-none" title="Edit Draft" style="background-color: #f59e0b; border-color: #f59e0b;">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                            @endif
+                            <button type="button" class="btn btn-sm btn-danger text-white px-2 py-1 rounded-2 shadow-none" title="Hapus / Batalkan" style="background-color: #ef4444; border-color: #ef4444;"
+                                onclick="openDeleteModal({{ $item->id }}, '{{ addslashes($item->restock_code) }}', {{ $totalQty }}, {{ $grandTotal }})">
+                                <i class="bi bi-trash"></i>
                             </button>
                         </div>
                     </td>

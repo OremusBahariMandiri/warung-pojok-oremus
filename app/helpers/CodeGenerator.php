@@ -128,14 +128,14 @@ class CodeGenerator
      */
     public static function generateInvoiceNumber(
         string $modelClass,
-        string $column,
+        string $column = 'invoice_number',
         string $prefix = 'INV',
         int $padLength = 5
     ): string {
         $year  = now()->format('Y');
         $month = now()->format('m');
 
-        // Pattern prefix bulan ini: INV/2025/01
+        // Pattern prefix bulan ini: INV/2026/09
         $monthPrefix = "{$prefix}/{$year}/{$month}";
 
         $latest = $modelClass::where($column, 'like', "{$monthPrefix}/%")
@@ -158,5 +158,49 @@ class CodeGenerator
         }
 
         return $invoiceNumber;
+    }
+
+    /**
+     * Generate restock code.
+     * Format: RST-YYYY-00001
+     */
+    public static function generateRestockCode(
+        string $modelClass,
+        string $column = 'restock_code',
+        string $prefix = 'RST',
+        int $padLength = 5
+    ): string {
+        $year = now()->format('Y');
+        $yearPrefix = "{$prefix}-{$year}";
+
+        return self::generateSequential(
+            modelClass: $modelClass,
+            column: $column,
+            prefix: $yearPrefix,
+            padLength: $padLength,
+            separator: '-'
+        );
+    }
+
+    /**
+     * Generate stock opname code.
+     * Format: SO-YYYY-001
+     */
+    public static function generateStockOpnameCode(
+        string $modelClass,
+        string $column = 'opname_code',
+        string $prefix = 'SO',
+        int $padLength = 3
+    ): string {
+        $year = now()->format('Y');
+        $yearPrefix = "{$prefix}-{$year}";
+
+        return self::generateSequential(
+            modelClass: $modelClass,
+            column: $column,
+            prefix: $yearPrefix,
+            padLength: $padLength,
+            separator: '-'
+        );
     }
 }
