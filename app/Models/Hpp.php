@@ -26,15 +26,29 @@ class Hpp extends Model
         ];
     }
 
-    public function productHpps()
+    /**
+     * Relasi ke rincian detail komponen HPP.
+     */
+    public function productHppDetails()
     {
-        return $this->hasMany(ProductHpp::class, 'hpp_id');
+        return $this->hasMany(ProductHppDetail::class, 'hpp_id');
     }
 
+    /**
+     * Relasi ke ProductHpp header melalui product_hpp_detail.
+     */
+    public function productHpps()
+    {
+        return $this->belongsToMany(ProductHpp::class, 'product_hpp_detail', 'hpp_id', 'product_hpp_id')
+            ->withTimestamps();
+    }
+
+    /**
+     * Relasi ke Products melalui product_hpp dan product_hpp_detail.
+     */
     public function products()
     {
-        return $this->belongsToMany(Products::class, 'product_hpp', 'hpp_id', 'product_id')
-            ->withPivot('selling_price', 'current_hpp')
+        return $this->belongsToMany(Products::class, 'product_hpp_detail', 'hpp_id', 'product_hpp_id')
             ->withTimestamps();
     }
 }

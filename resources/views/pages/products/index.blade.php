@@ -63,7 +63,7 @@
         <!-- Left: Search Box -->
         <div class="position-relative product-search-box">
             <i class="bi bi-search position-absolute top-50 start-0 translate-middle-y ms-3 text-muted"></i>
-            <input type="text" id="dtSearchInput" class="form-control form-control-sm ps-5 pe-3 rounded-2" placeholder="Cari nama produk, SKU, satuan...">
+            <input type="text" id="dtSearchInput" class="form-control form-control-sm ps-5 pe-3 rounded-2" placeholder="Cari kode produk, nama, satuan...">
         </div>
 
         <!-- Right: Action & Filter Buttons -->
@@ -85,8 +85,8 @@
         <thead>
             <tr>
                 <th style="width: 50px;" class="text-center">No</th>
+                <th style="width: 130px;">Kode Produk</th>
                 <th>Nama Produk</th>
-                <th style="width: 120px;">Sku</th>
                 <th style="width: 120px;">Satuan</th>
                 <th class="text-end" style="width: 150px;">Harga Jual</th>
                 <th class="text-end" style="width: 150px;">HPP Total</th>
@@ -100,31 +100,32 @@
         <tbody>
             @foreach ($productList as $item)
                 @php
-                    $hpp = (float)($item->current_hpp ?? $item->unit_price ?? 0);
-                    $selling = (float)($item->selling_price ?? 0);
+                    $firstHpp = $item->productHpps->first();
+                    $selling = (float)($firstHpp?->selling_price ?? $item->selling_price ?? 0);
+                    $hpp = (float)($firstHpp?->current_hpp ?? $item->unit_price ?? 0);
                     $marginAmount = $selling - $hpp;
                     $marginPercent = $selling > 0 ? round(($marginAmount / $selling) * 100, 1) : 0;
                     $stockStatus = ((int)$item->current_stock <= (int)$item->min_stock) ? 'kritis' : 'aman';
-                    $unitName = $item->unit->short_name ?? $item->unit->unit_name ?? 'PORSI';
+                    $unitName = $item->unit->short_name ?? $item->unit->unit_name ?? 'PCS';
+                    $hppMethod = $firstHpp?->hpp_method ?? $item->hpp_method ?? 'MANUAL';
                 @endphp
-                <tr data-stock="{{ $stockStatus }}" data-hpp="{{ $item->hpp_method }}">
+                <tr data-stock="{{ $stockStatus }}" data-hpp="{{ $hppMethod }}">
 
                     {{-- #1 Nomor --}}
-                    <td class="text-center text-muted fw-medium"
-                        data-label="No">
+                    <td class="text-center text-muted fw-medium" data-label="No">
                         {{ $loop->iteration }}
                     </td>
 
-                    {{-- #2 Nama Produk --}}
-                    <td data-label="Nama Produk">
-                        <div class="text-dark text-center">{{ $item->prod_name }}</div>
+                    {{-- #2 Kode Produk (Sebelum Nama Produk) --}}
+                    <td data-label="Kode Produk">
+                        <div class="text-dark font-monospace text-center">
+                            {{ $item->prod_code ?? $item->sku ?? ('PRD-' . sprintf('%05d', $item->id)) }}
+                        </div>
                     </td>
 
-                    {{-- #3 SKU --}}
-                    <td data-label="SKU">
-                        <div class="text-dark text-center">
-                            {{ $item->sku ?? 'PRD-' . sprintf('%03d', $item->id) }}
-                        </div>
+                    {{-- #3 Nama Produk --}}
+                    <td data-label="Nama Produk">
+                        <div class="text-dark fw-medium">{{ $item->prod_name }}</div>
                     </td>
 
                     {{-- #4 Satuan --}}
@@ -135,40 +136,35 @@
                     </td>
 
                     {{-- #5 Harga Jual --}}
-                    <td class="text-dark text-center"
-                        data-label="Harga Jual">
-                        Rp {{ number_format($item->selling_price, 0, ',', '.') }}
+                    <td class="text-dark text-end font-monospace fw-semibold" data-label="Harga Jual">
+                        Rp {{ number_format($selling, 0, ',', '.') }}
                     </td>
 
                     {{-- #6 HPP Total --}}
-                    <td class="text-center text-secondary"
-                        data-label="HPP">
+                    <td class="text-end text-secondary font-monospace" data-label="HPP">
                         Rp {{ number_format($hpp, 0, ',', '.') }}
                     </td>
 
                     {{-- #7 Margin % --}}
-                    <td class="text-center {{ $marginPercent >= 30 ? 'text-success' : ($marginPercent >= 15 ? 'text-warning' : 'text-danger') }}"
-                        data-label="Margin">
+                    <td class="text-center fw-bold {{ $marginPercent >= 30 ? 'text-success' : ($marginPercent >= 15 ? 'text-warning' : 'text-danger') }}" data-label="Margin">
                         {{ $marginPercent }}%
                     </td>
 
                     {{-- #8 Stok --}}
-                    <td class="text-center  text-dark"
-                        data-label="Stok">
+                    <td class="text-center text-dark" data-label="Stok">
                         <span class="{{ (int)$item->current_stock <= (int)$item->min_stock ? 'text-danger fw-bold' : 'text-dark' }}">
                             {{ $item->current_stock }} {{ $unitName }}
                         </span>
                     </td>
 
-                    {{-- #9 Metode HPP (tersembunyi di mobile via CSS) --}}
-                    <td class="text-center text-dark"
-                        data-label="Metode HPP">
-                        {{ $item->hpp_method === 'calculated' ? 'Otomatis' : 'Manual' }}
+                    {{-- #9 Metode HPP --}}
+                    <td class="text-center text-dark" data-label="Metode HPP">
+                        {{ strtoupper($hppMethod) === 'CALCULATED' ? 'Otomatis' : 'Manual' }}
                     </td>
 
-                    {{-- #10 Gambar (tersembunyi di mobile via CSS) --}}
+                    {{-- #10 Gambar --}}
                     <td class="text-center">
-                        @if ($item->thumbnail)
+                        @if ($item->thumbnail && !in_array($item->thumbnail, ['thumbnail/default.png', 'products/default.png']))
                             <img src="{{ asset('storage/' . $item->thumbnail) }}"
                                 alt="{{ $item->prod_name }}"
                                 style="width: 42px; height: 42px; object-fit: cover; border-radius: 6px; border: 1px solid #dee2e6;">
@@ -182,7 +178,7 @@
 
                     {{-- #11 Aksi --}}
                     <td class="text-center">
-                        <!-- Desktop Action Buttons (juga dipakai di mobile card) -->
+                        <!-- Desktop Action Buttons -->
                         <div class="d-none d-md-inline-flex gap-1 justify-content-center">
                             <a href="{{ route('products.show', $item->id) }}"
                                class="btn btn-sm btn-info text-white px-2 py-1 rounded-2 shadow-none"
@@ -200,35 +196,40 @@
                                     class="btn btn-sm btn-danger text-white px-2 py-1 rounded-2 shadow-none"
                                     title="Hapus"
                                     style="background-color: #ef4444; border-color: #ef4444;"
-                                    onclick="openDeleteModal({{ $item->id }}, '{{ addslashes($item->prod_name) }}')">
+                                    onclick="openDeleteModal('{{ $item->id }}', '{{ addslashes($item->prod_name) }}')">
                                 <i class="bi bi-trash"></i>
                             </button>
                         </div>
 
-                        <!-- Mobile Dropdown (disembunyikan CSS di mobile) -->
-                        <div class="dropdown d-inline-block d-md-none">
-                            <button class="btn btn-sm btn-light border dropdown-toggle shadow-none" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                Aksi
-                            </button>
-                            <ul class="dropdown-menu dropdown-menu-end shadow-sm rounded-3 py-1">
-                                <li>
-                                    <a class="dropdown-item py-2 small" href="{{ route('products.show', $item->id) }}">
-                                        <i class="bi bi-eye text-info me-2"></i> Detail Produk
-                                    </a>
-                                </li>
-                                <li>
-                                    <a class="dropdown-item py-2 small" href="{{ route('products.edit', $item->id) }}">
-                                        <i class="bi bi-pencil text-warning me-2"></i> Edit Produk
-                                    </a>
-                                </li>
-                                <li><hr class="dropdown-divider my-1"></li>
-                                <li>
-                                    <button type="button" class="dropdown-item py-2 small text-danger"
-                                            onclick="openDeleteModal({{ $item->id }}, '{{ addslashes($item->prod_name) }}')">
-                                        <i class="bi bi-trash me-2"></i> Hapus Produk
-                                    </button>
-                                </li>
-                            </ul>
+                        <!-- Mobile Action Dropdown -->
+                        <div class="d-inline-block d-md-none">
+                            <div class="dropdown">
+                                <button class="btn btn-sm btn-light border dropdown-toggle px-2 py-1"
+                                        type="button"
+                                        data-bs-toggle="dropdown"
+                                        aria-expanded="false">
+                                    <i class="bi bi-three-dots-vertical"></i>
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                                    <li>
+                                        <a class="dropdown-item d-flex align-items-center gap-2" href="{{ route('products.show', $item->id) }}">
+                                            <i class="bi bi-eye text-info"></i> Detail Produk
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item d-flex align-items-center gap-2" href="{{ route('products.edit', $item->id) }}">
+                                            <i class="bi bi-pencil text-warning"></i> Edit Produk
+                                        </a>
+                                    </li>
+                                    <li><hr class="dropdown-divider my-1"></li>
+                                    <li>
+                                        <button class="dropdown-item d-flex align-items-center gap-2 text-danger"
+                                                onclick="openDeleteModal('{{ $item->id }}', '{{ addslashes($item->prod_name) }}')">
+                                            <i class="bi bi-trash"></i> Hapus Produk
+                                        </button>
+                                    </li>
+                                </ul>
+                            </div>
                         </div>
                     </td>
                 </tr>
@@ -237,75 +238,78 @@
     </table>
 </div>
 
-<!-- MODAL FILTER PRODUK -->
+<!-- Modal Filter Produk -->
 <div class="modal fade" id="modalFilterProduct" tabindex="-1" aria-labelledby="modalFilterProductLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-sm">
-        <div class="modal-content modal-content-minimal">
-            <div class="modal-header modal-header-minimal d-flex align-items-center justify-content-between">
-                <div class="d-flex align-items-center gap-2">
-                    <div class="d-flex align-items-center justify-content-center rounded-2"
-                        style="width:30px;height:30px;background-color:var(--accent-light,#f0fdf4);flex-shrink:0;">
-                        <i class="bi bi-funnel text-success" style="font-size:14px;"></i>
-                    </div>
-                    <div class="fw-semibold text-dark" style="font-size:0.85rem;" id="modalFilterProductLabel">Filter Produk</div>
-                </div>
+        <div class="modal-content border-0 shadow-lg rounded-3">
+            <div class="modal-header border-bottom py-2 px-3 bg-light">
+                <h6 class="modal-title fw-bold text-dark fs-sm d-flex align-items-center gap-2" id="modalFilterProductLabel">
+                    <i class="bi bi-funnel text-success"></i> Filter Produk
+                </h6>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body modal-body-minimal d-flex flex-column gap-3">
-                <div>
-                    <label for="modalFilterUnit" class="form-label small fw-semibold text-muted mb-1">Satuan Produk</label>
-                    <select id="modalFilterUnit" class="form-select form-select-sm rounded-2">
+            <div class="modal-body p-3">
+                <!-- Filter Satuan -->
+                <div class="mb-3">
+                    <label class="form-label text-muted fs-xs fw-semibold">Satuan Produk</label>
+                    <select class="form-select form-select-sm rounded-2" id="modalFilterUnit">
                         <option value="">Semua Satuan</option>
-                        @foreach ($productList->map(fn($p) => strtoupper($p->unit->short_name ?? $p->unit->unit_name ?? ''))->unique()->filter() as $unitName)
-                            <option value="{{ $unitName }}">{{ $unitName }}</option>
+                        @php
+                            $uniqueUnits = $productList->pluck('unit.short_name')->filter()->unique()->sort();
+                        @endphp
+                        @foreach ($uniqueUnits as $u)
+                            <option value="{{ strtoupper($u) }}">{{ strtoupper($u) }}</option>
                         @endforeach
                     </select>
                 </div>
 
-                <div>
-                    <label for="modalFilterHppMethod" class="form-label small fw-semibold text-muted mb-1">Metode HPP</label>
-                    <select id="modalFilterHppMethod" class="form-select form-select-sm rounded-2">
-                        <option value="">Semua Metode HPP</option>
-                        <option value="calculated">Otomatis (Komposisi)</option>
-                        <option value="manual">Manual Fixed</option>
-                    </select>
-                </div>
-
-                <div>
-                    <label for="modalFilterStock" class="form-label small fw-semibold text-muted mb-1">Status Stok</label>
-                    <select id="modalFilterStock" class="form-select form-select-sm rounded-2">
-                        <option value="">Semua Status Stok</option>
+                <!-- Filter Stok -->
+                <div class="mb-2">
+                    <label class="form-label text-muted fs-xs fw-semibold">Status Stok</label>
+                    <select class="form-select form-select-sm rounded-2" id="modalFilterStock">
+                        <option value="">Semua Status</option>
+                        <option value="kritis">Stok Kritis / Menipis</option>
                         <option value="aman">Stok Aman</option>
-                        <option value="kritis">Stok Kritis / Habis</option>
                     </select>
                 </div>
             </div>
-            <div class="modal-footer modal-footer-minimal d-flex justify-content-between">
-                <button type="button" id="btnResetFilter" class="btn btn-sm btn-light border px-3 rounded-2">Reset</button>
-                <button type="button" id="btnApplyFilter" class="btn btn-sm btn-success px-3 rounded-2 text-white" data-bs-dismiss="modal">Terapkan Filter</button>
+            <div class="modal-footer border-top py-2 px-3 bg-light d-flex justify-content-between">
+                <button type="button" class="btn btn-sm btn-link text-muted p-0 text-decoration-none" id="btnResetFilter">
+                    Reset Filter
+                </button>
+                <button type="button" class="btn btn-sm btn-success text-white px-3 rounded-2" id="btnApplyFilter" data-bs-dismiss="modal">
+                    Terapkan
+                </button>
             </div>
         </div>
     </div>
 </div>
 
-<!-- MODAL CONFIRM DELETE PRODUK -->
-<div class="modal fade" id="modalDeleteProduct" tabindex="-1" aria-hidden="true">
+<!-- Modal Konfirmasi Hapus Produk -->
+<div class="modal fade" id="modalDeleteProduct" tabindex="-1" aria-labelledby="modalDeleteProductLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-sm">
-        <div class="modal-content modal-content-minimal">
-            <div class="modal-body modal-body-minimal text-center py-4">
-                <div class="avatar-circle mx-auto mb-3 bg-danger bg-opacity-10 text-danger" style="width: 54px; height: 54px; font-size: 1.5rem;">
-                    <i class="bi bi-trash"></i>
-                </div>
-                <h6 class="fw-bold text-dark mb-1">Hapus Produk Ini?</h6>
-                <p class="text-muted small mb-3">Produk "<span id="deleteProductName" class="fw-semibold text-dark"></span>" akan dihapus permanen dari inventori.</p>
-
-                <form id="deleteProductForm" method="POST" action="">
+        <div class="modal-content border-0 shadow-lg rounded-3">
+            <div class="modal-header border-bottom py-2 px-3 bg-light">
+                <h6 class="modal-title fw-bold text-danger fs-sm d-flex align-items-center gap-2" id="modalDeleteProductLabel">
+                    <i class="bi bi-exclamation-triangle-fill"></i> Hapus Produk
+                </h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-3 text-center">
+                <p class="text-secondary small mb-1">Apakah Anda yakin ingin menghapus produk ini?</p>
+                <p class="fw-bold text-dark mb-0 fs-sm" id="deleteProductName">-</p>
+                <p class="text-muted fs-xs mt-2 mb-0">Tindakan ini tidak dapat dibatalkan.</p>
+            </div>
+            <div class="modal-footer border-top py-2 px-3 bg-light d-flex justify-content-between">
+                <button type="button" class="btn btn-sm btn-outline-secondary px-3 rounded-2" data-bs-dismiss="modal">
+                    Batal
+                </button>
+                <form id="deleteProductForm" action="" method="POST" class="d-inline">
                     @csrf
                     @method('DELETE')
-                    <div class="d-flex gap-2 justify-content-center">
-                        <button type="button" class="btn btn-sm btn-light border px-3 rounded-2" data-bs-dismiss="modal">Batal</button>
-                        <button type="submit" class="btn btn-sm btn-danger px-3 rounded-2">Ya, Hapus</button>
-                    </div>
+                    <button type="submit" class="btn btn-sm btn-danger text-white px-3 rounded-2">
+                        Ya, Hapus
+                    </button>
                 </form>
             </div>
         </div>
@@ -315,7 +319,6 @@
 @endsection
 
 @push('scripts')
-<!-- jQuery & DataTables JS -->
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>

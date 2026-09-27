@@ -20,19 +20,21 @@
 
 @php
     $productObj = $product;
-    $sellingVal = (float)($productObj->selling_price ?? 0);
+    $firstHpp = $productObj->productHpps->first();
+    $sellingVal = (float)($firstHpp?->selling_price ?? $productObj->selling_price ?? 0);
     $unitVal = (float)($productObj->unit_price ?? 0);
-    $currentHppVal = (float)($productObj->current_hpp ?? $unitVal);
-    $existingComponents = $productObj->productHpps ?? collect();
+    $currentHppVal = (float)($firstHpp?->current_hpp ?? $unitVal);
+    $existingDetails = $firstHpp ? $firstHpp->details : collect();
     $profit = $sellingVal - $currentHppVal;
     $marginPercent = $sellingVal > 0 ? round(($profit / $sellingVal) * 100, 1) : 0;
-    $unitShort = $productObj->unit->short_name ?? $productObj->unit->unit_name ?? 'PORSI';
+    $unitShort = $productObj->unit->short_name ?? $productObj->unit->unit_name ?? 'PCS';
+    $hppMethod = $firstHpp?->hpp_method ?? $productObj->hpp_method ?? 'MANUAL';
 @endphp
 
 <!-- Header Title di atas Card -->
 <div class="d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-3 mb-4">
     <div>
-        <h4 class="fw-bold text-dark mb-1">Detail Produk & Komposisi HPP</h4>
+        <h4 class="fw-bold text-dark mb-1">Detail Produk: {{ $productObj->prod_name }}</h4>
     </div>
     <div class="d-flex align-items-center gap-2">
         <a href="{{ route('products.index') }}" class="btn btn-sm btn-outline-secondary rounded-2 px-3 d-inline-flex align-items-center gap-2">
@@ -51,57 +53,67 @@
             <h6 class="fw-bold text-dark border-bottom pb-2 mb-3">Informasi Produk</h6>
             <div class="d-flex flex-column gap-3">
                 <div class="d-flex align-items-start justify-content-between gap-3">
-                <div>
-                    <div class="text-muted small">Nama Produk</div>
-                    <div class="fw-semibold text-dark fs-6">{{ $productObj->prod_name }}</div>
+                    <div>
+                        <div class="text-muted small">Nama Produk</div>
+                        <div class="fw-semibold text-dark fs-6">{{ $productObj->prod_name }}</div>
+                    </div>
+
+                    <!-- Thumbnail Produk -->
+                    <div class="product-thumbnail-wrapper shrink-0">
+                        <div class="text-muted small mb-1 product-thumbnail-label">Foto Produk</div>
+                        @if ($productObj->thumbnail && !in_array($productObj->thumbnail, ['thumbnail/default.png', 'products/default.png']))
+                            <img src="{{ asset('storage/' . $productObj->thumbnail) }}" 
+                                alt="{{ $productObj->prod_name }}" 
+                                class="product-thumbnail-img rounded-2 border">
+                        @else
+                            <div class="product-thumbnail-placeholder rounded-2">
+                                <i class="bi bi-image fs-5 text-secondary"></i>
+                            </div>
+                        @endif
+                    </div>
                 </div>
 
-                <!-- Thumbnail Produk -->
-                <div class="product-thumbnail-wrapper shrink-0">
-                    <div class="text-muted small mb-1 product-thumbnail-label">Gambar Produk</div>
-                    @if ($productObj->thumbnail)
-                        <img src="{{ asset('storage/' . $productObj->thumbnail) }}" 
-                            alt="{{ $productObj->prod_name }}" 
-                            class="product-thumbnail-img">
-                    @else
-                        <div class="product-thumbnail-placeholder">
-                            <i class="bi bi-image fs-5 text-secondary"></i>
-                        </div>
-                    @endif
-                </div>
-            </div>
                 <div>
-                    <div class="text-muted small">Kode SKU</div>
-                    <div class="fw-semibold text-dark font-monospace">{{ $productObj->sku ?? '-' }}</div>
+                    <div class="text-muted small">Kode Produk</div>
+                    <div class="fw-semibold text-dark font-monospace">{{ $productObj->prod_code ?? $productObj->sku ?? '-' }}</div>
                 </div>
+
                 <div>
-                    <div class="text-muted small">Satuan Jual</div>
+                    <div class="text-muted small">Satuan Beli / Dasar</div>
                     <div class="fw-semibold text-dark">{{ strtoupper($unitShort) }}</div>
                 </div>
+
                 <div>
                     <div class="text-muted small">Metode Perhitungan HPP</div>
-                    <div class="fw-semibold text-dark">{{ $productObj->hpp_method === 'calculated' ? 'Otomatis (Komposisi)' : 'Manual Fixed' }}</div>
+                    <div class="fw-semibold text-dark">
+                        {{ strtoupper($hppMethod) === 'CALCULATED' ? 'Otomatis (Komposisi Resep)' : 'Manual (Fixed Cost)' }}
+                    </div>
                 </div>
+
                 <div class="row g-2 pt-2 border-top">
                     <div class="col-6">
-                        <div class="text-muted small">Harga Jual</div>
-                        <div class="fw-bold text-dark fs-6">Rp {{ number_format($sellingVal, 0, ',', '.') }}</div>
+                        <div class="text-muted small">Harga Bahan Utama</div>
+                        <div class="fw-bold text-dark font-monospace">Rp {{ number_format($unitVal, 0, ',', '.') }}</div>
                     </div>
                     <div class="col-6">
-                        <div class="text-muted small">Total HPP</div>
-                        <div class="fw-bold text-dark fs-6 font-monospace">Rp {{ number_format($currentHppVal, 0, ',', '.') }}</div>
+                        <div class="text-muted small">Harga Jual Konsumen</div>
+                        <div class="fw-bold text-dark fs-6 font-monospace">Rp {{ number_format($sellingVal, 0, ',', '.') }}</div>
                     </div>
                 </div>
+
                 <div class="row g-2">
                     <div class="col-6">
-                        <div class="text-muted small">Estimasi Laba per Satuan</div>
-                        <div class="fw-semibold text-dark">Rp {{ number_format($profit, 0, ',', '.') }}</div>
+                        <div class="text-muted small">Total HPP Produk</div>
+                        <div class="fw-bold text-dark fs-6 font-monospace">Rp {{ number_format($currentHppVal, 0, ',', '.') }}</div>
                     </div>
                     <div class="col-6">
-                        <div class="text-muted small">Margin Laba</div>
-                        <div class="fw-bold {{ $marginPercent >= 30 ? 'text-success' : ($marginPercent >= 15 ? 'text-warning' : 'text-danger') }}">{{ $marginPercent }}%</div>
+                        <div class="text-muted small">Margin Laba Bersih</div>
+                        <div class="fw-bold {{ $marginPercent >= 30 ? 'text-success' : ($marginPercent >= 15 ? 'text-warning' : 'text-danger') }}">
+                            {{ $marginPercent }}% (Rp {{ number_format($profit, 0, ',', '.') }})
+                        </div>
                     </div>
                 </div>
+
                 <div class="row g-2 pt-2 border-top">
                     <div class="col-6">
                         <div class="text-muted small">Stok Tersedia</div>
@@ -114,10 +126,12 @@
                         <div class="text-dark">{{ $productObj->min_stock }} {{ $unitShort }}</div>
                     </div>
                 </div>
+
                 <div>
                     <div class="text-muted small">Deskripsi Produk</div>
                     <div class="text-dark small">{{ $productObj->description ?: '-' }}</div>
                 </div>
+
                 <div>
                     <div class="text-muted small">Tanggal Dibuat</div>
                     <div class="text-dark small">{{ $productObj->created_at ? $productObj->created_at->format('d M Y, H:i') : '-' }}</div>
@@ -129,9 +143,9 @@
     <!-- Right Column: HPP Breakdown Table Card -->
     <div class="col-lg-7">
         <div class="card-box p-0 bg-white border rounded-3 overflow-hidden shadow-sm mb-4">
-            <div class="p-3 border-bottom d-flex align-items-center justify-content-between">
-                <h6 class="fw-bold text-dark mb-0">Komposisi HPP Produk</h6>
-                <span class="text-muted small">{{ $existingComponents->count() }} Komponen Tambahan</span>
+            <div class="p-3 border-bottom d-flex align-items-center justify-content-between bg-light">
+                <h6 class="fw-bold text-dark mb-0">Rincian Komposisi HPP Produk</h6>
+                <span class="badge bg-white text-dark border small">{{ $existingDetails->count() }} Komponen Tambahan</span>
             </div>
 
             <div class="table-responsive">
@@ -139,42 +153,61 @@
                     <thead class="table-light">
                         <tr>
                             <th style="width: 50px;" class="text-center">No</th>
-                            <th>Komponen HPP</th>
+                            <th>Komponen / Bahan</th>
                             <th class="text-center" style="width: 120px;">Satuan</th>
-                            <th class="text-end" style="width: 160px;">Biaya (Rp)</th>
-                            <th class="text-end" style="width: 120px;">Kontribusi %</th>
+                            <th class="text-end" style="width: 150px;">Biaya (Rp)</th>
+                            <th class="text-end" style="width: 120px;">Kontribusi</th>
                         </tr>
                     </thead>
                     <tbody>
+                        <!-- Row 1: Bahan Utama -->
                         <tr>
                             <td class="text-center text-muted fw-medium">1</td>
                             <td>
-                                <div class="fw-semibold text-dark">Bahan Utama</div>
-                                <div class="small text-muted">Modal pokok dasar</div>
+                                <div class="fw-semibold text-dark">Bahan Utama Produk</div>
+                                <div class="text-muted small">Komponen utama / serbuk bahan</div>
                             </td>
-                            <td class="text-center">{{ strtoupper($unitShort) }}</td>
-                            <td class="text-end font-monospace text-dark">Rp {{ number_format($unitVal, 0, ',', '.') }}</td>
-                            <td class="text-end font-monospace text-dark">{{ $currentHppVal > 0 ? round(($unitVal / $currentHppVal) * 100, 1) : 0 }}%</td>
+                            <td class="text-center text-muted">{{ strtoupper($unitShort) }}</td>
+                            <td class="text-end font-monospace fw-semibold text-dark">
+                                Rp {{ number_format($unitVal, 0, ',', '.') }}
+                            </td>
+                            <td class="text-end text-muted">
+                                {{ $currentHppVal > 0 ? round(($unitVal / $currentHppVal) * 100, 1) : 0 }}%
+                            </td>
                         </tr>
-                        @if ($existingComponents->count() > 0)
-                            @foreach ($existingComponents as $comp)
+
+                        <!-- Rows: Komponen Tambahan (ProductHppDetail) -->
+                        @forelse ($existingDetails as $idx => $detail)
+                            @php
+                                $cost = (float)($detail->hpp?->unit_cost ?? 0);
+                                $percent = $currentHppVal > 0 ? round(($cost / $currentHppVal) * 100, 1) : 0;
+                            @endphp
+                            <tr>
+                                <td class="text-center text-muted fw-medium">{{ $idx + 2 }}</td>
+                                <td>
+                                    <div class="fw-medium text-dark">{{ $detail->hpp?->name ?? 'Komponen HPP #' . $detail->hpp_id }}</div>
+                                </td>
+                                <td class="text-center text-muted">{{ $detail->hpp?->unit ?? '-' }}</td>
+                                <td class="text-end font-monospace text-dark">
+                                    Rp {{ number_format($cost, 0, ',', '.') }}
+                                </td>
+                                <td class="text-end text-muted">{{ $percent }}%</td>
+                            </tr>
+                        @empty
+                            @if (strtoupper($hppMethod) === 'CALCULATED')
                                 <tr>
-                                    <td class="text-center text-muted fw-medium">{{ $loop->iteration + 1 }}</td>
-                                    <td>
-                                        <div class="fw-semibold text-dark">{{ $comp->hpp->name ?? 'Komponen #' . $comp->hpp_id }}</div>
+                                    <td colspan="5" class="text-center text-muted py-3 small">
+                                        Tidak ada komponen HPP tambahan yang ditambahkan.
                                     </td>
-                                    <td class="text-center">{{ strtoupper($comp->hpp->unit ?? 'PCS') }}</td>
-                                    <td class="text-end font-monospace text-dark">Rp {{ number_format($comp->cost, 0, ',', '.') }}</td>
-                                    <td class="text-end font-monospace text-dark">{{ $currentHppVal > 0 ? round(($comp->cost / $currentHppVal) * 100, 1) : 0 }}%</td>
                                 </tr>
-                            @endforeach
-                        @endif
+                            @endif
+                        @endforelse
                     </tbody>
-                    <tfoot class="table-light fw-bold">
+                    <tfoot class="table-light">
                         <tr>
-                            <td colspan="3" class="text-end">Total HPP Modal Pokok:</td>
-                            <td class="text-end font-monospace text-dark">Rp {{ number_format($currentHppVal, 0, ',', '.') }}</td>
-                            <td class="text-end font-monospace text-dark">100.0%</td>
+                            <th colspan="3" class="text-end fw-bold text-dark">Total HPP Produk:</th>
+                            <th class="text-end fw-bold font-monospace text-dark">Rp {{ number_format($currentHppVal, 0, ',', '.') }}</th>
+                            <th class="text-end text-muted">100%</th>
                         </tr>
                     </tfoot>
                 </table>
