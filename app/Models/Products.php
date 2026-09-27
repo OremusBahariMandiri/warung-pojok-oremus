@@ -18,10 +18,10 @@ class Products extends Model
         'prod_code',
         'prod_name',
         'slug',
-        'hpp_method',
         'initial_stock',
         'current_stock',
         'min_stock',
+        'unit_price',
         'description',
         'thumbnail'
     ];
@@ -33,6 +33,7 @@ class Products extends Model
             'current_stock' => 'integer',
             'min_stock' => 'integer',
             'initial_stock' => 'integer',
+            'unit_price' => 'decimal:3',
         ];
     }
 
@@ -61,5 +62,10 @@ class Products extends Model
     public function reportDetails()
     {
         return $this->hasMany(ReportDetails::class, 'product_id');
+    }
+
+    public function getHppMethodAttribute(): string
+    {
+        return $this->productHpps->first()?->hpp_method ?? 'MANUAL';
     }
 }

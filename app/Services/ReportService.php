@@ -116,7 +116,7 @@ class ReportService
     {
         return DB::transaction(function () use ($data, $userId) {
             $reportDate = !empty($data['report_date']) ? Carbon::parse($data['report_date']) : Carbon::now();
-            $creatorId  = $userId ?? (auth()->check() ? auth()->id() : 1);
+            $creatorId  = $userId ?? (auth()->guard()->check() ? auth()->guard()->id() : 1);
 
             $report = Reports::create([
                 'created_by'     => $creatorId,

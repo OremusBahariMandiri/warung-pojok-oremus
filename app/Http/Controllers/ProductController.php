@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\CodeGenerator;
 use App\Http\Requests\StoreProductRequest;
 use App\Http\Requests\UpdateProductRequest;
 use App\Models\Hpp;
@@ -44,8 +45,9 @@ class ProductController extends Controller
     {
         $units = Unit::orderBy('unit_name', 'asc')->get();
         $hppComponents = Hpp::orderBy('name', 'asc')->get();
+        $generatedCode = CodeGenerator::generateProductCode(Products::class);
 
-        return view('pages.products.create', compact('units', 'hppComponents'));
+        return view('pages.products.create', compact('units', 'hppComponents', 'generatedCode'));
     }
 
     /**
@@ -72,7 +74,7 @@ class ProductController extends Controller
      */
     public function show(Request $request, Products $product)
     {
-        $product->load(['unit', 'productHpps.hpp', 'productHpps.sellingUnit']);
+        $product->load(['unit', 'productHpps.details.hpp', 'productHpps.sellingUnit']);
 
         if ($request->wantsJson()) {
             return response()->json([
@@ -89,7 +91,7 @@ class ProductController extends Controller
      */
     public function edit(Products $product)
     {
-        $product->load(['unit', 'productHpps.hpp', 'productHpps.sellingUnit']);
+        $product->load(['unit', 'productHpps.details.hpp', 'productHpps.sellingUnit']);
         $units = Unit::orderBy('unit_name', 'asc')->get();
         $hppComponents = Hpp::orderBy('name', 'asc')->get();
 

@@ -14,10 +14,10 @@ return new class extends Migration
         Schema::create('product_hpp', function (Blueprint $table) {
             $table->id();
             $table->foreignId("product_id")->constrained("products")->references("id")->onUpdate("restrict")->onDelete("cascade");
-            $table->foreignId("hpp_id")->nullable()->constrained("hpp")->references("id")->onUpdate("restrict")->onDelete("cascade");
             $table->foreignId("selling_unit_id")->constrained("units")->references("id")->onUpdate("restrict")->onDelete("cascade");
             // $table->enum("sale_method", ['UNIT', 'PACKAGE']);
             $table->decimal("selling_price", 15, 3);
+            $table->enum("hpp_method", ['MANUAL', 'CALCULATED']);
             $table->decimal("current_hpp", 15,3);
             $table->timestamps();
         });

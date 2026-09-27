@@ -15,9 +15,9 @@ class ProductHpp extends Model
 
     protected $fillable = [
         'product_id',
-        'hpp_id',
         'selling_unit_id',
         'selling_price',
+        'hpp_method',
         'current_hpp',
     ];
 
@@ -25,7 +25,6 @@ class ProductHpp extends Model
     {
         return [
             'product_id'      => 'integer',
-            'hpp_id'          => 'integer',
             'selling_unit_id' => 'integer',
             'selling_price'   => 'decimal:3',
             'current_hpp'     => 'decimal:3',
@@ -37,13 +36,25 @@ class ProductHpp extends Model
         return $this->belongsTo(Products::class, 'product_id');
     }
 
-    public function hpp()
-    {
-        return $this->belongsTo(Hpp::class, 'hpp_id');
-    }
-
     public function sellingUnit()
     {
         return $this->belongsTo(Unit::class, 'selling_unit_id');
+    }
+
+    /**
+     * Relasi ke rincian komponen HPP.
+     */
+    public function details()
+    {
+        return $this->hasMany(ProductHppDetail::class, 'product_hpp_id');
+    }
+
+    /**
+     * Relasi many-to-many ke master HPP melalui product_hpp_detail.
+     */
+    public function hpps()
+    {
+        return $this->belongsToMany(Hpp::class, 'product_hpp_detail', 'product_hpp_id', 'hpp_id')
+            ->withTimestamps();
     }
 }

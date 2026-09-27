@@ -30,7 +30,7 @@ class AuthTest extends TestCase
             'password' => 'rahasia123',
         ]);
 
-        $response->assertRedirect(route('products.index'));
+        $response->assertRedirect(route('admin.dashboard'));
         $this->assertAuthenticatedAs($user);
 
         // Verify activity log recorded

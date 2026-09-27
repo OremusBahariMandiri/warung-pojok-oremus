@@ -45,9 +45,10 @@ class ReportController extends Controller
      */
     public function create()
     {
-        $products = Products::with('unit')->select([
-            'id', 'unit_id', 'prod_name', 'sku', 'selling_price', 'current_hpp', 'current_stock'
-        ])->orderBy('prod_name', 'asc')->get();
+        $products = Products::with(['unit', 'productHpps.sellingUnit', 'productHpps.hpp'])
+            ->select([
+                'id', 'unit_id', 'prod_code', 'prod_name', 'current_stock'
+            ])->orderBy('prod_name', 'asc')->get();
 
         return view('pages.reports.create', compact('products'));
     }

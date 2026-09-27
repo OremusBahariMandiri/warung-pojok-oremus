@@ -3,23 +3,386 @@
  * Warung Pojok Oremus | PT Oremus Bahari Mandiri
  */
 
-if (window.jQuery) {
-    jQuery(function ($) {
-        if ($("#productsDataTable").length && $.fn.DataTable) {
-            initProductsDataTable($);
+$(function () {
+    // 1. Inisialisasi DataTables jika ada di halaman index
+    if ($("#productsDataTable").length && $.fn.DataTable) {
+        initProductsDataTable();
+    }
+
+    // 2. Alert auto-dismiss
+    setTimeout(function () {
+        $(".alert-dismissible").fadeOut("slow");
+    }, 5000);
+
+    // 3. Inisialisasi Select2 untuk Satuan Beli & Komponen HPP
+    initSelect2Elements();
+
+    // 4. Event listener saat Satuan Beli diubah
+    $("#unit_id").on("change", function () {
+        handleUnitChange(this);
+    });
+
+    // 5. Event listener untuk kalkulasi live HPP & Margin
+    $(document).on(
+        "input keyup change",
+        "#unit_price, #selling_price, #current_hpp",
+        function () {
+            calculateTotalHpp();
+        },
+    );
+
+    // 6. Trigger awal saat halaman dimuat (untuk edit form / old input)
+    if ($("#unit_id").length) {
+        handleUnitChange(document.getElementById("unit_id"));
+        calculateTotalHpp();
+    }
+});
+
+/**
+ * Inisialisasi Select2 dengan theme Bootstrap 5
+ */
+function initSelect2Elements(context) {
+    const $ctx = context ? $(context) : $(document);
+
+    $ctx.find(".select2-unit").each(function () {
+        if (!$(this).hasClass("select2-hidden-accessible")) {
+            $(this).select2({
+                theme: "bootstrap-5",
+                width: "100%",
+                placeholder: "Pilih Satuan...",
+                allowClear: false,
+            });
         }
-        setTimeout(function () {
-            $(".alert-dismissible").fadeOut("slow");
-        }, 5000);
+    });
+
+    $ctx.find(".select2-hpp").each(function () {
+        if (!$(this).hasClass("select2-hidden-accessible")) {
+            $(this).select2({
+                theme: "bootstrap-5",
+                width: "100%",
+                placeholder: "Pilih Komponen",
+                allowClear: true,
+            });
+        }
     });
 }
 
-function initProductsDataTable($) {
-    /*
-     * Mobile (< 768px): responsive: false → card layout murni via CSS
-     * Desktop (≥ 768px): responsive inline child row →
-     *   kolom Metode HPP (index 8) & Gambar (index 9) disembunyikan duluan
-     */
+/**
+ * Handle perubahan Satuan Beli:
+ * Jika satuan olahan / barang jadi (Gelas, Cup, Paket, Porsi, Pcs, dll) -> Tampilkan opsi metode HPP.
+ * Jika satuan mentah (Sachet, Renceng, Dus, dll) -> Sembunyikan metode HPP & komponen HPP.
+ */
+function handleUnitChange(selectEl) {
+    if (!selectEl || !selectEl.value) return;
+
+    const selectedOption = selectEl.options[selectEl.selectedIndex];
+    if (!selectedOption) return;
+
+    const unitName = (
+        selectedOption.getAttribute("data-name") ||
+        selectedOption.text ||
+        ""
+    ).toLowerCase();
+    const unitShort = (
+        selectedOption.getAttribute("data-short") || ""
+    ).toLowerCase();
+    const unitType = (
+        selectedOption.getAttribute("data-type") || ""
+    ).toLowerCase();
+
+    // Keyword satuan olahan / barang jadi / pcs
+    const processedKeywords = [
+        "gelas",
+        "cup",
+        "paket",
+        "porsi",
+        "olahan",
+        "botol",
+        "piring",
+        "minuman",
+        "makanan",
+        "jadi",
+        "pcs",
+        "biji",
+        "buah",
+        "butir",
+    ];
+
+    const isProcessedOrPcs =
+        unitType === "olahan" ||
+        unitType === "processed" ||
+        unitType === "finish_good" ||
+        unitType === "finished" ||
+        processedKeywords.some(
+            (kw) => unitName.includes(kw) || unitShort.includes(kw),
+        );
+
+    const hppMethodSection = document.getElementById("hppMethodSection");
+    const calcSection = document.getElementById("calculatedHppSection");
+    const manualSection = document.getElementById("manualHppSection");
+
+    if (isProcessedOrPcs) {
+        if (hppMethodSection) hppMethodSection.classList.remove("d-none");
+        handleHppMethodChange();
+    } else {
+        if (hppMethodSection) hppMethodSection.classList.add("d-none");
+        if (calcSection) calcSection.classList.add("d-none");
+        if (manualSection) manualSection.classList.add("d-none");
+        const methodSelect = document.getElementById("hpp_method");
+        if (methodSelect) methodSelect.value = "MANUAL";
+    }
+
+    calculateTotalHpp();
+}
+
+/**
+ * Handle perubahan Metode HPP (Calculated vs Manual)
+ */
+function handleHppMethodChange() {
+    const methodSelect = document.getElementById("hpp_method");
+    const calcSection = document.getElementById("calculatedHppSection");
+    const manualSection = document.getElementById("manualHppSection");
+    if (!methodSelect) return;
+
+    const method = methodSelect.value;
+    if (method === "CALCULATED") {
+        if (calcSection) calcSection.classList.remove("d-none");
+        if (manualSection) manualSection.classList.add("d-none");
+        const tbody = document.getElementById("hppComponentRows");
+        if (tbody && tbody.querySelectorAll(".component-row").length === 0) {
+            addHppComponentRow();
+        } else {
+            if (calcSection) initSelect2Elements(calcSection);
+        }
+    } else {
+        if (calcSection) calcSection.classList.add("d-none");
+        if (manualSection) manualSection.classList.remove("d-none");
+    }
+
+    calculateTotalHpp();
+}
+
+/**
+ * Dynamic HPP Component Rows Index Counter
+ */
+let componentRowIndex = document.querySelectorAll(".component-row").length + 20;
+
+/**
+ * Tambah Baris Komponen HPP Baru (Menggunakan Select2 & Biaya Readonly)
+ */
+function addHppComponentRow() {
+    const tbody = document.getElementById("hppComponentRows");
+    if (!tbody) return;
+
+    const masterList = window.hppMasterList || [];
+    const tr = document.createElement("tr");
+    tr.className = "component-row";
+
+    let optionsHtml = '<option value="">Pilih Komponen</option>';
+    if (masterList.length > 0) {
+        masterList.forEach((hpp) => {
+            optionsHtml += `<option value="${hpp.id}" data-cost="${hpp.unit_cost}">${hpp.name} (Rp ${Number(hpp.unit_cost).toLocaleString("id-ID")})</option>`;
+        });
+    }
+
+    tr.innerHTML = `
+        <td>
+            <select name="components[${componentRowIndex}][hpp_id]" class="form-select form-select-sm select2-hpp rounded-2 component-select" onchange="onComponentSelectChange(this)">
+                ${optionsHtml}
+            </select>
+        </td>
+        <td>
+            <input type="number" name="components[${componentRowIndex}][cost]" class="form-control form-control-sm font-monospace text-end rounded-2 component-cost bg-light" min="0" readonly>
+        </td>
+        <td class="text-center">
+            <button type="button" class="btn btn-link text-danger p-0 border-0" onclick="removeHppComponentRow(this)" title="Hapus"><i class="bi bi-x-circle-fill"></i></button>
+        </td>
+    `;
+
+    tbody.appendChild(tr);
+    initSelect2Elements(tr);
+
+    // Event binding untuk select2 change
+    $(tr)
+        .find(".select2-hpp")
+        .on("select2:select select2:clear change", function () {
+            onComponentSelectChange(this);
+        });
+
+    componentRowIndex++;
+    calculateTotalHpp();
+}
+
+/**
+ * Hapus Baris Komponen HPP
+ */
+function removeHppComponentRow(btn) {
+    const row = btn.closest("tr");
+    if (row) {
+        $(row).find(".select2-hpp").select2("destroy");
+        row.remove();
+    }
+    calculateTotalHpp();
+}
+
+/**
+ * Auto-fill biaya komponen saat komponen dipilih dari Select2
+ */
+function onComponentSelectChange(selectEl) {
+    const selectedOption = selectEl.options[selectEl.selectedIndex];
+    const defaultCost = selectedOption
+        ? selectedOption.getAttribute("data-cost")
+        : 0;
+    const row = selectEl.closest("tr");
+
+    if (row && defaultCost !== null && defaultCost !== undefined) {
+        const costInput = row.querySelector(".component-cost");
+        if (costInput) {
+            costInput.value = Math.round(parseFloat(defaultCost) || 0);
+        }
+    }
+    calculateTotalHpp();
+}
+
+/**
+ * Kalkulasi Total Biaya HPP Komponen, Total HPP Produk, dan Estimasi Live Margin
+ */
+function calculateTotalHpp() {
+    const calcSection = document.getElementById("calculatedHppSection");
+    const manualSection = document.getElementById("manualHppSection");
+    const methodSelect = document.getElementById("hpp_method");
+    const method = methodSelect ? methodSelect.value : "MANUAL";
+
+    let unitPrice = 0;
+    const unitPriceInput = document.getElementById("unit_price");
+    if (unitPriceInput) {
+        unitPrice = parseFloat(unitPriceInput.value) || 0;
+    }
+
+    let totalHpp = 0;
+    const currentHppInput = document.getElementById("current_hpp");
+
+    if (
+        calcSection &&
+        !calcSection.classList.contains("d-none") &&
+        method === "CALCULATED"
+    ) {
+        let componentsSum = 0;
+        const costInputs = document.querySelectorAll(".component-cost");
+        costInputs.forEach((input) => {
+            componentsSum += parseFloat(input.value) || 0;
+        });
+
+        const displayComponentHpp = document.getElementById(
+            "displayComponentHpp",
+        );
+        if (displayComponentHpp) {
+            displayComponentHpp.textContent =
+                "Rp " + Math.round(componentsSum).toLocaleString("id-ID");
+        }
+
+        totalHpp = unitPrice + componentsSum;
+        if (currentHppInput) {
+            currentHppInput.value = totalHpp > 0 ? Math.round(totalHpp) : "";
+        }
+    } else if (manualSection && !manualSection.classList.contains("d-none")) {
+        const manualHppVal =
+            parseFloat(currentHppInput ? currentHppInput.value : 0) || 0;
+        totalHpp = manualHppVal > 0 ? manualHppVal : unitPrice;
+    } else {
+        totalHpp = unitPrice;
+        if (currentHppInput) {
+            currentHppInput.value = Math.round(totalHpp);
+        }
+    }
+
+    const displayTotalHpp = document.getElementById("displayTotalHpp");
+    if (displayTotalHpp) {
+        displayTotalHpp.textContent =
+            "Rp " + Math.round(totalHpp).toLocaleString("id-ID");
+    }
+
+    // Hitung Live Margin & Profit
+    const sellingPriceInput = document.getElementById("selling_price");
+    const sellingPrice =
+        parseFloat(sellingPriceInput ? sellingPriceInput.value : 0) || 0;
+    const profit = sellingPrice - totalHpp;
+    const marginPercent =
+        sellingPrice > 0 ? ((profit / sellingPrice) * 100).toFixed(1) : 0;
+
+    const marginPercentEl = document.getElementById("displayMarginPercent");
+    if (marginPercentEl) {
+        marginPercentEl.textContent = marginPercent + "%";
+        if (profit < 0 || marginPercent <= 0) {
+            marginPercentEl.className = "h5 fw-bold text-danger mb-0";
+        } else if (parseFloat(marginPercent) >= 40) {
+            marginPercentEl.className = "h5 fw-bold text-success mb-0";
+        } else if (parseFloat(marginPercent) >= 20) {
+            marginPercentEl.className = "h5 fw-bold text-warning mb-0";
+        } else {
+            marginPercentEl.className = "h5 fw-bold text-danger mb-0";
+        }
+    }
+
+    const profitAmountEl = document.getElementById("displayProfitAmount");
+    if (profitAmountEl) {
+        profitAmountEl.textContent =
+            "Rp " + Math.round(profit).toLocaleString("id-ID");
+    }
+}
+
+/**
+ * Image Thumbnail Preview
+ */
+function previewThumbnail(input) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function (e) {
+            const previewEl = document.getElementById("thumbnailPreview");
+            const nameEl = document.getElementById("thumbnailFileName");
+            const containerEl = document.getElementById(
+                "thumbnailPreviewContainer",
+            );
+
+            if (previewEl) previewEl.src = e.target.result;
+            if (nameEl) nameEl.textContent = input.files[0].name;
+            if (containerEl) containerEl.classList.remove("d-none");
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+
+/**
+ * Modal Delete Product
+ */
+function openDeleteModal(id, name) {
+    const nameEl = document.getElementById("deleteProductName");
+    const formEl = document.getElementById("deleteProductForm");
+    if (nameEl) nameEl.textContent = name;
+    if (formEl) formEl.action = "/products/" + id;
+
+    const modalEl = document.getElementById("modalDeleteProduct");
+    if (modalEl) {
+        const modal = new bootstrap.Modal(modalEl);
+        modal.show();
+    }
+}
+
+/**
+ * Inisialisasi DataTables Products:
+ * Kolom 0: No
+ * Kolom 1: Kode Produk (prod_code) -> Sebelum Nama Produk!
+ * Kolom 2: Nama Produk
+ * Kolom 3: Satuan
+ * Kolom 4: Harga Jual
+ * Kolom 5: HPP Total
+ * Kolom 6: Margin %
+ * Kolom 7: Stok
+ * Kolom 8: Metode HPP
+ * Kolom 9: Gambar
+ * Kolom 10: Aksi
+ */
+function initProductsDataTable() {
     const isMobile = window.innerWidth < 768;
 
     const dataTable = $("#productsDataTable").DataTable({
@@ -36,18 +399,17 @@ function initProductsDataTable($) {
 
         columnDefs: [
             { targets: "no-sort", orderable: false },
-            // Prioritas kolom — makin kecil = makin dipertahankan
             { targets: 0, responsivePriority: 1 }, // No
-            { targets: 1, responsivePriority: 2 }, // Nama Produk
-            { targets: 2, responsivePriority: 6 }, // SKU
-            { targets: 3, responsivePriority: 7 }, // Satuan
+            { targets: 1, responsivePriority: 5 }, // Kode Produk
+            { targets: 2, responsivePriority: 2 }, // Nama Produk
+            { targets: 3, responsivePriority: 6 }, // Satuan
             { targets: 4, responsivePriority: 3 }, // Harga Jual
             { targets: 5, responsivePriority: 4 }, // HPP Total
-            { targets: 6, responsivePriority: 5 }, // Margin %
-            { targets: 7, responsivePriority: 8 }, // Stok
-            { targets: 8, responsivePriority: 11 }, // Metode HPP — disembunyikan duluan
-            { targets: 9, responsivePriority: 12 }, // Gambar     — disembunyikan duluan
-            { targets: 10, responsivePriority: 1 }, // Aksi       — selalu tampil
+            { targets: 6, responsivePriority: 4 }, // Margin %
+            { targets: 7, responsivePriority: 7 }, // Stok
+            { targets: 8, responsivePriority: 11 }, // Metode HPP
+            { targets: 9, responsivePriority: 12 }, // Gambar
+            { targets: 10, responsivePriority: 1 }, // Aksi
         ],
 
         scrollX: false,
@@ -72,7 +434,6 @@ function initProductsDataTable($) {
         pageLength: 10,
     });
 
-    // Resize handler — reinit jika berubah antara mobile dan desktop
     let resizeTimer;
     $(window).on("resize", function () {
         clearTimeout(resizeTimer);
@@ -80,47 +441,31 @@ function initProductsDataTable($) {
             const nowMobile = window.innerWidth < 768;
             if (nowMobile !== isMobile) {
                 dataTable.destroy();
-                initProductsDataTable($);
+                initProductsDataTable();
             }
         }, 300);
     });
 
-    // Custom search
     $("#dtSearchInput").on("keyup input", function () {
         dataTable.search(this.value).draw();
     });
 
-    // Modal Filter Apply
     $("#btnApplyFilter").on("click", function () {
         applyFilters();
     });
 
-    // Modal Filter Reset
     $("#btnResetFilter").on("click", function () {
         $("#modalFilterUnit").val("");
-        $("#modalFilterHppMethod").val("");
         $("#modalFilterStock").val("");
         applyFilters();
     });
 
     function applyFilters() {
         const unit = $("#modalFilterUnit").val();
-        const hppMethod = $("#modalFilterHppMethod").val();
         const stockStatus = $("#modalFilterStock").val();
 
-        // Satuan — kolom index 3
         dataTable.column(3).search(unit ? "^" + unit + "$" : "", true, false);
 
-        // Metode HPP — kolom index 8
-        if (hppMethod === "calculated") {
-            dataTable.column(8).search("Otomatis", true, false);
-        } else if (hppMethod === "manual") {
-            dataTable.column(8).search("Manual", true, false);
-        } else {
-            dataTable.column(8).search("");
-        }
-
-        // Stok — custom filter via data-stock attribute
         $.fn.dataTable.ext.search = $.fn.dataTable.ext.search.filter(
             (fn) => fn.name !== "productStockFilter",
         );
@@ -135,169 +480,10 @@ function initProductsDataTable($) {
 
         dataTable.draw();
 
-        if (unit || hppMethod || stockStatus) {
+        if (unit || stockStatus) {
             $("#activeFilterBadge").removeClass("d-none");
         } else {
             $("#activeFilterBadge").addClass("d-none");
         }
     }
 }
-
-function openDeleteModal(id, name) {
-    document.getElementById("deleteProductName").textContent = name;
-    document.getElementById("deleteProductForm").action = "/products/" + id;
-    const modal = new bootstrap.Modal(
-        document.getElementById("modalDeleteProduct"),
-    );
-    modal.show();
-}
-
-// Menentukan index awal agar tidak bentrok dengan row yang lama (old input)
-let componentRowIndex = document.querySelectorAll(".component-row").length + 10;
-
-function generateRandomSKU() {
-    const rand = Math.floor(1000 + Math.random() * 9000);
-    document.getElementById("sku").value = "PRD-WARJOK-" + rand;
-}
-
-function toggleHppSection() {
-    const method = document.getElementById("hpp_method").value;
-    const calcSection = document.getElementById("calculatedHppSection");
-    const manualSection = document.getElementById("manualHppSection");
-
-    if (method === "manual") {
-        calcSection.classList.add("d-none");
-        manualSection.classList.remove("d-none");
-    } else {
-        calcSection.classList.remove("d-none");
-        manualSection.classList.add("d-none");
-    }
-    calculateTotalHpp();
-}
-
-function onComponentSelectChange(selectEl) {
-    const selectedOption = selectEl.options[selectEl.selectedIndex];
-    const defaultCost = selectedOption.getAttribute("data-cost");
-    const row = selectEl.closest("tr");
-
-    if (row && defaultCost !== null) {
-        const costInput = row.querySelector(".component-cost");
-        if (costInput) {
-            costInput.value = Math.round(parseFloat(defaultCost) || 0);
-        }
-    }
-    calculateTotalHpp();
-}
-
-function addHppComponentRow() {
-    const tbody = document.getElementById("hppComponentRows");
-    // Ambil data hppMasterList dari window global (yang dilempar dari Blade)
-    const masterList = window.hppMasterList || [];
-
-    // Hapus baris "belum ada data" jika ada
-    const emptyRow = tbody.querySelector("td[colspan]");
-    if (emptyRow) emptyRow.closest("tr").remove();
-
-    const tr = document.createElement("tr");
-    tr.className = "component-row";
-
-    // Looping data options
-    let optionsHtml = '<option value="">Pilih Komponen</option>';
-    if (masterList.length > 0) {
-        masterList.forEach((hpp) => {
-            optionsHtml += `<option value="${hpp.id}" data-cost="${hpp.unit_cost}">${hpp.name} (Rp ${Number(hpp.unit_cost).toLocaleString("id-ID")})</option>`;
-        });
-    }
-
-    // Insert HTML
-    tr.innerHTML = `
-        <td>
-            <select name="components[${componentRowIndex}][hpp_id]" class="form-select form-select-sm rounded-2 component-select" onchange="onComponentSelectChange(this)">
-                ${optionsHtml}
-            </select>
-        </td>
-        <td>
-            <input type="number" name="components[${componentRowIndex}][cost]" class="form-control form-control-sm font-monospace text-end rounded-2 component-cost" value="0" placeholder="0" min="0" oninput="calculateTotalHpp()">
-        </td>
-        <td class="text-center">
-            <button type="button" class="btn btn-link text-danger p-0 border-0" onclick="removeHppComponentRow(this)" title="Hapus">
-                <i class="bi bi-x-circle-fill"></i>
-            </button>
-        </td>
-    `;
-
-    tbody.appendChild(tr);
-    componentRowIndex++;
-    calculateTotalHpp();
-}
-
-function removeHppComponentRow(btn) {
-    const row = btn.closest("tr");
-    if (row) row.remove();
-    calculateTotalHpp();
-}
-
-function calculateTotalHpp() {
-    const method = document.getElementById("hpp_method").value;
-    const unitPrice =
-        parseFloat(document.getElementById("unit_price").value) || 0;
-    const sellingPrice =
-        parseFloat(document.getElementById("selling_price").value) || 0;
-
-    let totalHpp = 0;
-
-    if (method === "calculated") {
-        let componentsSum = 0;
-        const costInputs = document.querySelectorAll(".component-cost");
-        costInputs.forEach((input) => {
-            componentsSum += parseFloat(input.value) || 0;
-        });
-        totalHpp = unitPrice + componentsSum;
-    } else {
-        const manualHppInput = document.getElementById("current_hpp");
-        totalHpp = manualHppInput
-            ? parseFloat(manualHppInput.value) || unitPrice
-            : unitPrice;
-    }
-
-    const profit = sellingPrice - totalHpp;
-    const marginPercent =
-        sellingPrice > 0 ? ((profit / sellingPrice) * 100).toFixed(1) : 0.0;
-
-    document.getElementById("displayTotalHpp").textContent =
-        "Rp " + Math.round(totalHpp).toLocaleString("id-ID");
-    document.getElementById("displayMarginPercent").textContent =
-        marginPercent + "%";
-    document.getElementById("displayProfitAmount").textContent =
-        "Rp " + Math.round(profit).toLocaleString("id-ID");
-
-    // Color coding margin
-    const marginEl = document.getElementById("displayMarginPercent");
-    if (marginPercent >= 40) {
-        marginEl.className = "h5 fw-bold text-success mb-0";
-    } else if (marginPercent >= 20) {
-        marginEl.className = "h5 fw-bold text-warning mb-0";
-    } else {
-        marginEl.className = "h5 fw-bold text-danger mb-0";
-    }
-}
-
-function previewThumbnail(input) {
-    if (input.files && input.files[0]) {
-        const reader = new FileReader();
-        reader.onload = function (e) {
-            document.getElementById("thumbnailPreview").src = e.target.result;
-            document.getElementById("thumbnailFileName").textContent =
-                input.files[0].name;
-            document
-                .getElementById("thumbnailPreviewContainer")
-                .classList.remove("d-none");
-        };
-        reader.readAsDataURL(input.files[0]);
-    }
-}
-
-// Inisialisasi saat pertama kali web dimuat
-document.addEventListener("DOMContentLoaded", function () {
-    calculateTotalHpp();
-});
