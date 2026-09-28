@@ -93,7 +93,7 @@
                         </h6>
                         <span class="text-muted small">Pilih produk, sistem akan menampilkan stok saat ini. Masukkan hasil stok fisik di lapangan.</span>
                     </div>
-                    <button type="button" class="btn btn-sm btn-outline-primary rounded-2 px-3 d-inline-flex align-items-center gap-1" id="btnAddRow">
+                    <button type="button" class="btn btn-sm btn-outline-success rounded-2 px-3 d-inline-flex align-items-center gap-1" id="btnAddRow">
                         <i class="bi bi-plus-lg"></i> Tambah Produk
                     </button>
                 </div>
@@ -164,7 +164,7 @@
                                     <td>
                                         <input type="number" name="items[0][physical_stock]"
                                             class="form-control form-control-sm text-center fw-bold physical-stock-input"
-                                            value="0" min="0" required>
+                                            min="0" required>
                                     </td>
                                     <td class="text-center diff-cell text-secondary">-</td>
                                     <td class="text-center">
@@ -182,14 +182,14 @@
 
                 <!-- Action Buttons -->
                 <div class="d-none d-md-flex flex-wrap align-items-center justify-content-between gap-2 mt-5">
-                    <a href="{{ route('stock-opname.index') }}" class="btn btn-outline-secondary rounded-2 px-4">
+                    <a href="{{ route('stock-opname.index') }}" class="btn btn-light border rounded-2 px-4">
                         Batal
                     </a>
                     <div class="d-flex gap-2">
                         <button type="button" class="btn btn-outline-secondary rounded-2 px-4 d-inline-flex align-items-center gap-2" id="btnSaveDraft">
                            Simpan sebagai Draft
                         </button>
-                        <button type="button" class="btn btn-primary rounded-2 px-4 d-inline-flex align-items-center gap-2" id="btnOpenConfirmModal">
+                        <button type="button" class="btn btn-success rounded-2 px-4 d-inline-flex align-items-center gap-2" id="btnOpenConfirmModal">
                         Simpan
                         </button>
                     </div>
@@ -201,7 +201,7 @@
                         <button type="button" class="btn btn-secondary rounded-2 flex-fill d-inline-flex align-items-center justify-content-center gap-2" id="btnSaveDraftMobile">
                             Simpan Draft
                         </button>
-                        <button type="button" class="btn btn-primary rounded-2 flex-fill d-inline-flex align-items-center justify-content-center gap-2" id="btnOpenConfirmModalMobile">
+                        <button type="button" class="btn btn-success rounded-2 flex-fill d-inline-flex align-items-center justify-content-center gap-2" id="btnOpenConfirmModalMobile">
                             Simpan
                         </button>
                     </div>
