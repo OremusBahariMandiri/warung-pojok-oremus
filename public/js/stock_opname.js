@@ -1,9 +1,98 @@
 /**
- * WARJOK — JavaScript for Stock Opname Create / Edit Form
+ * WARJOK — JavaScript for Stock Opname (Index + Create/Edit)
  * Warung Pojok Oremus | PT Oremus Bahari Mandiri
  */
 
+// ════════════════════════════════════════════════════════════════
+// INDEX PAGE — DataTables + Mobile Filter
+// ════════════════════════════════════════════════════════════════
+$(function () {
+    // Guard: hanya jalan di index page (ada #opnameDataTable)
+    if ($("#opnameDataTable").length && typeof $.fn.DataTable !== "undefined") {
+        initOpnameDataTable();
+        initOpnameMobileSearch();
+    }
+
+    // Alert auto-dismiss
+    setTimeout(function () {
+        $(".alert-dismissible").fadeOut("slow");
+    }, 5000);
+});
+
+var opnameDT = null;
+
+function initOpnameDataTable() {
+    opnameDT = $("#opnameDataTable").DataTable({
+        // dom: l = length dropdown | t = table | i = info | p = pagination
+        dom:
+            "<'row align-items-center mb-2'<'col-sm-4'l>>" +
+            "t" +
+            "<'row mt-2'<'col-sm-5'i><'col-sm-7 d-flex justify-content-end'p>>",
+        pageLength: 25,
+        lengthMenu: [10, 25, 50, 100],
+        responsive: false,
+        autoWidth: false,
+        order: [[2, "desc"]], // default sort: Tanggal Pemeriksaan desc
+        language: {
+            lengthMenu: "Tampilkan _MENU_ entri",
+            info: "Showing _START_ to _END_ of _TOTAL_ entries",
+            infoEmpty: "Showing 0 to 0 of 0 entries",
+            infoFiltered: "(difilter dari _MAX_ total)",
+            zeroRecords: `<div class="d-flex flex-column align-items-center justify-content-center py-4 text-center text-muted">
+                <i class="bi bi-search fs-3 mb-2 opacity-50"></i>
+                <div class="fw-semibold small">Data tidak ditemukan</div>
+                <div class="small">Coba gunakan kata kunci atau filter yang berbeda.</div>
+            </div>`,
+            emptyTable: `<div class="d-flex flex-column align-items-center justify-content-center py-4 text-center text-muted">
+                <i class="bi bi-clipboard2-x fs-3 mb-2 opacity-50"></i>
+                <div class="fw-semibold small">Belum ada riwayat transaksi Stock Opname</div>
+                <div class="small">Klik <strong>+ Catat Stock Opname</strong> untuk memulai pemeriksaan baru.</div>
+            </div>`,
+            paginate: { first: "«", last: "»", next: "›", previous: "‹" },
+        },
+        // Kolom No & Aksi tidak bisa di-sort
+        columnDefs: [{ targets: [0, 6], orderable: false }],
+    });
+
+    // Hubungkan custom search input ke DataTables
+    $("#opnameSearchInput").on("keyup input", function () {
+        opnameDT.search($(this).val()).draw();
+    });
+
+    // Reset search ketika input dikosongkan
+    $("#opnameSearchInput").on("search", function () {
+        if ($(this).val() === "") {
+            opnameDT.search("").draw();
+        }
+    });
+}
+
+// ── Mobile search / filter ────────────────────────────────────
+function initOpnameMobileSearch() {
+    $("#opnameMobileSearch").on("keyup input", function () {
+        var keyword = $(this).val().toLowerCase().trim();
+        var hasResult = false;
+
+        $(".opname-mobile-card").each(function () {
+            var searchData = $(this).data("search") || "";
+            var match = !keyword || searchData.indexOf(keyword) !== -1;
+            $(this).toggle(match);
+            if (match) hasResult = true;
+        });
+
+        var isEmpty = $(".opname-mobile-card").length === 0;
+        $("#opnameMobileEmpty").toggle(isEmpty && !keyword);
+        $("#opnameMobileNoResult").toggleClass("d-none", isEmpty || hasResult);
+    });
+}
+
+// ════════════════════════════════════════════════════════════════
+// CREATE / EDIT PAGE — Form Logic
+// ════════════════════════════════════════════════════════════════
 $(document).ready(function () {
+    // Guard: hanya jalan di create/edit page (ada form opname)
+    if (!$("#opnameItemsTable").length && !$("#formStockOpname").length) return;
+
     var rowIndex = $("#opnameItemsTable tbody tr.opname-row").length || 0;
 
     // ── 1. Initialize Select2 ─────────────────────────────────────
@@ -60,7 +149,6 @@ $(document).ready(function () {
         $row.find(".unit-cell").text(unitName);
         $row.find(".system-stock-cell").text(systemStock);
 
-        // Tampilkan selisih sebagai angka biasa
         var diffText = diff === 0 ? "0" : diff > 0 ? "+" + diff : String(diff);
         var diffClass =
             diff === 0
@@ -185,7 +273,6 @@ $(document).ready(function () {
                       ? "text-success fw-bold"
                       : "text-danger fw-bold";
 
-            // Bangun opsi untuk select di mobile — clone dari select desktop
             var optionsHtml = "";
             $select.find("option").each(function () {
                 var val = $(this).val();
@@ -227,7 +314,6 @@ $(document).ready(function () {
                     "</div>" +
                     '<button type="button" class="btn-delete-row ms-2" title="Hapus"><i class="bi bi-trash3"></i></button>' +
                     "</div>" +
-                    "<!-- Dropdown produk di mobile -->" +
                     '<div class="mb-3">' +
                     '<label class="mobile-field-label">Produk <span class="text-danger">*</span></label>' +
                     '<select class="form-select form-select-sm mobile-product-select" data-row-idx="' +
@@ -265,8 +351,6 @@ $(document).ready(function () {
             );
 
             $container.append($card);
-
-            // Init Select2 pada dropdown mobile
             initSelect2($card.find(".mobile-product-select"));
         });
     }
@@ -277,7 +361,6 @@ $(document).ready(function () {
     });
     calculateSummary();
 
-    // Init mobile cards
     if (window.innerWidth < 768) {
         syncMobileCards();
     }
@@ -286,14 +369,10 @@ $(document).ready(function () {
     $(document).on("change", ".mobile-product-select", function () {
         var rowIdx = parseInt($(this).data("row-idx"));
         var newVal = $(this).val();
-
-        // Sync ke select desktop (tanpa memicu event ini lagi)
         var $desktopSelect = $("#opnameItemsTable tbody tr.opname-row")
             .eq(rowIdx)
             .find(".product-select");
         $desktopSelect.val(newVal).trigger("change.select2");
-
-        // Hitung selisih baris desktop
         calculateRowDiff($("#opnameItemsTable tbody tr.opname-row").eq(rowIdx));
         calculateSummary();
         updateMobileCard(rowIdx);
@@ -307,7 +386,6 @@ $(document).ready(function () {
         calculateSummary();
         if (window.innerWidth < 768) {
             updateMobileCard(rowIdx);
-            // Update juga nama produk & unit di card header
             var selectedOption = $(this).find("option:selected");
             var $card = $('.opname-item-card[data-row-idx="' + rowIdx + '"]');
             if ($card.length && selectedOption.val()) {
@@ -315,7 +393,6 @@ $(document).ready(function () {
                 $card
                     .find(".mobile-unit-val")
                     .text(selectedOption.data("unit") || "-");
-                // Sync mobile select val
                 $card
                     .find(".mobile-product-select")
                     .val(selectedOption.val())
@@ -331,7 +408,6 @@ $(document).ready(function () {
         calculateRowDiff($row);
         calculateSummary();
         if (window.innerWidth < 768) {
-            // Sync ke mobile input
             $('.mobile-phys-input[data-row-idx="' + rowIdx + '"]').val(
                 $(this).val(),
             );
@@ -343,12 +419,10 @@ $(document).ready(function () {
     $(document).on("input change", ".mobile-phys-input", function () {
         var rowIdx = parseInt($(this).data("row-idx"));
         var newVal = $(this).val();
-        // Sync ke input desktop (tanpa re-trigger syncMobileCards)
         $("#opnameItemsTable tbody tr.opname-row")
             .eq(rowIdx)
             .find(".physical-stock-input")
             .val(newVal);
-        // Hitung ulang
         calculateRowDiff($("#opnameItemsTable tbody tr.opname-row").eq(rowIdx));
         calculateSummary();
         updateMobileCard(rowIdx);

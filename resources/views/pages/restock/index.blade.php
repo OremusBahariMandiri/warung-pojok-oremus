@@ -1,4 +1,4 @@
-@extends('layouts.admin')
+﻿@extends('layouts.admin')
 
 @section('title', 'Riwayat Restock — Warung Pojok Oremus')
 
@@ -82,83 +82,84 @@
     </div>
 
     {{-- ═══ DESKTOP: DataTables Table ═══ --}}
-    <table class="table table-bordered table-hover align-middle mb-0 w-100 text-nowrap" id="restockDataTable">
-        <thead>
-            <tr>
-                <th style="width: 50px;" class="text-center">No</th>
-                <th style="width: 150px;">Kode & Invoice</th>
-                <th class="text-center" style="width: 140px;">Tanggal</th>
-                <th>Supplier</th>
-                <th class="text-center" style="width: 110px;">Status</th>
-                <th class="text-center" style="width: 140px;">Total Item</th>
-                <th class="text-end" style="width: 150px;">Grand Total</th>
-                <th class="text-center" style="width: 130px;">Petugas</th>
-                <th class="text-center no-sort" style="width: 130px;">Aksi</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach ($list as $item)
-                @php
-                    $rawDate = $item->restock_date ? $item->restock_date->format('Y-m-d') : '';
-                    $isDraft = $item->status_restock === 'DRAFT';
-                    $totalQty = $item->items->sum('quantity');
-                    $grandTotal = $item->grand_total ?? $item->total_value ?? 0;
-                @endphp
-                <tr data-date="{{ $rawDate }}">
-                    <td class="text-center text-muted fw-medium">{{ $loop->iteration }}</td>
-                    <td>
-                        <div class="fw-bold text-dark font-monospace">{{ $item->restock_code }}</div>
-                        <div class="text-muted small font-monospace">{{ $item->invoice_number }}</div>
-                    </td>
-                    <td class="text-center text-secondary small">
-                        {{ $item->restock_date ? $item->restock_date->format('d M Y, H:i') : '-' }}
-                    </td>
-                    <td>
-                        <div class="text-dark fw-semibold">{{ $item->supplier_name }}</div>
-                        @if ($item->notes)
-                            <div class="text-muted small text-truncate" style="max-width: 220px;">{{ $item->notes }}</div>
-                        @endif
-                    </td>
-                    <td class="text-center">
-                        @if ($isDraft)
-                            <span class="badge bg-warning text-dark px-2 py-1">DRAFT</span>
-                        @else
-                            <span class="badge bg-success text-white px-2 py-1">CONFIRMED</span>
-                        @endif
-                    </td>
-                    <td class="text-center">
-                        <span class="text-dark">{{ $item->items->count() }} Produk</span>
-                        <span class="text-muted small d-block">({{ $totalQty }} Unit)</span>
-                    </td>
-                    <td class="text-end font-monospace fw-bold text-dark">
-                        Rp {{ number_format($grandTotal, 0, ',', '.') }}
-                    </td>
-                    <td class="text-center text-secondary small">
-                        {{ $item->creator->employee_name ?? 'Admin' }}
-                    </td>
-                    <td class="text-center">
-                        <div class="d-inline-flex gap-1 justify-content-center">
-                            <a href="{{ route('restock.show', $item->id) }}" class="btn btn-sm btn-info text-white px-2 py-1 rounded-2 shadow-none" title="Detail" style="background-color: #0ea5e9; border-color: #0ea5e9;">
-                                <i class="bi bi-eye"></i>
-                            </a>
-                            @if ($isDraft)
-                                <a href="{{ route('restock.edit', $item->id) }}" class="btn btn-sm btn-warning text-white px-2 py-1 rounded-2 shadow-none" title="Edit Draft" style="background-color: #f59e0b; border-color: #f59e0b;">
-                                    <i class="bi bi-pencil"></i>
-                                </a>
-                            @endif
-                            <button type="button" class="btn btn-sm btn-danger text-white px-2 py-1 rounded-2 shadow-none" title="Hapus / Batalkan" style="background-color: #ef4444; border-color: #ef4444;"
-                                onclick="openDeleteModal({{ $item->id }}, '{{ addslashes($item->restock_code) }}', {{ $totalQty }}, {{ $grandTotal }})">
-                                <i class="bi bi-trash"></i>
-                            </button>
-                        </div>
-                    </td>
+    <div class="d-none d-md-block">
+        <table class="table table-bordered table-hover align-middle mb-0 w-100" id="restockDataTable">
+            <thead>
+                <tr>
+                    <th class="text-center" style="width: 46px;">No</th>
+                    <th style="width: 155px;">No. Invoice</th>
+                    <th style="width: 155px;">Kode Restock</th>
+                    <th class="text-center" style="width: 150px;">Tanggal</th>
+                    <th>Supplier</th>
+                    <th class="text-center" style="width: 110px;">Status</th>
+                    <th class="text-center" style="width: 120px;">Total Item</th>
+                    <th class="text-end" style="width: 150px;">Grand Total</th>
+                    <th class="text-center" style="width: 130px;">Petugas</th>
+                    <th class="text-center no-sort" style="width: 110px;">Aksi</th>
                 </tr>
-            @endforeach
-        </tbody>
-    </table>
+            </thead>
+            <tbody>
+                @foreach ($list as $item)
+                    @php
+                        $rawDate    = $item->restock_date ? $item->restock_date->format('Y-m-d') : '';
+                        $isDraft    = $item->status_restock === 'DRAFT';
+                        $totalQty   = $item->items->sum('quantity');
+                        $grandTotal = $item->grand_total ?? $item->total_value ?? 0;
+                    @endphp
+                    <tr data-date="{{ $rawDate }}">
+                        <td class="text-center text-muted">{{ $loop->iteration }}</td>
+                        <td class="font-monospace text-secondary small">{{ $item->invoice_number }}</td>
+                        <td class="font-monospace text-dark">{{ $item->restock_code }}</td>
+                        <td class="text-center text-secondary small">
+                            {{ $item->restock_date ? $item->restock_date->format('d M Y, H:i') : '-' }}
+                        </td>
+                        <td>
+                            <div class="text-dark">{{ $item->supplier_name }}</div>
+                            @if ($item->notes)
+                                <div class="text-muted small text-truncate" style="max-width: 220px;">{{ $item->notes }}</div>
+                            @endif
+                        </td>
+                        <td class="text-center">
+                            @if ($isDraft)
+                                <span class="badge bg-warning text-dark px-2 py-1">DRAFT</span>
+                            @else
+                                <span class="badge bg-success text-white px-2 py-1">CONFIRMED</span>
+                            @endif
+                        </td>
+                        <td class="text-center">
+                            <span class="text-dark">{{ $item->items->count() }} Produk</span>
+                            <span class="text-muted small d-block">({{ $totalQty }} Unit)</span>
+                        </td>
+                        <td class="text-end font-monospace text-dark">
+                            Rp {{ number_format($grandTotal, 0, ',', '.') }}
+                        </td>
+                        <td class="text-center text-secondary small">
+                            {{ $item->creator->employee_name ?? 'Admin' }}
+                        </td>
+                        <td class="text-center">
+                            <div class="d-inline-flex gap-1 justify-content-center">
+                                <a href="{{ route('restock.show', $item->id) }}" class="btn btn-sm btn-info text-white px-2 py-1 rounded-2 shadow-none" title="Detail" style="background-color: #0ea5e9; border-color: #0ea5e9;">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                @if ($isDraft)
+                                    <a href="{{ route('restock.edit', $item->id) }}" class="btn btn-sm btn-warning text-white px-2 py-1 rounded-2 shadow-none" title="Edit Draft" style="background-color: #f59e0b; border-color: #f59e0b;">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                @endif
+                                <button type="button" class="btn btn-sm btn-danger text-white px-2 py-1 rounded-2 shadow-none" title="Hapus / Batalkan"
+                                    onclick="openDeleteModal({{ $item->id }}, '{{ addslashes($item->restock_code) }}', {{ $totalQty }}, {{ $grandTotal }})">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                @endforeach
+            </tbody>
+        </table>
+    </div>
 
     {{-- ═══ MOBILE: Card List ═══ --}}
-    <div id="restockMobileCards" class="px-1 pt-1">
+    <div id="restockMobileCards" class="d-md-none px-1 pt-1">
         @forelse ($list as $item)
             <div class="restock-list-card">
                 {{-- Header: kode + tanggal --}}
@@ -253,7 +254,7 @@
                     <input type="date" id="modalFilterEndDate" class="form-control form-control-sm rounded-2">
                 </div>
             </div>
-            <div class="modal-footer modal-footer-minimal d-flex justify-content-between">
+            <div class="modal-footer border-0 modal-footer-minimal d-flex justify-content-between">
                 <button type="button" id="btnResetFilter" class="btn btn-sm btn-light border px-3 rounded-2">Reset</button>
                 <button type="button" id="btnApplyFilter" class="btn btn-sm btn-success px-3 rounded-2 text-white" data-bs-dismiss="modal">Terapkan Filter</button>
             </div>
@@ -303,84 +304,4 @@
 <script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
 <script src="https://cdn.datatables.net/responsive/2.5.0/js/responsive.bootstrap5.min.js"></script>
 <script src="{{ asset('js/restock.js') }}"></script>
-
-<script>
-/**
- * Mobile card search + filter sync with DataTables
- * Cards are always rendered server-side; JS handles live filtering
- * by mirroring the DataTables search/filter state.
- */
-(function () {
-    const isMobile = () => window.innerWidth < 768;
-
-    // ── Live search on mobile cards ──
-    document.getElementById('dtSearchInput').addEventListener('input', function () {
-        if (!isMobile()) return;
-        filterMobileCards();
-    });
-
-    function filterMobileCards() {
-        const q = (document.getElementById('dtSearchInput').value || '').toLowerCase().trim();
-        const supplier = (document.getElementById('modalFilterSupplier')?.value || '').toLowerCase();
-        const startDate = document.getElementById('modalFilterStartDate')?.value || '';
-        const endDate   = document.getElementById('modalFilterEndDate')?.value || '';
-
-        let anyVisible = false;
-        document.querySelectorAll('.restock-list-card').forEach(card => {
-            const code     = (card.querySelector('.rlc-code')?.textContent || '').toLowerCase();
-            const sup      = (card.querySelector('.rlc-supplier')?.textContent || '').toLowerCase();
-            const dateRaw  = card.dataset.date || '';
-
-            const matchQ        = !q || code.includes(q) || sup.includes(q);
-            const matchSupplier = !supplier || sup.includes(supplier);
-            const matchStart    = !startDate || dateRaw >= startDate;
-            const matchEnd      = !endDate   || dateRaw <= endDate;
-
-            const visible = matchQ && matchSupplier && matchStart && matchEnd;
-            card.style.display = visible ? '' : 'none';
-            if (visible) anyVisible = true;
-        });
-
-        // Empty state
-        let empty = document.getElementById('mobileCardsEmpty');
-        if (!anyVisible) {
-            if (!empty) {
-                empty = document.createElement('div');
-                empty.id = 'mobileCardsEmpty';
-                empty.className = 'restock-mobile-list-empty';
-                empty.innerHTML = '<i class="bi bi-search d-block mb-2 fs-4 opacity-40"></i>Tidak ada hasil yang cocok.';
-                document.getElementById('restockMobileCards').appendChild(empty);
-            }
-            empty.style.display = '';
-        } else if (empty) {
-            empty.style.display = 'none';
-        }
-    }
-
-    // ── Filter modal apply on mobile ──
-    document.getElementById('btnApplyFilter')?.addEventListener('click', function () {
-        if (isMobile()) {
-            setTimeout(filterMobileCards, 100);
-            const supplier  = document.getElementById('modalFilterSupplier')?.value;
-            const startDate = document.getElementById('modalFilterStartDate')?.value;
-            const endDate   = document.getElementById('modalFilterEndDate')?.value;
-            const badge = document.getElementById('activeFilterBadge');
-            if (badge) badge.classList.toggle('d-none', !(supplier || startDate || endDate));
-        }
-    });
-
-    document.getElementById('btnResetFilter')?.addEventListener('click', function () {
-        if (isMobile()) {
-            setTimeout(filterMobileCards, 50);
-            document.getElementById('activeFilterBadge')?.classList.add('d-none');
-        }
-    });
-
-    // Stamp data-date on each card from the DataTables row for date filtering
-    document.querySelectorAll('#restockDataTable tbody tr[data-date]').forEach((tr, i) => {
-        const cards = document.querySelectorAll('.restock-list-card');
-        if (cards[i]) cards[i].dataset.date = tr.dataset.date;
-    });
-})();
-</script>
 @endpush
