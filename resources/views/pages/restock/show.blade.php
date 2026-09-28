@@ -1,4 +1,4 @@
-@extends('layouts.admin')
+﻿@extends('layouts.admin')
 
 @section('title', 'Detail Restock — Warung Pojok Oremus')
 
@@ -135,8 +135,8 @@
                             <th class="text-center" style="width: 110px;">Satuan</th>
                             <th class="text-center" style="width: 120px;">Metode HPP</th>
                             <th class="text-center" style="width: 120px;">Jumlah Masuk</th>
-                            <th class="text-end" style="width: 160px;">Harga Modal / Unit</th>
-                            <th class="text-end" style="width: 160px;">Subtotal Nilai</th>
+                            <th class="text-end" style="width: 160px;">Harga Beli</th>
+                            <th class="text-end" style="width: 160px;">Subtotal</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -151,7 +151,6 @@
                                 <td class="text-center text-muted fw-medium">{{ $loop->iteration }}</td>
                                 <td>
                                     <div class="fw-semibold text-dark">{{ $product->prod_name ?? 'Produk Dihapus' }}</div>
-                                    <div class="text-muted small font-monospace">SKU: {{ $product->sku ?? '-' }}</div>
                                 </td>
                                 <td class="text-center">{{ strtoupper($unitName) }}</td>
                                 <td class="text-center">

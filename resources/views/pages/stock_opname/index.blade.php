@@ -23,9 +23,6 @@
     <div>
         <h4 class="fw-bold text-dark mb-1">Pemeriksaan Stok Opname</h4>
     </div>
-    <a href="{{ route('stock-opname.create') }}" class="btn btn-primary rounded-2 px-3 d-inline-flex align-items-center gap-2">
-        <i class="bi bi-plus-lg"></i> Catat Stock Opname
-    </a>
 </div>
 
 <!-- Flash Message -->
@@ -49,9 +46,9 @@
 <div class="card-box bg-white border rounded-3 p-4">
 
     <!-- Toolbar: Search + Filter Button -->
-    <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-4">
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
         <div class="d-flex align-items-center gap-2 flex-wrap flex-grow-1">
-            <!-- Search (hanya desktop, DataTables handle di desktop) -->
+            <!-- Search Desktop (DataTables controlled) -->
             <div class="input-group input-group-sm opname-search-box d-none d-md-flex">
                 <span class="input-group-text bg-white border-end-0 text-muted"><i class="bi bi-search"></i></span>
                 <input type="text" id="opnameSearchInput" class="form-control border-start-0" placeholder="Cari kode opname atau catatan...">
@@ -77,49 +74,55 @@
             @endif
         </div>
 
-        <div class="d-flex gap-2">
-            <!-- Mobile Search -->
+        <div class="d-flex gap-2 align-items-center">
+            <!-- Mobile Search Button -->
             <button type="button" class="btn btn-sm btn-outline-secondary rounded-2 d-flex d-md-none align-items-center gap-1" data-bs-toggle="modal" data-bs-target="#opnameMobileSearchModal">
                 <i class="bi bi-search"></i>
             </button>
-            <!-- Filter Button -->
+            <!-- Filter Button — ukuran kecil (btn-sm) -->
             <button type="button" class="btn btn-sm btn-outline-secondary rounded-2 d-inline-flex align-items-center gap-1" data-bs-toggle="modal" data-bs-target="#opnameFilterModal">
                 <i class="bi bi-funnel"></i>
                 <span>Filter</span>
                 @if(request()->hasAny(['status_opname', 'start_date']))
-                    <span class="badge bg-primary rounded-pill ms-1" style="font-size:0.65rem;">
+                    <span class="badge bg-primary rounded-pill ms-1" style="font-size:0.55rem;">
                         {{ collect(['status_opname', 'start_date'])->filter(fn($k) => request($k))->count() }}
                     </span>
                 @endif
             </button>
+            <!-- Catat Stock Opname — ukuran kecil (btn-sm) -->
+            <a href="{{ route('stock-opname.create') }}" class="btn btn-sm btn-success rounded-2 px-3 d-inline-flex align-items-center gap-1">
+                <i class="bi bi-plus-lg"></i> Catat Stock Opname
+            </a>
         </div>
     </div>
 
-    <!-- ════════════════════════════════════════════════ -->
-    <!-- DESKTOP TABLE (d-none d-md-block)               -->
-    <!-- ════════════════════════════════════════════════ -->
-    <div class="table-responsive d-none d-md-block">
-        <table class="table table-bordered table-hover align-middle mb-0" id="opnameDataTable">
+    {{-- ════════════════════════════════════════════════════════════ --}}
+    {{-- DESKTOP: DataTables (d-none d-md-block)                     --}}
+    {{-- Tabel SELALU render agar DataTables info "Showing X..." ada --}}
+    {{-- Empty state ditangani oleh DataTables language.emptyTable   --}}
+    {{-- ════════════════════════════════════════════════════════════ --}}
+    <div class="d-none d-md-block">
+        <table class="table table-bordered table-hover align-middle mb-0 w-100 text-nowrap" id="opnameDataTable">
             <thead>
                 <tr>
-                    <th class="text-center" style="width:5%;">No</th>
-                    <th style="width:18%;">Kode Opname</th>
+                    <th class="text-center" style="width:4%;">No</th>
+                    <th style="width:20%;">Kode Opname</th>
                     <th style="width:18%;">Tanggal Pemeriksaan</th>
-                    <th style="width:18%;">Petugas</th>
+                    <th style="width:20%;">Petugas</th>
                     <th class="text-center" style="width:13%;">Total Produk</th>
-                    <th class="text-center" style="width:13%;">Status</th>
-                    <th class="text-center" style="width:15%;">Aksi</th>
+                    <th class="text-center" style="width:12%;">Status</th>
+                    <th class="text-center" style="width:13%;">Aksi</th>
                 </tr>
             </thead>
             <tbody>
-                @forelse ($opnames as $opname)
+                @foreach ($opnames as $opname)
                     @php $status = strtoupper($opname->status_opname); @endphp
                     <tr>
                         <td class="text-center fw-semibold text-secondary">{{ $loop->iteration }}</td>
                         <td>
                             <span class="font-monospace fw-bold text-navy">{{ $opname->opname_code }}</span>
                             @if ($opname->notes)
-                                <div class="text-muted small text-truncate" style="max-width:200px;" title="{{ $opname->notes }}">{{ $opname->notes }}</div>
+                                <div class="text-muted small text-truncate" style="max-width:220px;" title="{{ $opname->notes }}">{{ $opname->notes }}</div>
                             @endif
                         </td>
                         <td>
@@ -162,20 +165,14 @@
                             </div>
                         </td>
                     </tr>
-                @empty
-                    <tr>
-                        <td colspan="7" class="text-center py-4 text-muted">
-                            Belum ada riwayat transaksi Stock Opname.
-                        </td>
-                    </tr>
-                @endforelse
+                @endforeach
             </tbody>
         </table>
     </div>
 
-    <!-- ════════════════════════════════════════════════ -->
-    <!-- MOBILE CARDS (d-block d-md-none)                -->
-    <!-- ════════════════════════════════════════════════ -->
+    {{-- ════════════════════════════════════════════════════════════ --}}
+    {{-- MOBILE CARDS (d-block d-md-none)                            --}}
+    {{-- ════════════════════════════════════════════════════════════ --}}
     <div class="d-block d-md-none" id="opnameMobileCards">
 
         <!-- Mobile Search Bar -->
@@ -246,7 +243,8 @@
         @empty
             <div class="text-center py-5 text-muted" id="opnameMobileEmpty">
                 <i class="bi bi-clipboard2-x fs-2 d-block mb-2 text-secondary opacity-50"></i>
-                Belum ada riwayat transaksi Stock Opname.
+                <div class="fw-semibold mb-1 small">Belum ada riwayat transaksi Stock Opname</div>
+                <div class="small">Klik <strong>+ Catat Stock Opname</strong> untuk memulai pemeriksaan baru.</div>
             </div>
         @endforelse
 
@@ -258,9 +256,9 @@
     </div>
 </div>
 
-<!-- ════════════════════════════════════════════════════════════ -->
-<!-- DELETE CONFIRMATION MODALS                                  -->
-<!-- ════════════════════════════════════════════════════════════ -->
+{{-- ════════════════════════════════════════════════════════════ --}}
+{{-- DELETE CONFIRMATION MODALS                                  --}}
+{{-- ════════════════════════════════════════════════════════════ --}}
 @foreach ($opnames as $opname)
 <div class="modal fade" id="deleteOpnameModal{{ $opname->id }}" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
@@ -292,15 +290,15 @@
 </div>
 @endforeach
 
-<!-- ════════════════════════════════════════════════════════════ -->
-<!-- FILTER MODAL                                                -->
-<!-- ════════════════════════════════════════════════════════════ -->
+{{-- ════════════════════════════════════════════════════════════ --}}
+{{-- FILTER MODAL                                                --}}
+{{-- ════════════════════════════════════════════════════════════ --}}
 <div class="modal fade" id="opnameFilterModal" tabindex="-1" aria-labelledby="opnameFilterModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content rounded-3 border-0 shadow">
             <div class="modal-header border-bottom py-3">
                 <h6 class="modal-title fw-bold text-dark d-flex align-items-center gap-2" id="opnameFilterModalLabel">
-                    <i class="bi bi-funnel-fill text-primary fs-5"></i> Filter Stock Opname
+                    <i class="bi bi-funnel text-secondary fs-5"></i> Filter Stock Opname
                 </h6>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
@@ -328,7 +326,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer border-top py-2 justify-content-between">
+                <div class="modal-footer border-0 py-2 justify-content-between">
                     @if(request()->hasAny(['status_opname', 'start_date', 'end_date']))
                         <a href="{{ route('stock-opname.index') }}" class="btn btn-sm btn-link text-danger text-decoration-none px-0">
                             <i class="bi bi-x-circle me-1"></i>Reset Filter
@@ -336,10 +334,9 @@
                     @else
                         <span></span>
                     @endif
-                    <div class="d-flex gap-2">
+                    <div class="d-flex justify-content-between w-100">
                         <button type="button" class="btn btn-outline-secondary rounded-2 px-3" data-bs-dismiss="modal">Batal</button>
-                        <button type="submit" class="btn btn-primary rounded-2 px-4">
-                            <i class="bi bi-funnel me-1"></i> Terapkan
+                        <button type="submit" class="btn btn-success rounded-2 px-4">Terapkan
                         </button>
                     </div>
                 </div>
@@ -347,7 +344,6 @@
         </div>
     </div>
 </div>
-
 @endsection
 
 @push('scripts')

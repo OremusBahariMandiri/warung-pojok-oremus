@@ -135,9 +135,11 @@
                                 @foreach ($oldItems as $idx => $item)
                                     @php
                                         $selectedProd = $productsList->firstWhere('id', $item['product_id'] ?? null);
+                                        $selectedUnitId = $item['restock_unit_id'] ?? ($selectedProd ? $selectedProd->unit_id : null);
+                                        $filteredProds = $selectedUnitId ? $productsList->where('unit_id', $selectedUnitId) : $productsList;
                                         $qty = (int)($item['quantity'] ?? 1);
-                                        $purchasePrice = (float)($item['purchase_price'] ?? ($selectedProd ? ($selectedProd->unit_price ?: $selectedProd->current_hpp) : 0));
-                                        $subtotal = $qty * $purchasePrice;
+                                        $purchasePrice = isset($item['purchase_price']) && $item['purchase_price'] !== '' ? (float)$item['purchase_price'] : null;
+                                        $subtotal = $purchasePrice !== null ? ($qty * $purchasePrice) : 0;
                                         $unitName = $selectedProd && $selectedProd->unit
                                             ? ($selectedProd->unit->short_name ?: $selectedProd->unit->unit_name)
                                             : 'Pcs';
@@ -147,9 +149,9 @@
                                         <td class="row-number text-center text-muted fw-medium small">{{ $loop->iteration }}</td>
                                         <td>
                                             <select name="items[{{ $idx }}][restock_unit_id]" class="form-select form-select-sm select2-restock-unit rounded-2" onchange="onUnitSelectChange(this)" required>
-                                                <option value="" disabled {{ empty($item['restock_unit_id']) ? 'selected' : '' }}>Pilih Satuan...</option>
+                                                <option value="" disabled {{ empty($selectedUnitId) ? 'selected' : '' }}>Pilih Satuan...</option>
                                                 @foreach ($unitsList as $u)
-                                                    <option value="{{ $u->id }}" {{ ($item['restock_unit_id'] ?? ($selectedProd ? $selectedProd->unit_id : '')) == $u->id ? 'selected' : '' }}>
+                                                    <option value="{{ $u->id }}" {{ $selectedUnitId == $u->id ? 'selected' : '' }}>
                                                         {{ $u->unit_name }} ({{ $u->short_name ?: $u->unit_name }})
                                                     </option>
                                                 @endforeach
@@ -158,7 +160,7 @@
                                         <td>
                                             <select name="items[{{ $idx }}][product_id]" class="form-select form-select-sm select2-restock-product rounded-2" onchange="onProductSelectChange(this)" required>
                                                 <option value="" disabled {{ empty($item['product_id']) ? 'selected' : '' }}>Pilih Produk...</option>
-                                                @foreach ($productsList as $p)
+                                                @foreach ($filteredProds as $p)
                                                     @php
                                                         $uName = $p->unit ? ($p->unit->short_name ?: $p->unit->unit_name) : 'Pcs';
                                                         $defaultCost = (float)($p->unit_price ?: $p->current_hpp ?: 0);
@@ -188,7 +190,7 @@
                                                 <span class="input-group-text bg-light border-end-0">Rp</span>
                                                 <input type="number" name="items[{{ $idx }}][purchase_price]"
                                                     class="form-control form-control-sm font-monospace text-end rounded-end-2 item-price"
-                                                    value="{{ (int)$purchasePrice }}" min="0"
+                                                    value="{{ $purchasePrice !== null ? (int)$purchasePrice : '' }}" min="0" placeholder=""
                                                     oninput="onItemQtyOrPriceChange(this)" required>
                                             </div>
                                         </td>
@@ -219,9 +221,11 @@
                         @foreach ($oldItems as $idx => $item)
                             @php
                                 $selectedProd = $productsList->firstWhere('id', $item['product_id'] ?? null);
+                                $selectedUnitId = $item['restock_unit_id'] ?? ($selectedProd ? $selectedProd->unit_id : null);
+                                $filteredProds = $selectedUnitId ? $productsList->where('unit_id', $selectedUnitId) : $productsList;
                                 $qty = (int)($item['quantity'] ?? 1);
-                                $purchasePrice = (float)($item['purchase_price'] ?? ($selectedProd ? ($selectedProd->unit_price ?: $selectedProd->current_hpp) : 0));
-                                $subtotal = $qty * $purchasePrice;
+                                $purchasePrice = isset($item['purchase_price']) && $item['purchase_price'] !== '' ? (float)$item['purchase_price'] : null;
+                                $subtotal = $purchasePrice !== null ? ($qty * $purchasePrice) : 0;
                                 $unitName = $selectedProd && $selectedProd->unit ? ($selectedProd->unit->short_name ?: $selectedProd->unit->unit_name) : 'Pcs';
                                 $costDisplay = $selectedProd ? ($selectedProd->unit_price ?: $selectedProd->current_hpp ?: 0) : 0;
                             @endphp
@@ -234,10 +238,10 @@
                                 </div>
                                 <div class="mb-2">
                                     <label class="form-label small fw-semibold text-dark mb-1">Satuan Beli</label>
-                                    <select name="items[{{ $idx }}][restock_unit_id]" class="form-select form-select-sm select2-restock-unit rounded-2" required>
-                                        <option value="" disabled {{ empty($item['restock_unit_id']) ? 'selected' : '' }}>Pilih Satuan...</option>
+                                    <select name="items[{{ $idx }}][restock_unit_id]" class="form-select form-select-sm select2-restock-unit rounded-2" onchange="onUnitSelectChange(this)" required>
+                                        <option value="" disabled {{ empty($selectedUnitId) ? 'selected' : '' }}>Pilih Satuan...</option>
                                         @foreach ($unitsList as $u)
-                                            <option value="{{ $u->id }}" {{ ($item['restock_unit_id'] ?? ($selectedProd ? $selectedProd->unit_id : '')) == $u->id ? 'selected' : '' }}>
+                                            <option value="{{ $u->id }}" {{ $selectedUnitId == $u->id ? 'selected' : '' }}>
                                                 {{ $u->unit_name }} ({{ $u->short_name ?: $u->unit_name }})
                                             </option>
                                         @endforeach
@@ -247,7 +251,7 @@
                                     <label class="form-label small fw-semibold text-dark mb-1">Nama Produk</label>
                                     <select name="items[{{ $idx }}][product_id]" class="form-select form-select-sm select2-restock-product rounded-2" onchange="onMobileProductSelectChange(this)" required>
                                         <option value="" disabled {{ empty($item['product_id']) ? 'selected' : '' }}>Pilih Produk...</option>
-                                        @foreach ($productsList as $p)
+                                        @foreach ($filteredProds as $p)
                                             @php $defaultCost = (float)($p->unit_price ?: $p->current_hpp ?: 0); @endphp
                                             <option value="{{ $p->id }}"
                                                 data-unit-id="{{ $p->unit_id }}"
@@ -274,7 +278,7 @@
                                         <label class="form-label small fw-semibold text-dark mb-1">Harga Beli/Unit</label>
                                         <div class="input-group input-group-sm">
                                             <span class="input-group-text bg-light border-end-0">Rp</span>
-                                            <input type="number" name="items[{{ $idx }}][purchase_price]" class="form-control form-control-sm font-monospace text-end item-price" value="{{ (int)$purchasePrice }}" min="0" oninput="onMobileItemChange(this)" required>
+                                            <input type="number" name="items[{{ $idx }}][purchase_price]" class="form-control form-control-sm font-monospace text-end item-price" value="{{ $purchasePrice !== null ? (int)$purchasePrice : '' }}" min="0" placeholder="" oninput="onMobileItemChange(this)" required>
                                         </div>
                                     </div>
                                 </div>
@@ -315,30 +319,41 @@
                     <div class="col-md-12">
                         <label for="grand_total" class="form-label small fw-bold text-dark">Grand Total</label>
                         <div class="input-group">
-                            <span class="input-group-text bg-light border-end-0">Rp</span>
+                            <span class="input-group-text border-end-0">Rp</span>
                             <input type="number" class="form-control font-monospace fw-bold fs-5 text-end bg-light text-success" id="grand_total" name="grand_total" value="{{ old('grand_total') }}" readonly>
                         </div>
                     </div>
                 </div>
 
                 <!-- Action Buttons -->
-                <div class="restock-action-buttons pt-3 mt-4">
-                    {{-- Desktop: Batal kiri | Draft + Simpan kanan --}}
-                    <div class="d-none d-md-flex align-items-center justify-content-between gap-2">
-                        <a href="{{ route('restock.index') }}" class="btn btn-outline-secondary rounded-2 px-4">Batal</a>
-                        <div class="d-flex gap-2">
-                            <button type="button" class="btn btn-outline-secondary rounded-2 px-4" onclick="submitRestockAs('DRAFT')">Simpan sebagai Draft</button>
-                            <button type="button" class="btn btn-success rounded-2 px-4" onclick="openConfirmRestockModal()">Simpan</button>
-                        </div>
+                {{-- DESKTOP: Batal kiri, Draft + Simpan kanan (layout asli) --}}
+                <div class="d-none d-md-flex align-items-center justify-content-between gap-2 mt-4 pt-3">
+                    <a href="{{ route('restock.index') }}" class="btn btn-light border rounded-2 px-4">
+                        Batal
+                    </a>
+                    <div class="d-flex gap-3">
+                        <button type="button" class="btn btn-outline-secondary rounded-2 px-4 d-inline-flex align-items-center gap-2" onclick="submitRestockAs('DRAFT')">
+                            Simpan sebagai Draft
+                        </button>
+                        <button type="button" class="btn btn-success rounded-2 px-4 d-inline-flex align-items-center gap-2" onclick="openConfirmRestockModal()">
+                            Simpan
+                        </button>
                     </div>
-                    {{-- Mobile: Draft kiri | Simpan kanan (baris 1), Batal full-width (baris 2) --}}
-                    <div class="d-flex d-md-none flex-column gap-2">
-                        <div class="d-flex gap-2">
-                            <button type="button" class="btn btn-outline-secondary rounded-2 flex-fill" onclick="submitRestockAs('DRAFT')">Simpan sebagai Draft</button>
-                            <button type="button" class="btn btn-success rounded-2 flex-fill" onclick="openConfirmRestockModal()">Simpan</button>
-                        </div>
-                        <a href="{{ route('restock.index') }}" class="btn btn-outline-secondary rounded-2 w-100 text-center">Batal</a>
+                </div>
+
+                {{-- MOBILE: Draft & Simpan sejajar (between), Batal full-width di bawah --}}
+                <div class="d-flex d-md-none flex-column gap-2 mt-4 pt-3">
+                    <div class="d-flex justify-content-between gap-2">
+                        <button type="button" class="btn btn-secondary rounded-2 flex-fill d-inline-flex align-items-center justify-content-center gap-2" onclick="submitRestockAs('DRAFT')">
+                            Simpan Draft
+                        </button>
+                        <button type="button" class="btn btn-success rounded-2 flex-fill d-inline-flex align-items-center justify-content-center gap-2" onclick="openConfirmRestockModal()">
+                            Simpan
+                        </button>
                     </div>
+                    <a href="{{ route('restock.index') }}" class="btn btn-light border rounded-2 w-100 text-center">
+                        Batal
+                    </a>
                 </div>
             </div>
         </div>

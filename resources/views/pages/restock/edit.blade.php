@@ -62,28 +62,28 @@
             <div class="card-box bg-white border rounded-3 p-4 mb-3">
                 <h6 class="fw-bold text-dark mb-3 pb-2 border-bottom">Informasi Restock & Supplier</h6>
                 <div class="row g-3">
-                    <div class="col-md-6">
+                    <div class="col-md-12">
                         <label for="invoice_number" class="form-label small fw-semibold text-dark">Nomor Invoice</label>
                         <input type="text" class="form-control font-monospace bg-light rounded-2 text-secondary"
                             id="invoice_number" name="invoice_number" value="{{ old('invoice_number', $restock->invoice_number) }}" readonly>
                     </div>
 
-                    <div class="col-md-6">
+                    <div class="col-md-12">
                         <label for="restock_code" class="form-label small fw-semibold text-dark">Kode Restock</label>
                         <input type="text" class="form-control font-monospace bg-light rounded-2 text-secondary"
                             id="restock_code" name="restock_code" value="{{ old('restock_code', $restock->restock_code) }}" readonly>
                     </div>
 
-                    <div class="col-md-6">
+                    <div class="col-md-12">
                         <label for="supplier_name" class="form-label small fw-semibold text-dark">Nama Supplier <span class="text-danger">*</span></label>
                         <input type="text" class="form-control rounded-2 @error('supplier_name') is-invalid @enderror"
-                            id="supplier_name" name="supplier_name" value="{{ old('supplier_name', $restock->supplier_name) }}" required autofocus>
+                            id="supplier_name" name="supplier_name" value="{{ old('supplier_name', $restock->supplier_name) }}" required>
                         @error('supplier_name')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
                     </div>
 
-                    <div class="col-md-6">
+                    <div class="col-md-12">
                         <label for="restock_date" class="form-label small fw-semibold text-dark">Tanggal Penerimaan <span class="text-danger">*</span></label>
                         <input type="datetime-local" class="form-control rounded-2 @error('restock_date') is-invalid @enderror"
                             id="restock_date" name="restock_date" value="{{ old('restock_date', $restock->restock_date ? $restock->restock_date->format('Y-m-d\TH:i') : now()->format('Y-m-d\TH:i')) }}" required>
@@ -118,18 +118,18 @@
                 </div>
 
                 {{-- DESKTOP TABLE VIEW --}}
-                <div class="table-responsive">
+                <div class="table-responsive d-none d-md-block">
                     <table class="table table-bordered table-hover align-middle mb-0 w-100" id="restockItemsTable">
                         <thead class="table-light">
                             <tr>
-                                <th class="text-center col-no" style="width: 40px;">No</th>
-                                <th style="width: 170px;">Pilih Satuan Beli</th>
-                                <th>Pilih Produk</th>
-                                <th class="text-start" style="width: 150px;">INFORMASI</th>
-                                <th class="text-center" style="width: 120px;">JUMLAH MASUK</th>
-                                <th class="text-end" style="width: 170px;">HARGA BELI / UNIT</th>
-                                <th class="text-end" style="width: 160px;">SUBTOTAL BIAYA</th>
-                                <th class="text-center no-sort" style="width: 50px;">AKSI</th>
+                                <th class="text-center" style="width: 45px;">No</th>
+                                <th class="text-center" style="width: 160px;">Satuan Beli</th>
+                                <th class="text-center" style="min-width: 180px;">Nama Produk</th>
+                                <th style="width: 120px;">Informasi</th>
+                                <th class="text-center" style="width: 100px;">Jumlah Masuk</th>
+                                <th class="text-center" style="width: 140px;">Harga Beli</th>
+                                <th class="text-center" style="width: 120px;">Subtotal</th>
+                                <th class="text-center no-sort" style="width: 55px;">Aksi</th>
                             </tr>
                         </thead>
                         <tbody id="restockItemRows">
@@ -137,9 +137,11 @@
                                 @foreach ($oldItems as $idx => $item)
                                     @php
                                         $selectedProd = $productsList->firstWhere('id', $item['product_id'] ?? null);
+                                        $selectedUnitId = $item['restock_unit_id'] ?? ($selectedProd ? $selectedProd->unit_id : null);
+                                        $filteredProds = $selectedUnitId ? $productsList->where('unit_id', $selectedUnitId) : $productsList;
                                         $qty = (int)($item['quantity'] ?? 1);
-                                        $purchasePrice = (float)($item['purchase_price'] ?? 0);
-                                        $subtotal = $qty * $purchasePrice;
+                                        $purchasePrice = isset($item['purchase_price']) && $item['purchase_price'] !== '' ? (float)$item['purchase_price'] : null;
+                                        $subtotal = $purchasePrice !== null ? ($qty * $purchasePrice) : 0;
                                         $unitName = $selectedProd && $selectedProd->unit
                                             ? ($selectedProd->unit->short_name ?: $selectedProd->unit->unit_name)
                                             : 'Pcs';
@@ -149,9 +151,9 @@
                                         <td class="row-number text-center text-muted fw-medium small">{{ $loop->iteration }}</td>
                                         <td>
                                             <select name="items[{{ $idx }}][restock_unit_id]" class="form-select form-select-sm select2-restock-unit rounded-2" onchange="onUnitSelectChange(this)" required>
-                                                <option value="" disabled {{ empty($item['restock_unit_id']) ? 'selected' : '' }}>Pilih Satuan...</option>
+                                                <option value="" disabled {{ empty($selectedUnitId) ? 'selected' : '' }}>Pilih Satuan...</option>
                                                 @foreach ($unitsList as $u)
-                                                    <option value="{{ $u->id }}" {{ ($item['restock_unit_id'] ?? ($selectedProd ? $selectedProd->unit_id : '')) == $u->id ? 'selected' : '' }}>
+                                                    <option value="{{ $u->id }}" {{ $selectedUnitId == $u->id ? 'selected' : '' }}>
                                                         {{ $u->unit_name }} ({{ $u->short_name ?: $u->unit_name }})
                                                     </option>
                                                 @endforeach
@@ -160,7 +162,7 @@
                                         <td>
                                             <select name="items[{{ $idx }}][product_id]" class="form-select form-select-sm select2-restock-product rounded-2" onchange="onProductSelectChange(this)" required>
                                                 <option value="" disabled {{ empty($item['product_id']) ? 'selected' : '' }}>Pilih Produk...</option>
-                                                @foreach ($productsList as $p)
+                                                @foreach ($filteredProds as $p)
                                                     @php
                                                         $uName = $p->unit ? ($p->unit->short_name ?: $p->unit->unit_name) : 'Pcs';
                                                         $defaultCost = (float)($p->unit_price ?: $p->current_hpp ?: 0);
@@ -190,7 +192,7 @@
                                                 <span class="input-group-text bg-light border-end-0">Rp</span>
                                                 <input type="number" name="items[{{ $idx }}][purchase_price]"
                                                     class="form-control form-control-sm font-monospace text-end rounded-end-2 item-price"
-                                                    value="{{ (int)$purchasePrice }}" min="0"
+                                                    value="{{ $purchasePrice !== null ? (int)$purchasePrice : '' }}" min="0" placeholder=""
                                                     oninput="onItemQtyOrPriceChange(this)" required>
                                             </div>
                                         </td>
@@ -208,6 +210,8 @@
                                 @foreach ($existingItems as $idx => $item)
                                     @php
                                         $selectedProd = $productsList->firstWhere('id', $item->product_id);
+                                        $selectedUnitId = $item->restock_unit_id ?? ($selectedProd ? $selectedProd->unit_id : null);
+                                        $filteredProds = $selectedUnitId ? $productsList->where('unit_id', $selectedUnitId) : $productsList;
                                         $qty = (int)$item->quantity;
                                         $purchasePrice = (float)$item->purchase_price;
                                         $subtotal = (float)$item->total_price;
@@ -218,9 +222,9 @@
                                         <td class="row-number text-center text-muted fw-medium small">{{ $loop->iteration }}</td>
                                         <td>
                                             <select name="items[{{ $idx }}][restock_unit_id]" class="form-select form-select-sm select2-restock-unit rounded-2" onchange="onUnitSelectChange(this)" required>
-                                                <option value="" disabled>Pilih Satuan...</option>
+                                                <option value="" disabled {{ empty($selectedUnitId) ? 'selected' : '' }}>Pilih Satuan...</option>
                                                 @foreach ($unitsList as $u)
-                                                    <option value="{{ $u->id }}" {{ ($item->restock_unit_id ?? ($selectedProd ? $selectedProd->unit_id : '')) == $u->id ? 'selected' : '' }}>
+                                                    <option value="{{ $u->id }}" {{ $selectedUnitId == $u->id ? 'selected' : '' }}>
                                                         {{ $u->unit_name }} ({{ $u->short_name ?: $u->unit_name }})
                                                     </option>
                                                 @endforeach
@@ -228,8 +232,8 @@
                                         </td>
                                         <td>
                                             <select name="items[{{ $idx }}][product_id]" class="form-select form-select-sm select2-restock-product rounded-2" onchange="onProductSelectChange(this)" required>
-                                                <option value="" disabled>Pilih Produk...</option>
-                                                @foreach ($productsList as $p)
+                                                <option value="" disabled {{ empty($item->product_id) ? 'selected' : '' }}>Pilih Produk...</option>
+                                                @foreach ($filteredProds as $p)
                                                     @php
                                                         $uName = $p->unit ? ($p->unit->short_name ?: $p->unit->unit_name) : 'Pcs';
                                                         $defaultCost = (float)($p->unit_price ?: $p->current_hpp ?: 0);
@@ -259,7 +263,7 @@
                                                 <span class="input-group-text bg-light border-end-0">Rp</span>
                                                 <input type="number" name="items[{{ $idx }}][purchase_price]"
                                                     class="form-control form-control-sm font-monospace text-end rounded-end-2 item-price"
-                                                    value="{{ (int)$purchasePrice }}" min="0"
+                                                    value="{{ (int)$purchasePrice }}" min="0" placeholder=""
                                                     oninput="onItemQtyOrPriceChange(this)" required>
                                             </div>
                                         </td>
@@ -283,11 +287,162 @@
                         </tbody>
                     </table>
                 </div>
+
+                {{-- MOBILE CARD VIEW --}}
+                <div id="restockMobileItemCards" class="d-block d-md-none py-3">
+                    @if (!empty($oldItems) && is_array($oldItems))
+                        @foreach ($oldItems as $idx => $item)
+                            @php
+                                $selectedProd = $productsList->firstWhere('id', $item['product_id'] ?? null);
+                                $selectedUnitId = $item['restock_unit_id'] ?? ($selectedProd ? $selectedProd->unit_id : null);
+                                $filteredProds = $selectedUnitId ? $productsList->where('unit_id', $selectedUnitId) : $productsList;
+                                $qty = (int)($item['quantity'] ?? 1);
+                                $purchasePrice = isset($item['purchase_price']) && $item['purchase_price'] !== '' ? (float)$item['purchase_price'] : null;
+                                $subtotal = $purchasePrice !== null ? ($qty * $purchasePrice) : 0;
+                                $unitName = $selectedProd && $selectedProd->unit ? ($selectedProd->unit->short_name ?: $selectedProd->unit->unit_name) : 'Pcs';
+                                $costDisplay = $selectedProd ? ($selectedProd->unit_price ?: $selectedProd->current_hpp ?: 0) : 0;
+                            @endphp
+                            <div class="restock-mobile-item-card mb-3" data-mobile-index="{{ $idx }}">
+                                <div class="d-flex align-items-center justify-content-between mb-2">
+                                    <span class="badge bg-secondary rounded-pill">Item {{ $loop->iteration }}</span>
+                                    <button type="button" class="btn btn-link text-danger p-0 border-0 small" onclick="removeMobileItemCard(this)" title="Hapus">
+                                        <i class="bi bi-trash3-fill"></i>
+                                    </button>
+                                </div>
+                                <div class="mb-2">
+                                    <label class="form-label small fw-semibold text-dark mb-1">Satuan Beli</label>
+                                    <select name="items[{{ $idx }}][restock_unit_id]" class="form-select form-select-sm select2-restock-unit rounded-2" onchange="onUnitSelectChange(this)" required>
+                                        <option value="" disabled {{ empty($selectedUnitId) ? 'selected' : '' }}>Pilih Satuan...</option>
+                                        @foreach ($unitsList as $u)
+                                            <option value="{{ $u->id }}" {{ $selectedUnitId == $u->id ? 'selected' : '' }}>
+                                                {{ $u->unit_name }} ({{ $u->short_name ?: $u->unit_name }})
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="mb-2">
+                                    <label class="form-label small fw-semibold text-dark mb-1">Nama Produk</label>
+                                    <select name="items[{{ $idx }}][product_id]" class="form-select form-select-sm select2-restock-product rounded-2" onchange="onMobileProductSelectChange(this)" required>
+                                        <option value="" disabled {{ empty($item['product_id']) ? 'selected' : '' }}>Pilih Produk...</option>
+                                        @foreach ($filteredProds as $p)
+                                            @php $defaultCost = (float)($p->unit_price ?: $p->current_hpp ?: 0); @endphp
+                                            <option value="{{ $p->id }}"
+                                                data-unit-id="{{ $p->unit_id }}"
+                                                data-unit="{{ $p->unit ? ($p->unit->short_name ?: $p->unit->unit_name) : 'Pcs' }}"
+                                                data-stock="{{ $p->current_stock }}"
+                                                data-cost="{{ $defaultCost }}"
+                                                {{ ($item['product_id'] ?? '') == $p->id ? 'selected' : '' }}>
+                                                {{ $p->prod_name }} ({{ $p->prod_code ?: 'PRD-' . $p->id }})
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="rounded-2 bg-light border px-3 py-2 mb-2 small">
+                                    <span class="text-muted">Stok: </span><span class="fw-semibold mobile-stock-val">{{ $selectedProd ? $selectedProd->current_stock . ' ' . $unitName : '-' }}</span>
+                                    &nbsp;|&nbsp;
+                                    <span class="text-muted">HPP: </span><span class="fw-semibold mobile-hpp-val">{{ $selectedProd ? 'Rp ' . number_format($costDisplay, 0, ',', '.') : '-' }}</span>
+                                </div>
+                                <div class="row g-2 mb-2">
+                                    <div class="col-5">
+                                        <label class="form-label small fw-semibold text-dark mb-1">Jumlah Masuk</label>
+                                        <input type="number" name="items[{{ $idx }}][quantity]" class="form-control form-control-sm font-monospace text-center item-qty" value="{{ $qty }}" min="1" oninput="onMobileItemChange(this)" required>
+                                    </div>
+                                    <div class="col-7">
+                                        <label class="form-label small fw-semibold text-dark mb-1">Harga Beli/Unit</label>
+                                        <div class="input-group input-group-sm">
+                                            <span class="input-group-text bg-light border-end-0">Rp</span>
+                                            <input type="number" name="items[{{ $idx }}][purchase_price]" class="form-control form-control-sm font-monospace text-end item-price" value="{{ $purchasePrice !== null ? (int)$purchasePrice : '' }}" min="0" placeholder="" oninput="onMobileItemChange(this)" required>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="d-flex align-items-center justify-content-between px-3 py-2 rounded-2 bg-success bg-opacity-10 border border-success border-opacity-25">
+                                    <span class="small fw-semibold text-success">Subtotal</span>
+                                    <span class="fw-bold font-monospace text-success mobile-subtotal-val">Rp {{ number_format($subtotal, 0, ',', '.') }}</span>
+                                </div>
+                            </div>
+                        @endforeach
+                    @elseif ($existingItems->count() > 0)
+                        @foreach ($existingItems as $idx => $item)
+                            @php
+                                $selectedProd = $productsList->firstWhere('id', $item->product_id);
+                                $selectedUnitId = $item->restock_unit_id ?? ($selectedProd ? $selectedProd->unit_id : null);
+                                $filteredProds = $selectedUnitId ? $productsList->where('unit_id', $selectedUnitId) : $productsList;
+                                $qty = (int)$item->quantity;
+                                $purchasePrice = (float)$item->purchase_price;
+                                $subtotal = (float)$item->total_price;
+                                $unitName = $item->unit ? ($item->unit->short_name ?: $item->unit->unit_name) : ($selectedProd && $selectedProd->unit ? ($selectedProd->unit->short_name ?: $selectedProd->unit->unit_name) : 'Pcs');
+                                $costDisplay = $selectedProd ? ($selectedProd->unit_price ?: $selectedProd->current_hpp ?: 0) : 0;
+                            @endphp
+                            <div class="restock-mobile-item-card mb-3" data-mobile-index="{{ $idx }}">
+                                <div class="d-flex align-items-center justify-content-between mb-2">
+                                    <span class="badge bg-secondary rounded-pill">Item {{ $loop->iteration }}</span>
+                                    <button type="button" class="btn btn-link text-danger p-0 border-0 small" onclick="removeMobileItemCard(this)" title="Hapus">
+                                        <i class="bi bi-trash3-fill"></i>
+                                    </button>
+                                </div>
+                                <div class="mb-2">
+                                    <label class="form-label small fw-semibold text-dark mb-1">Satuan Beli</label>
+                                    <select name="items[{{ $idx }}][restock_unit_id]" class="form-select form-select-sm select2-restock-unit rounded-2" onchange="onUnitSelectChange(this)" required>
+                                        <option value="" disabled {{ empty($selectedUnitId) ? 'selected' : '' }}>Pilih Satuan...</option>
+                                        @foreach ($unitsList as $u)
+                                            <option value="{{ $u->id }}" {{ $selectedUnitId == $u->id ? 'selected' : '' }}>
+                                                {{ $u->unit_name }} ({{ $u->short_name ?: $u->unit_name }})
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="mb-2">
+                                    <label class="form-label small fw-semibold text-dark mb-1">Nama Produk</label>
+                                    <select name="items[{{ $idx }}][product_id]" class="form-select form-select-sm select2-restock-product rounded-2" onchange="onMobileProductSelectChange(this)" required>
+                                        <option value="" disabled {{ empty($item->product_id) ? 'selected' : '' }}>Pilih Produk...</option>
+                                        @foreach ($filteredProds as $p)
+                                            @php $defaultCost = (float)($p->unit_price ?: $p->current_hpp ?: 0); @endphp
+                                            <option value="{{ $p->id }}"
+                                                data-unit-id="{{ $p->unit_id }}"
+                                                data-unit="{{ $p->unit ? ($p->unit->short_name ?: $p->unit->unit_name) : 'Pcs' }}"
+                                                data-stock="{{ $p->current_stock }}"
+                                                data-cost="{{ $defaultCost }}"
+                                                {{ $item->product_id == $p->id ? 'selected' : '' }}>
+                                                {{ $p->prod_name }} ({{ $p->prod_code ?: 'PRD-' . $p->id }})
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="rounded-2 bg-light border px-3 py-2 mb-2 small">
+                                    <span class="text-muted">Stok: </span><span class="fw-semibold mobile-stock-val">{{ $selectedProd ? $selectedProd->current_stock . ' ' . $unitName : '-' }}</span>
+                                    &nbsp;|&nbsp;
+                                    <span class="text-muted">HPP: </span><span class="fw-semibold mobile-hpp-val">{{ $selectedProd ? 'Rp ' . number_format($costDisplay, 0, ',', '.') : '-' }}</span>
+                                </div>
+                                <div class="row g-2 mb-2">
+                                    <div class="col-5">
+                                        <label class="form-label small fw-semibold text-dark mb-1">Jumlah Masuk</label>
+                                        <input type="number" name="items[{{ $idx }}][quantity]" class="form-control form-control-sm font-monospace text-center item-qty" value="{{ $qty }}" min="1" oninput="onMobileItemChange(this)" required>
+                                    </div>
+                                    <div class="col-7">
+                                        <label class="form-label small fw-semibold text-dark mb-1">Harga Beli/Unit</label>
+                                        <div class="input-group input-group-sm">
+                                            <span class="input-group-text bg-light border-end-0">Rp</span>
+                                            <input type="number" name="items[{{ $idx }}][purchase_price]" class="form-control form-control-sm font-monospace text-end item-price" value="{{ (int)$purchasePrice }}" min="0" placeholder="" oninput="onMobileItemChange(this)" required>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="d-flex align-items-center justify-content-between px-3 py-2 rounded-2 bg-success bg-opacity-10 border border-success border-opacity-25">
+                                    <span class="small fw-semibold text-success">Subtotal</span>
+                                    <span class="fw-bold font-monospace text-success mobile-subtotal-val">Rp {{ number_format($subtotal, 0, ',', '.') }}</span>
+                                </div>
+                            </div>
+                        @endforeach
+                    @else
+                        <div id="mobileEmptyItemRow" class="text-center py-4 text-muted small">
+                            Belum ada produk. Klik "+ Tambah" di atas untuk menambahkan item.
+                        </div>
+                    @endif
+                </div>
             </div>
         </div>
 
-        <!-- Section 3: Rincian Kalkulasi Pembayaran (Card Khusus Terpisah) -->
-        <div class="col-lg-12">
+        <!-- Section 3 & 4: Ringkasan Restock + Action Buttons (digabung dalam satu card) -->
+        <div class="col-lg-12 mt-3">
             <div class="card-box bg-white border rounded-3 p-4 mb-4">
                 <h6 class="fw-bold text-dark mb-3 pb-2 border-bottom">Ringkasan Restock</h6>
                 <div class="row g-3">
@@ -308,28 +463,24 @@
                     <div class="col-md-12">
                         <label for="grand_total" class="form-label small fw-bold text-dark">Grand Total</label>
                         <div class="input-group">
-                            <span class="input-group-text bg-success text-white fw-bold border-end-0">Rp</span>
+                            <span class="input-group-text  border-end-0">Rp</span>
                             <input type="number" class="form-control font-monospace fw-bold fs-5 text-end bg-light text-success" id="grand_total" name="grand_total" value="{{ old('grand_total', (int)$restock->grand_total) }}" readonly>
                         </div>
                     </div>
                 </div>
-            </div>
-        </div>
 
-        <!-- Section 4: Action Buttons Flow (Draft & Confirmation Modal) -->
-        <div class="col-lg-12">
-            <div class="card-box bg-white border rounded-3 p-3 d-flex flex-wrap align-items-center justify-content-between gap-2 mb-4">
-                <a href="{{ route('restock.index') }}" class="btn btn-outline-secondary rounded-2 px-4">
-                    Batal
-                </a>
-
-                <div class="d-flex flex-wrap align-items-center gap-2">
-                    <button type="button" class="btn btn-outline-primary rounded-2 px-4 d-inline-flex align-items-center gap-2" onclick="submitRestockAs('DRAFT')">
-                        <i class="bi bi-file-earmark-arrow-down"></i> Simpan Perubahan Draft
-                    </button>
-                    <button type="button" class="btn btn-success rounded-2 px-4 d-inline-flex align-items-center gap-2" onclick="openConfirmRestockModal()">
-                        <i class="bi bi-check-circle-fill"></i> Simpan & Selesaikan
-                    </button>
+                <!-- Action Buttons -->
+                <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mt-4 pt-3">
+                    <a href="{{ route('restock.index') }}" class="btn btn-light border rounded-2 px-4">
+                        Batal
+                    </a>
+                    <div class="d-flex gap-3">
+                        <button type="button" class="btn btn-outline-secondary rounded-2 px-4 d-inline-flex align-items-center gap-2" onclick="submitRestockAs('DRAFT')">
+                            Simpan Perubahan Draft
+                        </button>
+                        <button type="button" class="btn btn-success rounded-2 px-4 d-inline-flex align-items-center gap-2" onclick="openConfirmRestockModal()">Simpan
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
