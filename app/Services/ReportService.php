@@ -48,7 +48,7 @@ class ReportService
      */
     public function getReportById(int $id): Reports
     {
-        return Reports::with(['creator', 'details.product.productHpps.hpp', 'details.sellingUnit'])->findOrFail($id);
+        return Reports::with(['creator', 'details.product.productHpps.hpps', 'details.sellingUnit'])->findOrFail($id);
     }
 
     /**
@@ -139,21 +139,24 @@ class ReportService
                 $sellingUnitId = (int) $itemData['selling_unit_id'];
                 $quantity      = (int) $itemData['quantity'];
 
-                // Lock product to safely deduct current_stock
+                // Lock product to safely update current_stock
                 $product  = Products::lockForUpdate()->findOrFail($productId);
                 $oldStock = $product->current_stock;
-                $newStock = max(0, $oldStock - $quantity);
+
+                $stockFinal = isset($itemData['stock_final']) && $itemData['stock_final'] !== ''
+                    ? (int) $itemData['stock_final']
+                    : max(0, $oldStock - $quantity);
 
                 // Look up selling_price and current_hpp from ProductHpp configuration
                 $config = ProductHpp::where('product_id', $productId)
                     ->where('selling_unit_id', $sellingUnitId)
                     ->first();
 
-                $sellingPrice = isset($itemData['selling_price']) && $itemData['selling_price'] !== ''
+                $sellingPrice = isset($itemData['selling_price']) && $itemData['selling_price'] !== '' && (float)$itemData['selling_price'] > 0
                     ? (float) $itemData['selling_price']
                     : ($config ? (float) $config->selling_price : 0.0);
 
-                $hpp = isset($itemData['hpp']) && $itemData['hpp'] !== ''
+                $hpp = isset($itemData['hpp']) && $itemData['hpp'] !== '' && (float)$itemData['hpp'] > 0
                     ? (float) $itemData['hpp']
                     : ($config ? (float) $config->current_hpp : 0.0);
 
@@ -161,8 +164,8 @@ class ReportService
                 $totalHpp   = $quantity * $hpp;
                 $margin     = $totalPrice - $totalHpp;
 
-                // Update product stock
-                $product->current_stock = $newStock;
+                // Update product stock to stockFinal
+                $product->current_stock = $stockFinal;
                 $product->save();
 
                 // Save report detail with snapshot values
@@ -171,7 +174,7 @@ class ReportService
                     'product_id'      => $productId,
                     'selling_unit_id' => $sellingUnitId,
                     'quantity'        => $quantity,
-                    'stock_final'     => $newStock,
+                    'stock_final'     => $stockFinal,
                     'selling_price'   => $sellingPrice,
                     'hpp'             => $hpp,
                     'total_price'     => $totalPrice,
@@ -189,14 +192,14 @@ class ReportService
                     'product_name'    => $product->prod_name,
                     'selling_unit_id' => $sellingUnitId,
                     'quantity'        => $quantity,
-                    'stock_final'     => $newStock,
+                    'stock_final'     => $stockFinal,
                     'selling_price'   => $sellingPrice,
                     'hpp'             => $hpp,
                     'total_price'     => $totalPrice,
                     'total_hpp'       => $totalHpp,
                     'margin'          => $margin,
                     'old_stock'       => $oldStock,
-                    'new_stock'       => $newStock,
+                    'new_stock'       => $stockFinal,
                 ];
             }
 

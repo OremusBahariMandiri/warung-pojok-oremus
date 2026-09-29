@@ -109,21 +109,27 @@
                     <thead class="table-light">
                         <tr>
                             <th style="width: 40px;" class="text-center">No</th>
+                            <th class="text-center" style="width: 110px;">Satuan Jual</th>
                             <th>Produk</th>
-                            <th class="text-center" style="width: 100px;">Kuantitas</th>
-                            <th class="text-end" style="width: 120px;">Harga Jual</th>
-                            <th class="text-end" style="width: 130px;">Total Penjualan</th>
-                            <th class="text-end" style="width: 110px;">HPP / Unit</th>
-                            <th class="text-end" style="width: 120px;">Total HPP</th>
-                            <th class="text-end" style="width: 120px;">Margin</th>
+                            <th class="text-center" style="width: 90px;">Kuantitas</th>
+                            <th class="text-center" style="width: 90px;">Stok Akhir</th>
+                            <th class="text-end" style="width: 110px;">Harga Beli</th>
+                            <th class="text-end" style="width: 110px;">Harga Jual</th>
+                            <th class="text-end" style="width: 120px;">Total Penjualan</th>
+                            <th class="text-end" style="width: 100px;">HPP / Unit</th>
+                            <th class="text-end" style="width: 110px;">Total HPP</th>
+                            <th class="text-end" style="width: 110px;">Margin</th>
                         </tr>
                     </thead>
                     <tbody>
                         @forelse ($detailsList as $detail)
                             @php
                                 $p = $detail->product;
-                                $unitName = $p && $p->unit ? ($p->unit->short_name ?: $p->unit->unit_name) : 'Pcs';
+                                $sellingUnitName = $detail->sellingUnit ? ($detail->sellingUnit->short_name ?: $detail->sellingUnit->unit_name) : 'Pcs';
                                 $qty = (int)$detail->quantity;
+                                $stockFinal = (int)($detail->stock_final ?? 0);
+                                $latestRestock = $p ? $p->restockItems()->latest()->first() : null;
+                                $purchasePrice = $latestRestock ? (float)$latestRestock->purchase_price : (float)($p ? $p->unit_price : 0);
                                 $price = (float)$detail->selling_price;
                                 $hpp = (float)$detail->hpp;
                                 $subtotalSales = (float)$detail->total_price;
@@ -132,16 +138,25 @@
                             @endphp
                             <tr>
                                 <td class="text-center text-muted small">{{ $loop->iteration }}</td>
+                                <td class="text-center small text-dark fw-medium">
+                                    {{ $sellingUnitName }}
+                                </td>
                                 <td>
                                     @if ($p)
                                         <div class="fw-semibold text-dark">{{ $p->prod_name }}</div>
-                                        <div class="text-muted small font-monospace" style="font-size: 0.72rem;">{{ $p->sku ?: 'PRD-' . $p->id }}</div>
+                                        <div class="text-muted small font-monospace" style="font-size: 0.72rem;">{{ $p->prod_code ?: 'PRD-' . $p->id }}</div>
                                     @else
                                         <div class="text-muted fst-italic">Produk telah dihapus (ID: {{ $detail->product_id }})</div>
                                     @endif
                                 </td>
                                 <td class="text-center font-monospace fw-semibold text-dark">
-                                    {{ $qty }} {{ $unitName }}
+                                    {{ $qty }}
+                                </td>
+                                <td class="text-center font-monospace text-secondary small">
+                                    {{ $stockFinal }}
+                                </td>
+                                <td class="text-end font-monospace text-muted small">
+                                    Rp {{ number_format($purchasePrice, 0, ',', '.') }}
                                 </td>
                                 <td class="text-end font-monospace text-muted small">
                                     Rp {{ number_format($price, 0, ',', '.') }}
@@ -161,7 +176,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="8" class="text-center py-4 text-muted small">
+                                <td colspan="11" class="text-center py-4 text-muted small">
                                     Tidak ada rincian item dalam laporan penjualan ini.
                                 </td>
                             </tr>
@@ -169,8 +184,10 @@
                     </tbody>
                     <tfoot class="table-light">
                         <tr class="fw-bold align-middle">
-                            <td colspan="2" class="text-end text-dark">Total Keseluruhan:</td>
+                            <td colspan="3" class="text-end text-dark">Total Keseluruhan:</td>
                             <td class="text-center font-monospace">{{ (int)($reportObj->total_quantity ?? 0) }} Unit</td>
+                            <td class="text-center">-</td>
+                            <td class="text-end">-</td>
                             <td class="text-end">-</td>
                             <td class="text-end font-monospace text-dark">Rp {{ number_format($totalSales, 0, ',', '.') }}</td>
                             <td class="text-end">-</td>

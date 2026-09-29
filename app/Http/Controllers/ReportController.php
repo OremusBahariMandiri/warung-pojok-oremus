@@ -45,12 +45,33 @@ class ReportController extends Controller
      */
     public function create()
     {
-        $products = Products::with(['unit', 'productHpps.sellingUnit', 'productHpps.hpp'])
-            ->select([
-                'id', 'unit_id', 'prod_code', 'prod_name', 'current_stock'
-            ])->orderBy('prod_name', 'asc')->get();
+        $products = Products::with([
+            'unit',
+            'productHpps.sellingUnit',
+            'restockItems' => function ($q) {
+                $q->orderBy('created_at', 'desc')->orderBy('id', 'desc');
+            }
+        ])
+        ->select([
+            'id', 'unit_id', 'prod_code', 'prod_name', 'current_stock', 'unit_price'
+        ])->orderBy('prod_name', 'asc')->get();
 
-        return view('pages.reports.create', compact('products'));
+        $products->each(function ($p) {
+            $latestRestock = $p->restockItems->first();
+            $p->latest_purchase_price = $latestRestock ? (float) $latestRestock->purchase_price : (float) $p->unit_price;
+
+            $pricesByUnit = [];
+            foreach ($p->restockItems as $ri) {
+                if (!isset($pricesByUnit[$ri->restock_unit_id])) {
+                    $pricesByUnit[$ri->restock_unit_id] = (float) $ri->purchase_price;
+                }
+            }
+            $p->purchase_prices_by_unit = $pricesByUnit;
+        });
+
+        $units = \App\Models\Unit::orderBy('unit_name', 'asc')->get();
+
+        return view('pages.reports.create', compact('products', 'units'));
     }
 
     /**

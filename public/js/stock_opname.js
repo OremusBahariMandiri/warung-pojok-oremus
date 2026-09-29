@@ -126,6 +126,16 @@ $(document).ready(function () {
         });
     }
 
+    function getDiffBadgeHtml(diff) {
+        if (diff === 0) {
+            return '<span class="diff-badge zero"><i class="bi bi-check-circle-fill"></i> 0 (Sesuai)</span>';
+        } else if (diff > 0) {
+            return '<span class="diff-badge surplus"><i class="bi bi-arrow-up-circle-fill"></i> +' + diff + ' (Lebih)</span>';
+        } else {
+            return '<span class="diff-badge deficit"><i class="bi bi-arrow-down-circle-fill"></i> ' + diff + ' (Kurang)</span>';
+        }
+    }
+
     // ── 3. Hitung selisih satu baris (desktop) ────────────────────
     function calculateRowDiff($row) {
         var $productSelect = $row.find(".product-select");
@@ -135,7 +145,7 @@ $(document).ready(function () {
         if (!productId) {
             $row.find(".unit-cell").text("-");
             $row.find(".system-stock-cell").text("-");
-            $row.find(".diff-cell").text("-");
+            $row.find(".diff-cell, .diff-badge-container").text("-");
             return;
         }
 
@@ -148,17 +158,7 @@ $(document).ready(function () {
 
         $row.find(".unit-cell").text(unitName);
         $row.find(".system-stock-cell").text(systemStock);
-
-        var diffText = diff === 0 ? "0" : diff > 0 ? "+" + diff : String(diff);
-        var diffClass =
-            diff === 0
-                ? "text-secondary"
-                : diff > 0
-                  ? "text-success fw-bold"
-                  : "text-danger fw-bold";
-        $row.find(".diff-cell").html(
-            '<span class="' + diffClass + '">' + diffText + "</span>",
-        );
+        $row.find(".diff-cell, .diff-badge-container").html(getDiffBadgeHtml(diff));
     }
 
     // ── 4. Hitung ringkasan keseluruhan ───────────────────────────
@@ -219,23 +219,13 @@ $(document).ready(function () {
             var physRaw = $row.find(".physical-stock-input").val();
             var physStock = physRaw !== "" ? parseInt(physRaw, 10) : 0;
             var diff = physStock - systemStock;
-            var diffText =
-                diff === 0 ? "0" : diff > 0 ? "+" + diff : String(diff);
-            var diffClass =
-                diff === 0
-                    ? "text-secondary"
-                    : diff > 0
-                      ? "text-success fw-bold"
-                      : "text-danger fw-bold";
 
             $card.find(".mobile-product-name").text(productName);
             $card.find(".mobile-unit-val").text(unitName);
             $card.find(".mobile-sys-stock-val").text(systemStock);
             $card
                 .find(".mobile-diff-val")
-                .html(
-                    '<span class="' + diffClass + '">' + diffText + "</span>",
-                );
+                .html(getDiffBadgeHtml(diff));
         } else {
             $card
                 .find(".mobile-product-name")
@@ -264,14 +254,7 @@ $(document).ready(function () {
             var physRaw = $row.find(".physical-stock-input").val();
             var physStock = physRaw !== "" ? parseInt(physRaw, 10) : 0;
             var diff = productId ? physStock - systemStock : 0;
-            var diffText =
-                diff === 0 ? "0" : diff > 0 ? "+" + diff : String(diff);
-            var diffClass =
-                diff === 0
-                    ? "text-secondary"
-                    : diff > 0
-                      ? "text-success fw-bold"
-                      : "text-danger fw-bold";
+            var diffBadgeHtml = productId ? getDiffBadgeHtml(diff) : "-";
 
             var optionsHtml = "";
             $select.find("option").each(function () {
@@ -341,11 +324,9 @@ $(document).ready(function () {
                     "</div>" +
                     '<div class="mt-2">' +
                     '<label class="mobile-field-label">Selisih</label>' +
-                    '<div class="mobile-diff-val"><span class="' +
-                    diffClass +
-                    '">' +
-                    diffText +
-                    "</span></div>" +
+                    '<div class="mobile-diff-val">' +
+                    diffBadgeHtml +
+                    "</div>" +
                     "</div>" +
                     "</div>",
             );
