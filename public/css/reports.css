@@ -447,48 +447,72 @@ table.dataTable thead > tr > th.no-sort {
 
 #reportItemsTable {
     width: 100% !important;
-    min-width: 980px;
+    min-width: 1350px;
     border-collapse: collapse;
 }
 #reportItemsTable th,
 #reportItemsTable td {
-    padding: 0.6rem 0.65rem;
+    padding: 0.5rem 0.5rem;
     vertical-align: middle;
 }
 
 #reportItemsTable .col-no {
-    width: 45px;
-    min-width: 45px;
+    width: 40px;
+    min-width: 40px;
 }
-#reportItemsTable .col-product {
-    min-width: 250px;
-}
-#reportItemsTable .col-qty {
-    min-width: 110px;
-}
-#reportItemsTable .col-price {
-    min-width: 130px;
-}
-#reportItemsTable .col-total-price {
-    min-width: 140px;
-}
-#reportItemsTable .col-hpp {
+#reportItemsTable .col-unit {
+    width: 120px;
     min-width: 120px;
 }
-#reportItemsTable .col-total-hpp {
+#reportItemsTable .col-product {
+    min-width: 220px;
+}
+#reportItemsTable .col-info {
+    width: 130px;
     min-width: 130px;
 }
+#reportItemsTable .col-qty {
+    width: 95px;
+    min-width: 95px;
+}
+#reportItemsTable .col-stock-final {
+    width: 95px;
+    min-width: 95px;
+}
+#reportItemsTable .col-price {
+    width: 110px;
+    min-width: 110px;
+}
+#reportItemsTable .col-selling-price {
+    width: 110px;
+    min-width: 110px;
+}
+#reportItemsTable .col-total-sales {
+    width: 125px;
+    min-width: 125px;
+}
+#reportItemsTable .col-hpp {
+    width: 110px;
+    min-width: 110px;
+}
+#reportItemsTable .col-total-hpp {
+    width: 120px;
+    min-width: 120px;
+}
 #reportItemsTable .col-margin {
-    min-width: 130px;
+    width: 120px;
+    min-width: 120px;
 }
 #reportItemsTable .col-action {
     width: 45px;
     min-width: 45px;
 }
 
-#reportItemsTable .item-qty {
-    min-width: 75px;
+#reportItemsTable .item-qty,
+#reportItemsTable .item-stock-final {
+    width: 100%;
     font-size: 0.85rem;
+    padding: 0.3rem 0.4rem;
 }
 #reportItemsTable .item-readonly-badge {
     font-size: 0.83rem;
