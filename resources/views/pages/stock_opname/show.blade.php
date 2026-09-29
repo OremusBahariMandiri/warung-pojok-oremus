@@ -48,7 +48,6 @@
     <div>
         <div class="d-flex align-items-center gap-2 mb-1">
             <h4 class="fw-bold text-dark mb-0">Detail Stock Opname</h4>
-            <span class="badge font-monospace fs-6 bg-light text-navy border">{{ $detailedOpname->opname_code }}</span>
             @if ($status === 'COMPLETED' || $status === 'CONFIRMED')
                 <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1">
                     <i class="bi bi-check-circle-fill me-1"></i> Selesai (Completed)
@@ -59,7 +58,6 @@
                 </span>
             @endif
         </div>
-        <p class="text-muted small mb-0">Rincian perbandingan stok sistem dengan stok riil hasil opname.</p>
     </div>
 
     <div class="d-flex flex-wrap align-items-center gap-2">
@@ -72,7 +70,7 @@
                 <i class="bi bi-pencil"></i> Edit Draft
             </a>
 
-            <button type="button" class="btn btn-sm btn-primary rounded-2 px-3 d-inline-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#modalCompleteOpname">
+            <button type="button" class="btn btn-sm btn-success rounded-2 px-3 d-inline-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#modalCompleteOpname">
                 <i class="bi bi-check2-circle"></i> Selesaikan Sekarang
             </button>
         @endif
@@ -97,7 +95,7 @@
     <div class="col-lg-12">
         <div class="card-box bg-white border rounded-3 p-4">
             <h6 class="fw-bold text-dark mb-3 pb-2 border-bottom d-flex align-items-center gap-2">
-                <i class="bi bi-file-earmark-text text-primary"></i> Informasi Transaksi
+                Informasi Transaksi
             </h6>
             <div class="row g-3">
                 <div class="col-md-3 col-6">
@@ -140,64 +138,11 @@
         </div>
     </div>
 
-    <!-- Summary Statistics Grid -->
-    <div class="col-lg-12">
-        <div class="row g-3">
-            <div class="col-md-3 col-6">
-                <div class="opname-stat-card d-flex align-items-center gap-3">
-                    <div class="stat-icon bg-primary bg-opacity-10 text-primary">
-                        <i class="bi bi-boxes"></i>
-                    </div>
-                    <div>
-                        <div class="stat-label">Total Diperiksa</div>
-                        <div class="stat-value">{{ $totalChecked }}</div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-md-3 col-6">
-                <div class="opname-stat-card d-flex align-items-center gap-3">
-                    <div class="stat-icon bg-secondary bg-opacity-10 text-secondary">
-                        <i class="bi bi-check-all"></i>
-                    </div>
-                    <div>
-                        <div class="stat-label">Stok Sesuai (0)</div>
-                        <div class="stat-value text-secondary">{{ $totalMatch }}</div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-md-3 col-6">
-                <div class="opname-stat-card d-flex align-items-center gap-3">
-                    <div class="stat-icon bg-success bg-opacity-10 text-success">
-                        <i class="bi bi-arrow-up-circle"></i>
-                    </div>
-                    <div>
-                        <div class="stat-label">Surplus (+ Lebih)</div>
-                        <div class="stat-value text-success">{{ $totalSurplus }}</div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-md-3 col-6">
-                <div class="opname-stat-card d-flex align-items-center gap-3">
-                    <div class="stat-icon bg-danger bg-opacity-10 text-danger">
-                        <i class="bi bi-arrow-down-circle"></i>
-                    </div>
-                    <div>
-                        <div class="stat-label">Defisit (- Kurang)</div>
-                        <div class="stat-value text-danger">{{ $totalDeficit }}</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <!-- Details Table Card -->
     <div class="col-lg-12">
         <div class="card-box bg-white border rounded-3 p-4">
             <h6 class="fw-bold text-dark mb-3 pb-2 border-bottom d-flex align-items-center gap-2">
-                <i class="bi bi-list-check text-primary"></i> Rincian Perbandingan Produk
+                Rincian Perbandingan Produk
             </h6>
 
             <div class="table-responsive">

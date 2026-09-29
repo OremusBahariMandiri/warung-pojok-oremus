@@ -31,12 +31,8 @@
 <div class="d-flex align-items-center justify-content-between mb-4">
     <div>
         <h4 class="fw-bold text-dark mb-1">Edit Stock Opname: {{ $stockOpname->opname_code }}</h4>
-        <p class="text-muted small mb-0">Ubah data pemeriksaan stok sebelum diselesaikan atau selesaikan sekarang.</p>
     </div>
     <div class="d-flex align-items-center gap-2">
-        <a href="{{ route('stock-opname.show', $stockOpname->id) }}" class="btn btn-sm btn-outline-info rounded-2 px-3 d-inline-flex align-items-center gap-1">
-            <i class="bi bi-eye"></i> Lihat Detail
-        </a>
         <a href="{{ route('stock-opname.index') }}" class="btn btn-sm btn-outline-secondary rounded-2 px-3 d-inline-flex align-items-center gap-2">
             <i class="bi bi-arrow-left"></i> Kembali
         </a>
@@ -75,16 +71,16 @@
         <div class="col-lg-12">
             <div class="card-box bg-white border rounded-3 p-4">
                 <h6 class="fw-bold text-dark mb-3 pb-2 border-bottom d-flex align-items-center gap-2">
-                    <i class="bi bi-info-circle text-primary"></i> Informasi Stock Opname
+                    Informasi Stock Opname
                 </h6>
                 <div class="row g-3">
-                    <div class="col-md-6">
+                    <div class="col-md-12">
                         <label for="opname_code" class="form-label small fw-semibold text-dark">Kode Stock Opname</label>
                         <input type="text" class="form-control font-monospace bg-light rounded-2 text-secondary fw-bold"
                             id="opname_code" name="opname_code" value="{{ $stockOpname->opname_code }}" readonly>
                     </div>
 
-                    <div class="col-md-6">
+                    <div class="col-md-12">
                         <label for="opname_date" class="form-label small fw-semibold text-dark">Tanggal Pemeriksaan <span class="text-danger">*</span></label>
                         <input type="datetime-local" class="form-control rounded-2 @error('opname_date') is-invalid @enderror"
                             id="opname_date" name="opname_date"
@@ -97,7 +93,7 @@
                     <div class="col-md-12">
                         <label for="notes" class="form-label small fw-semibold text-dark">Catatan Pemeriksaan (Opsional)</label>
                         <textarea class="form-control rounded-2 @error('notes') is-invalid @enderror"
-                            id="notes" name="notes" rows="2" placeholder="Catatan atau keterangan audit stok">{{ old('notes', $stockOpname->notes) }}</textarea>
+                            id="notes" name="notes" rows="5">{{ old('notes', $stockOpname->notes) }}</textarea>
                         @error('notes')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
@@ -112,11 +108,11 @@
                 <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3 pb-2 border-bottom">
                     <div>
                         <h6 class="fw-bold text-dark mb-0 d-flex align-items-center gap-2">
-                            <i class="bi bi-card-checklist text-primary"></i> Daftar Produk & Hasil Hitung Fisik
+                            Daftar Produk & Hasil Hitung Fisik
                         </h6>
                         <span class="text-muted small">Pilih produk, sistem akan menampilkan stok saat ini. Masukkan hasil stok fisik di lapangan.</span>
                     </div>
-                    <button type="button" class="btn btn-sm btn-outline-primary rounded-2 px-3 d-inline-flex align-items-center gap-1" id="btnAddRow">
+                    <button type="button" class="btn btn-sm btn-outline-success rounded-2 px-3 d-inline-flex align-items-center gap-1" id="btnAddRow">
                         <i class="bi bi-plus-lg"></i> Tambah Produk
                     </button>
                 </div>
@@ -139,8 +135,10 @@
                                 @foreach ($existingItems as $idx => $item)
                                     @php
                                         $productId = is_array($item) ? ($item['product_id'] ?? null) : $item->product_id;
-                                        $physStock = is_array($item) ? ($item['physical_stock'] ?? 0) : $item->physical_stock;
+                                        $physStock = (int)(is_array($item) ? ($item['physical_stock'] ?? 0) : $item->physical_stock);
                                         $selectedProd = $productsList->firstWhere('id', $productId);
+                                        $sysStock = (int)($selectedProd->current_stock ?? 0);
+                                        $diff = $physStock - $sysStock;
                                     @endphp
                                     <tr class="opname-row">
                                         <td class="text-center fw-semibold text-secondary row-number">{{ $loop->iteration }}</td>
@@ -161,15 +159,25 @@
                                             {{ $selectedProd->unit->unit_name ?? '-' }}
                                         </td>
                                         <td class="text-center system-stock-cell fw-bold text-navy">
-                                            {{ $selectedProd->current_stock ?? 0 }}
+                                            {{ $selectedProd ? $sysStock : '-' }}
                                         </td>
                                         <td>
                                             <input type="number" name="items[{{ $idx }}][physical_stock]"
                                                 class="form-control form-control-sm text-center fw-bold physical-stock-input"
                                                 value="{{ $physStock }}" min="0" required>
                                         </td>
-                                        <td class="text-center diff-badge-container">
-                                            <span class="diff-badge zero">0 (Sesuai)</span>
+                                        <td class="text-center diff-cell diff-badge-container">
+                                            @if ($productId)
+                                                @if ($diff === 0)
+                                                    <span class="diff-badge zero"><i class="bi bi-check-circle-fill"></i> 0 (Sesuai)</span>
+                                                @elseif ($diff > 0)
+                                                    <span class="diff-badge surplus"><i class="bi bi-arrow-up-circle-fill"></i> +{{ $diff }} (Lebih)</span>
+                                                @else
+                                                    <span class="diff-badge deficit"><i class="bi bi-arrow-down-circle-fill"></i> {{ $diff }} (Kurang)</span>
+                                                @endif
+                                            @else
+                                                -
+                                            @endif
                                         </td>
                                         <td class="text-center">
                                             <button type="button" class="btn-delete-row" title="Hapus Baris">
@@ -200,9 +208,7 @@
                                             class="form-control form-control-sm text-center fw-bold physical-stock-input"
                                             value="0" min="0" required>
                                     </td>
-                                    <td class="text-center diff-badge-container">
-                                        <span class="diff-badge zero">0 (Sesuai)</span>
-                                    </td>
+                                    <td class="text-center diff-cell diff-badge-container">-</td>
                                     <td class="text-center">
                                         <button type="button" class="btn-delete-row" title="Hapus Baris">
                                             <i class="bi bi-trash3"></i>
@@ -216,59 +222,6 @@
             </div>
         </div>
 
-        <!-- Section 3: Ringkasan Opname -->
-        <div class="col-lg-12">
-            <div class="row g-3">
-                <div class="col-md-3 col-6">
-                    <div class="opname-stat-card d-flex align-items-center gap-3">
-                        <div class="stat-icon bg-primary bg-opacity-10 text-primary">
-                            <i class="bi bi-boxes"></i>
-                        </div>
-                        <div>
-                            <div class="stat-label">Total Diperiksa</div>
-                            <div class="stat-value" id="summaryTotalChecked">0</div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-md-3 col-6">
-                    <div class="opname-stat-card d-flex align-items-center gap-3">
-                        <div class="stat-icon bg-warning bg-opacity-10 text-warning">
-                            <i class="bi bi-exclamation-triangle"></i>
-                        </div>
-                        <div>
-                            <div class="stat-label">Produk Selisih</div>
-                            <div class="stat-value text-warning" id="summaryTotalDiscrepancy">0</div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-md-3 col-6">
-                    <div class="opname-stat-card d-flex align-items-center gap-3">
-                        <div class="stat-icon bg-success bg-opacity-10 text-success">
-                            <i class="bi bi-arrow-up-circle"></i>
-                        </div>
-                        <div>
-                            <div class="stat-label">Stok Surplus (+)</div>
-                            <div class="stat-value text-success" id="summaryTotalSurplus">0</div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-md-3 col-6">
-                    <div class="opname-stat-card d-flex align-items-center gap-3">
-                        <div class="stat-icon bg-danger bg-opacity-10 text-danger">
-                            <i class="bi bi-arrow-down-circle"></i>
-                        </div>
-                        <div>
-                            <div class="stat-label">Stok Minus (-)</div>
-                            <div class="stat-value text-danger" id="summaryTotalDeficit">0</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
         <!-- Section 4: Action Buttons Flow -->
         <div class="col-lg-12">
             <div class="card-box bg-white border rounded-3 p-3 d-flex flex-wrap align-items-center justify-content-between gap-2">
@@ -277,11 +230,11 @@
                 </a>
 
                 <div class="d-flex flex-wrap align-items-center gap-2">
-                    <button type="button" class="btn btn-outline-primary rounded-2 px-4 d-inline-flex align-items-center gap-2" id="btnSaveDraft">
-                        <i class="bi bi-file-earmark-check"></i> Simpan Perubahan Draft
+                    <button type="button" class="btn btn-outline-secondary rounded-2 px-4 d-inline-flex align-items-center gap-2" id="btnSaveDraft">
+                        Simpan Perubahan Draft
                     </button>
-                    <button type="button" class="btn btn-primary rounded-2 px-4 d-inline-flex align-items-center gap-2" id="btnOpenConfirmModal">
-                        <i class="bi bi-check-circle-fill"></i> Selesaikan & Sinkron Stok
+                    <button type="button" class="btn btn-success rounded-2 px-4 d-inline-flex align-items-center gap-2" id="btnOpenConfirmModal">
+                        Simpan
                     </button>
                 </div>
             </div>
@@ -354,9 +307,7 @@
                 class="form-control form-control-sm text-center fw-bold physical-stock-input"
                 value="0" min="0" required>
         </td>
-        <td class="text-center diff-badge-container">
-            <span class="diff-badge zero">0 (Sesuai)</span>
-        </td>
+        <td class="text-center diff-cell diff-badge-container">-</td>
         <td class="text-center">
             <button type="button" class="btn-delete-row" title="Hapus Baris">
                 <i class="bi bi-trash3"></i>

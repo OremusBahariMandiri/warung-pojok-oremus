@@ -94,7 +94,7 @@
                     <th class="text-center" style="width: 110px;">Status</th>
                     <th class="text-center" style="width: 120px;">Total Item</th>
                     <th class="text-end" style="width: 150px;">Grand Total</th>
-                    <th class="text-center" style="width: 130px;">Petugas</th>
+                    <th class="text-center" style="width: 130px;">Dibuat Oleh</th>
                     <th class="text-center no-sort" style="width: 110px;">Aksi</th>
                 </tr>
             </thead>
