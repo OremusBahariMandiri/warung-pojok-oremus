@@ -23,7 +23,7 @@ class UpdateHppRequest extends FormRequest
                 'max:120',
                 Rule::unique('hpp', 'name')->ignore($hppId),
             ],
-            'unit' => 'required|string|max:80',
+            // 'unit' => 'required|string|max:80',
             'unit_cost' => 'required|numeric|min:0',
         ];
     }

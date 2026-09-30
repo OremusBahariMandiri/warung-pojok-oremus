@@ -448,9 +448,17 @@
 
                 <!-- Action Buttons -->
                 <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mt-4 pt-3">
-                    <a href="{{ route('restock.index') }}" class="btn btn-light border rounded-2 px-4">
-                        Batal
-                    </a>
+                    <div class="d-flex gap-2">
+                        <a href="{{ route('restock.index') }}" class="btn btn-light border rounded-2 px-4">
+                            Batal
+                        </a>
+                        @if ($restock->status_restock === 'CONFIRMED')
+                            <button type="button" class="btn btn-danger rounded-2 px-3 d-inline-flex align-items-center gap-2"
+                                onclick="openRollbackRestockModal()">
+                                <i class="bi bi-arrow-counterclockwise"></i> Rollback Restock
+                            </button>
+                        @endif
+                    </div>
                     <div class="d-flex gap-3">
                         <button type="button" class="btn btn-outline-secondary rounded-2 px-4 d-inline-flex align-items-center gap-2" onclick="submitRestockAs('DRAFT')">
                             Simpan Perubahan Draft
@@ -463,6 +471,47 @@
         </div>
     </div>
 </form>
+
+{{-- Modal Konfirmasi Rollback Restock --}}
+@if ($restock->status_restock === 'CONFIRMED')
+<div class="modal fade" id="modalRollbackRestock" tabindex="-1" aria-labelledby="modalRollbackRestockLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-3 border-0 shadow">
+            <div class="modal-header border-bottom py-3">
+                <h6 class="modal-title fw-bold text-danger d-flex align-items-center gap-2" id="modalRollbackRestockLabel">
+                    <i class="bi bi-arrow-counterclockwise fs-5"></i> Rollback Transaksi Restock
+                </h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body py-4">
+                <p class="text-secondary mb-3">
+                    Apakah Anda yakin ingin <strong>membatalkan (rollback)</strong> transaksi restock
+                    <strong class="text-dark">{{ $restock->restock_code }}</strong>?
+                </p>
+                <div class="alert alert-danger border-danger border-opacity-25 rounded-2 p-3 mb-0 small">
+                    <div class="fw-bold mb-1"><i class="bi bi-exclamation-triangle me-1"></i> Perhatian:</div>
+                    <ul class="mb-0 ps-3">
+                        <li>Stok produk akan <strong>dikurangi kembali</strong> sesuai kuantitas restock ini.</li>
+                        <li>Transaksi restock ini akan <strong>dihapus permanen</strong>.</li>
+                        <li>Tindakan ini <strong>tidak dapat dibatalkan</strong>.</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="modal-footer border-top py-2">
+                <button type="button" class="btn btn-outline-secondary rounded-2 px-3" data-bs-dismiss="modal">Batal</button>
+                <form method="POST" action="{{ route('restock.destroy', $restock->id) }}" style="display:inline;">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit" class="btn btn-danger rounded-2 px-4">
+                        <i class="bi bi-arrow-counterclockwise me-1"></i> Ya, Rollback Sekarang
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+@endif
+
 
 <!-- Modal Konfirmasi Simpan & Selesaikan Restock -->
 <div class="modal fade" id="modalConfirmRestock" tabindex="-1" aria-labelledby="modalConfirmRestockLabel" aria-hidden="true">
