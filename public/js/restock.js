@@ -754,6 +754,16 @@ function calculateRestockTotals() {
 }
 
 /**
+ * Buka modal konfirmasi Rollback Restock (dari form edit, status CONFIRMED)
+ */
+function openRollbackRestockModal() {
+    const modalEl = document.getElementById("modalRollbackRestock");
+    if (modalEl && typeof bootstrap !== "undefined") {
+        new bootstrap.Modal(modalEl).show();
+    }
+}
+
+/**
  * Simpan transaksi dengan status tertentu (DRAFT / CONFIRMED)
  */
 function submitRestockAs(status) {

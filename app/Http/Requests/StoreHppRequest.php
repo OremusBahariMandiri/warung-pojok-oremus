@@ -15,7 +15,7 @@ class StoreHppRequest extends FormRequest
     {
         return [
             'name' => 'required|string|max:120|unique:hpp,name',
-            'unit' => 'required|string|max:80',
+            // 'unit' => 'required|string|max:80',
             'unit_cost' => 'required|numeric|min:0',
         ];
     }
