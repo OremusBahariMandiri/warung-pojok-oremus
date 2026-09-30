@@ -14,40 +14,49 @@ class StoreProductRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'prod_name'                          => 'required|string|max:255',
-            'prod_code'                          => 'nullable|string|max:50|unique:products,prod_code',
-            'slug'                               => 'nullable|string|max:255|unique:products,slug',
-            'unit_id'                            => 'required|integer|exists:units,id',
-            'hpp_method'                         => 'nullable|in:MANUAL,CALCULATED',
-            'initial_stock'                      => 'nullable|integer|min:0',
-            'current_stock'                      => 'nullable|integer|min:0',
-            'min_stock'                          => 'required|integer|min:0',
-            'unit_price'                         => 'nullable|numeric|min:0',
-            'selling_price'                      => 'required|numeric|min:0',
-            'current_hpp'                        => 'nullable|numeric|min:0',
-            'description'                        => 'nullable|string',
-            'thumbnail'                          => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
-            'components'                         => 'nullable|array',
-            'components.*.hpp_id'                => 'nullable|exists:hpp,id',
-            'components.*.cost'                  => 'nullable|numeric|min:0',
+            'prod_name'                                  => 'required|string|max:255',
+            'prod_code'                                  => 'nullable|string|max:50|unique:products,prod_code',
+            'slug'                                       => 'nullable|string|max:255|unique:products,slug',
+            'unit_price'                                 => 'nullable|numeric|min:0',
+            'unit_id'                                    => 'nullable|integer|exists:units,id',
+            'initial_stock'                              => 'nullable|integer|min:0',
+            'current_stock'                              => 'nullable|integer|min:0',
+            'min_stock'                                  => 'required|integer|min:0',
+            'description'                                => 'nullable|string',
+            'thumbnail'                                  => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
+
+            'selling_configs'                            => 'nullable|array',
+            'selling_configs.*.selling_unit_id'          => 'nullable|integer|exists:units,id',
+            'selling_configs.*.hpp_method'               => 'nullable|in:MANUAL,CALCULATED',
+            'selling_configs.*.selling_price'            => 'nullable|numeric|min:0',
+            'selling_configs.*.current_hpp'              => 'nullable|numeric|min:0',
+            'selling_configs.*.components'               => 'nullable|array',
+            'selling_configs.*.components.*.hpp_id'      => 'nullable|exists:hpp,id',
+            'selling_configs.*.components.*.cost'        => 'nullable|numeric|min:0',
+
+            'configurations'                             => 'nullable|array',
+            'configurations.*.selling_unit_id'           => 'nullable|integer|exists:units,id',
+            'configurations.*.hpp_method'                => 'nullable|in:MANUAL,CALCULATED',
+            'configurations.*.selling_price'             => 'nullable|numeric|min:0',
+            'configurations.*.current_hpp'               => 'nullable|numeric|min:0',
+
+            // Legacy fallback single fields
+            'hpp_method'                                 => 'nullable|in:MANUAL,CALCULATED',
+            'selling_price'                              => 'nullable|numeric|min:0',
+            'current_hpp'                                => 'nullable|numeric|min:0',
+            'components'                                 => 'nullable|array',
         ];
     }
 
     public function messages(): array
     {
         return [
-            'prod_name.required'     => 'Nama produk wajib diisi.',
-            'prod_code.unique'       => 'Kode produk sudah digunakan.',
-            'slug.unique'            => 'Slug sudah digunakan, gunakan slug lain.',
-            'unit_id.required'       => 'Satuan dasar produk wajib dipilih.',
-            'unit_id.exists'         => 'Satuan dasar produk yang dipilih tidak valid.',
-            'hpp_method.required'    => 'Metode HPP wajib dipilih.',
-            'hpp_method.in'          => 'Metode HPP harus MANUAL atau CALCULATED.',
-            'min_stock.required'     => 'Batas minimum stok wajib diisi.',
-            'selling_price.required' => 'Harga jual konsumen wajib diisi.',
-            'selling_price.numeric'  => 'Harga jual konsumen harus berupa angka.',
-            'thumbnail.image'        => 'File thumbnail harus berupa gambar.',
-            'thumbnail.max'          => 'Ukuran thumbnail maksimal 2MB.',
+            'prod_name.required'                      => 'Nama produk wajib diisi.',
+            'prod_code.unique'                        => 'Kode produk sudah digunakan.',
+            'slug.unique'                             => 'Slug sudah digunakan, gunakan slug lain.',
+            'min_stock.required'                      => 'Batas minimum stok wajib diisi.',
+            'thumbnail.image'                         => 'File thumbnail harus berupa gambar.',
+            'thumbnail.max'                           => 'Ukuran thumbnail maksimal 2MB.',
         ];
     }
 }

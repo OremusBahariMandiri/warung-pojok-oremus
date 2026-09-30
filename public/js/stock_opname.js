@@ -130,9 +130,17 @@ $(document).ready(function () {
         if (diff === 0) {
             return '<span class="diff-badge zero"><i class="bi bi-check-circle-fill"></i> 0 (Sesuai)</span>';
         } else if (diff > 0) {
-            return '<span class="diff-badge surplus"><i class="bi bi-arrow-up-circle-fill"></i> +' + diff + ' (Lebih)</span>';
+            return (
+                '<span class="diff-badge surplus"><i class="bi bi-arrow-up-circle-fill"></i> +' +
+                diff +
+                " (Lebih)</span>"
+            );
         } else {
-            return '<span class="diff-badge deficit"><i class="bi bi-arrow-down-circle-fill"></i> ' + diff + ' (Kurang)</span>';
+            return (
+                '<span class="diff-badge deficit"><i class="bi bi-arrow-down-circle-fill"></i> ' +
+                diff +
+                " (Kurang)</span>"
+            );
         }
     }
 
@@ -158,7 +166,9 @@ $(document).ready(function () {
 
         $row.find(".unit-cell").text(unitName);
         $row.find(".system-stock-cell").text(systemStock);
-        $row.find(".diff-cell, .diff-badge-container").html(getDiffBadgeHtml(diff));
+        $row.find(".diff-cell, .diff-badge-container").html(
+            getDiffBadgeHtml(diff),
+        );
     }
 
     // ── 4. Hitung ringkasan keseluruhan ───────────────────────────
@@ -223,9 +233,7 @@ $(document).ready(function () {
             $card.find(".mobile-product-name").text(productName);
             $card.find(".mobile-unit-val").text(unitName);
             $card.find(".mobile-sys-stock-val").text(systemStock);
-            $card
-                .find(".mobile-diff-val")
-                .html(getDiffBadgeHtml(diff));
+            $card.find(".mobile-diff-val").html(getDiffBadgeHtml(diff));
         } else {
             $card
                 .find(".mobile-product-name")
@@ -520,4 +528,11 @@ $(document).ready(function () {
         $("#status_opname").val("COMPLETED");
         $("#formStockOpname").submit();
     });
+});
+
+$("#btnSaveDraftMobile").on("click", function () {
+    $("#btnSaveDraft").trigger("click");
+});
+$("#btnOpenConfirmModalMobile").on("click", function () {
+    $("#btnOpenConfirmModal").trigger("click");
 });

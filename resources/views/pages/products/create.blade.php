@@ -23,7 +23,8 @@
 
 @php
     $hppList = $hppComponents ?? collect();
-    $oldComponents = old('components', []);
+    $unitsList = $units ?? collect();
+    $oldConfigs = old('selling_configs', []);
 @endphp
 
 <!-- Header Back Bar -->
@@ -77,10 +78,22 @@
                     @enderror
                 </div>
 
+                <!-- Harga Bahan Utama (Dipindahkan ke Informasi Produk) -->
+                <div class="mb-3">
+                    <label for="unit_price" class="form-label small fw-semibold text-dark">Harga Bahan Utama (Rp) <span class="text-danger">*</span></label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-end-0">Rp</span>
+                        <input type="number" class="form-control font-monospace fw-semibold @error('unit_price') is-invalid @enderror" id="unit_price" name="unit_price" value="{{ old('unit_price') }}" min="0" required>
+                    </div>
+                    @error('unit_price')
+                        <div class="invalid-feedback d-block">{{ $message }}</div>
+                    @enderror
+                </div>
+
                 <!-- Deskripsi Produk -->
                 <div class="mb-3">
                     <label for="description" class="form-label small fw-semibold text-dark">Deskripsi Produk</label>
-                    <textarea class="form-control rounded-3" id="description" name="description" rows="3">{{ old('description') }}</textarea>
+                    <textarea class="form-control rounded-3" id="description" name="description" rows="5">{{ old('description') }}</textarea>
                 </div>
 
                 <!-- Gambar / Foto Produk -->
@@ -105,13 +118,17 @@
                     Manajemen Stok & Inventori
                 </h6>
                 <div class="row g-3">
-                    <div class="col-md-6">
+                    <div class="col-md-4">
                         <label for="initial_stock" class="form-label small fw-semibold text-dark">Stok Awal</label>
-                        <input type="number" class="form-control rounded-3" id="initial_stock" name="initial_stock" value="{{ old('initial_stock') }}" min="0">
+                        <input type="number" class="form-control rounded-3" id="initial_stock" name="initial_stock" value="{{ old('initial_stock') }}" min="0" oninput="document.getElementById('current_stock').value = this.value">
                     </div>
-                    <div class="col-md-6">
+                    <div class="col-md-4">
+                        <label for="current_stock" class="form-label small fw-semibold text-dark">Stok Saat Ini</label>
+                        <input type="number" class="form-control font-monospace bg-light rounded-3 text-secondary" id="current_stock" value="{{ old('initial_stock') }}" readonly>
+                    </div>
+                    <div class="col-md-4">
                         <label for="min_stock" class="form-label small fw-semibold text-dark">Minimum Stok <span class="text-danger">*</span></label>
-                        <input type="number" class="form-control rounded-3 @error('min_stock') is-invalid @enderror" id="min_stock" name="min_stock" value="{{ old('min_stock') }}" min="0" required>
+                        <input type="number" class="form-control rounded-3 @error('min_stock') is-invalid @enderror" id="min_stock" name="min_stock" value="{{ old('min_stock', 5) }}" min="0" required>
                         @error('min_stock')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
@@ -119,138 +136,30 @@
                 </div>
             </div>
 
-            <!-- Card 3: Kalkulasi HPP & Rincian Komponen -->
+            <!-- Card 3: Multiple Kalkulasi HPP & Rincian Komponen -->
             <div class="card-box mb-4">
-                <h6 class="card-box-title mb-3 pb-2 border-bottom d-flex align-items-center gap-2">
-                    Kalkulasi HPP & Rincian Komponen
-                </h6>
-
-                <!-- Satuan Jual (Select2 Searchable) -->
-                <div class="mb-3">
-                    <label for="unit_id" class="form-label small fw-semibold text-dark">Satuan Jual <span class="text-danger">*</span></label>
-                    <select class="form-select select2-unit rounded-3 @error('unit_id') is-invalid @enderror" id="unit_id" name="unit_id" required>
-                        <option value="" disabled {{ old('unit_id') ? '' : 'selected' }}>Pilih Satuan...</option>
-                        @foreach($units as $unit)
-                            <option value="{{ $unit->id }}" data-type="{{ $unit->type ?? '' }}" data-name="{{ strtolower($unit->unit_name) }}" data-short="{{ strtolower($unit->short_name) }}" {{ old('unit_id') == $unit->id ? 'selected' : '' }}>
-                                {{ $unit->unit_name }} ({{ $unit->short_name }})
-                            </option>
-                        @endforeach
-                    </select>
-                    @error('unit_id')
-                        <div class="invalid-feedback">{{ $message }}</div>
-                    @enderror
+                <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom">
+                    <div>
+                        <h6 class="card-box-title mb-0 d-flex align-items-center gap-2">
+                            Kalkulasi HPP & Rincian Komponen
+                        </h6>
+                        <span class="text-muted small">Kelola harga jual dan rincian komponen HPP untuk setiap satuan jual produk.</span>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-outline-success rounded-2 px-3 d-inline-flex align-items-center gap-1" id="btnAddSellingConfig" onclick="addSellingConfigCard()">
+                        <i class="bi bi-plus-lg"></i> Tambah Satuan Jual
+                    </button>
                 </div>
 
-                <!-- Opsi Metode HPP (Muncul saat satuan olahan/Gelas/Pcs) -->
-                <div id="hppMethodSection" class="mb-3 d-none">
-                    <label for="hpp_method" class="form-label small fw-semibold text-dark">Metode Perhitungan HPP <span class="text-danger">*</span></label>
-                    <select class="form-select rounded-3" id="hpp_method" name="hpp_method" onchange="handleHppMethodChange()">
-                        <option value="CALCULATED" {{ old('hpp_method', 'CALCULATED') == 'CALCULATED' ? 'selected' : '' }}>Otomatis (Calculated / By System)</option>
-                        <option value="MANUAL" {{ old('hpp_method') == 'MANUAL' ? 'selected' : '' }}>Manual (Fixed Cost)</option>
-                    </select>
-                </div>
-
-                <!-- Section: Dynamic HPP Components Repeater (Muncul saat Satuan Olahan & Metode CALCULATED) -->
-                <div id="calculatedHppSection" class="mb-3 d-none">
-                    <div class="d-flex align-items-center justify-content-between mb-2">
-                        <label class="form-label small fw-semibold text-dark mb-0">Komposisi HPP Tambahan</label>
-                        <button type="button" class="btn btn-xs btn-outline-success rounded-2 py-1 px-2 text-xs d-inline-flex align-items-center gap-1" onclick="addHppComponentRow()">
-                            <i class="bi bi-plus-lg"></i> Tambah Komponen
-                        </button>
-                    </div>
-
-                    <div class="table-responsive mb-2">
-                        <table class="table table-sm table-borderless align-middle mb-0" id="hppComponentsTable">
-                            <thead class="table-light rounded-2">
-                                <tr style="font-size: 0.75rem;">
-                                    <th>Komponen HPP</th>
-                                    <th class="text-end" style="width: 160px;">Biaya (Rp)</th>
-                                    <th style="width: 40px;"></th>
-                                </tr>
-                            </thead>
-                            <tbody id="hppComponentRows">
-                                @if (!empty($oldComponents) && is_array($oldComponents))
-                                    @foreach ($oldComponents as $idx => $comp)
-                                        <tr class="component-row">
-                                            <td>
-                                                <select name="components[{{ $idx }}][hpp_id]" class="form-select form-select-sm select2-hpp rounded-2 component-select" onchange="onComponentSelectChange(this)">
-                                                    <option value="">Pilih Komponen</option>
-                                                    @foreach ($hppList as $hpp)
-                                                        <option value="{{ $hpp->id }}" data-cost="{{ $hpp->unit_cost }}" {{ ($comp['hpp_id'] ?? '') == $hpp->id ? 'selected' : '' }}>
-                                                            {{ $hpp->name }} (Rp {{ number_format($hpp->unit_cost, 0, ',', '.') }})
-                                                        </option>
-                                                    @endforeach
-                                                </select>
-                                            </td>
-                                            <td>
-                                                <input type="number" name="components[{{ $idx }}][cost]" class="form-control form-control-sm font-monospace text-end rounded-2 component-cost bg-light" value="{{ $comp['cost'] ?? 0 }}" min="0" readonly>
-                                            </td>
-                                            <td class="text-center">
-                                                <button type="button" class="btn btn-link text-danger p-0 border-0" onclick="removeHppComponentRow(this)" title="Hapus"><i class="bi bi-x-circle-fill"></i></button>
-                                            </td>
-                                        </tr>
-                                    @endforeach
-                                @endif
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <!-- Total Biaya HPP Komponen Info -->
-                    <div class="d-flex align-items-center justify-content-between p-2 bg-light rounded-2 mb-3">
-                        <span class="small text-muted">Total Biaya HPP Komponen:</span>
-                        <span class="fw-bold font-monospace text-dark" id="displayComponentHpp">Rp 0</span>
-                    </div>
-                </div>
-
-                <!-- Harga Bahan Utama (Muncul untuk semua jenis atau saat diinput) -->
-                <div class="mb-3" id="unitPriceSection">
-                    <label for="unit_price" class="form-label small fw-semibold text-dark">Harga Bahan Utama <span class="text-danger">*</span></label>
-                    <div class="input-group">
-                        <span class="input-group-text bg-light border-end-0">Rp</span>
-                        <input type="number" class="form-control font-monospace fw-semibold text-end" id="unit_price" name="unit_price" value="{{ old('unit_price') }}" min="0" oninput="calculateTotalHpp()" required>
-                    </div>
-                </div>
-
-                <!-- Input HPP Fixed (Muncul saat Metode Perhitungan HPP = MANUAL) -->
-                <div class="mb-3 d-none" id="manualHppSection">
-                    <label for="current_hpp" class="form-label small fw-semibold text-dark">HPP Fixed <span class="text-danger">*</span></label>
-                    <div class="input-group">
-                        <span class="input-group-text bg-light border-end-0">Rp</span>
-                        <input type="number" class="form-control font-monospace fw-semibold text-end" id="current_hpp" name="current_hpp" value="{{ old('current_hpp') }}" min="0" oninput="calculateTotalHpp()">
-                    </div>
-                </div>
-
-                <!-- Harga Jual Konsumen -->
-                <div class="mb-3">
-                    <label for="selling_price" class="form-label small fw-semibold text-dark">Harga Jual Konsumen<span class="text-danger">*</span></label>
-                    <div class="input-group">
-                        <span class="input-group-text bg-light border-end-0">Rp</span>
-                        <input type="number" class="form-control font-monospace fw-bold text-end text-dark" id="selling_price" name="selling_price" value="{{ old('selling_price') }}" min="0" oninput="calculateTotalHpp()" required>
-                    </div>
-                </div>
-
-                <!-- Live Margin & Profit Display Card -->
-                <div class="calc-preview-card text-center mb-4">
-                    <div class="row g-2 align-items-center">
-                        <div class="col-6 border-end">
-                            <div class="text-muted small" style="font-size: 0.75rem;">Total HPP Produk</div>
-                            <div class="h5 fw-bold font-monospace text-dark mb-0" id="displayTotalHpp">Rp 0</div>
-                        </div>
-                        <div class="col-6">
-                            <div class="text-muted small" style="font-size: 0.75rem;">Estimasi Margin Bersih</div>
-                            <div class="h5 fw-bold text-danger mb-0" id="displayMarginPercent">0%</div>
-                        </div>
-                    </div>
-                    <div class="mt-2 pt-2 border-top text-muted small" style="font-size: 0.78rem;">
-                        Estimasi Laba per Satuan: <span class="fw-bold text-dark font-monospace" id="displayProfitAmount">Rp 0</span>
-                    </div>
+                <!-- Container Card Repeater Satuan Jual -->
+                <div id="sellingConfigsContainer" class="d-flex flex-column gap-3 mb-4">
+                    <!-- Cards will be populated by JS or old input loop -->
                 </div>
 
                 <!-- Submit Action -->
-                <div class="d-flex align-items-center justify-content-between mt-4">
+                <div class="d-flex align-items-center justify-content-between mt-4 pt-3">
                     <a href="{{ route('products.index') }}" class="btn btn-light border rounded-3 px-4">Batal</a>
                     <button type="submit" class="btn btn-success text-white fw-bold px-5 rounded-3 d-inline-flex align-items-center gap-2">
-                        Simpan
+                        Simpan Produk
                     </button>
                 </div>
             </div>
@@ -267,6 +176,8 @@
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
     window.hppMasterList = @json($hppList);
+    window.unitsList = @json($unitsList);
+    window.oldSellingConfigs = @json($oldConfigs);
 </script>
 <script src="{{ asset('js/products.js') }}"></script>
 @endpush

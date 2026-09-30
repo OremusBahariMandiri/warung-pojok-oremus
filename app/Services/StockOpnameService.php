@@ -63,8 +63,8 @@ class StockOpnameService
 
     /**
      * Create a new stock opname transaction.
-     * Difference = physical_stock - system_stock.
-     * If status_opname is COMPLETED or CONFIRMED, current_stock on master product is adjusted to physical_stock.
+     * Difference = physical_stock - initial_stock (initial stock is the permanent baseline).
+     * Opname does NOT modify current_stock — that is solely managed by restock operations.
      */
     public function createStockOpname(array $data, int $userId): StockOpname
     {
@@ -89,22 +89,24 @@ class StockOpnameService
                 $productId     = (int) $itemData['product_id'];
                 $physicalStock = (int) $itemData['physical_stock'];
 
-                // Lock product row to get current system stock
+                // Lock product row — system_stock is current_stock for display/diff calculation
                 $product     = Products::lockForUpdate()->findOrFail($productId);
                 $systemStock = (int) $product->current_stock;
                 $difference  = $physicalStock - $systemStock;
 
                 StockOpnameItem::create([
-                    'opname_id'      => $opname->id,
-                    'product_id'     => $productId,
-                    'system_stock'   => $systemStock,
-                    'physical_stock' => $physicalStock,
-                    'difference'     => $difference,
+                    'opname_id'           => $opname->id,
+                    'product_id'          => $productId,
+                    'system_stock'        => $systemStock,
+                    'physical_stock'      => $physicalStock,
+                    'difference'          => $difference,
+                    // Save old initial_stock here so rollback can restore it
+                    'stock_before_opname' => (int) $product->initial_stock,
                 ]);
 
-                // If transaction is COMPLETED, adjust product current_stock to physical_stock
+                // If COMPLETED: update initial_stock to the physical count result
                 if ($status === 'COMPLETED') {
-                    $product->current_stock = $physicalStock;
+                    $product->initial_stock = $physicalStock;
                     $product->save();
                 }
 
@@ -116,6 +118,8 @@ class StockOpnameService
                     'difference'     => $difference,
                 ];
             }
+
+
 
             ActivityLogService::log(
                 action:      'CREATE',
@@ -165,16 +169,18 @@ class StockOpnameService
                     $difference  = $physicalStock - $systemStock;
 
                     StockOpnameItem::create([
-                        'opname_id'      => $opname->id,
-                        'product_id'     => $productId,
-                        'system_stock'   => $systemStock,
-                        'physical_stock' => $physicalStock,
-                        'difference'     => $difference,
+                        'opname_id'           => $opname->id,
+                        'product_id'          => $productId,
+                        'system_stock'        => $systemStock,
+                        'physical_stock'      => $physicalStock,
+                        'difference'          => $difference,
+                        // Save old initial_stock so rollback can restore it
+                        'stock_before_opname' => (int) $product->initial_stock,
                     ]);
 
-                    // If transaction is COMPLETED now, adjust product current_stock to physical_stock
+                    // If COMPLETED: update initial_stock to the physical count result
                     if ($newStatus === 'COMPLETED') {
-                        $product->current_stock = $physicalStock;
+                        $product->initial_stock = $physicalStock;
                         $product->save();
                     }
 
@@ -187,6 +193,8 @@ class StockOpnameService
                     ];
                 }
             }
+
+
 
             ActivityLogService::log(
                 action:      'UPDATE',
@@ -205,7 +213,7 @@ class StockOpnameService
 
     /**
      * Update status of stock opname transaction (e.g. DRAFT -> COMPLETED).
-     * When completed, system stock is adjusted to physical stock.
+     * Opname does NOT modify current_stock regardless of status change.
      */
     public function updateStatus(StockOpname $opname, string $newStatus, int $userId): StockOpname
     {
@@ -219,18 +227,19 @@ class StockOpnameService
 
             $opname->load('items');
 
-            // If changing DRAFT/REVIEW -> COMPLETED: update product current_stock to physical_stock
+            // If DRAFT/REVIEW → COMPLETED: update initial_stock to physical_stock result
             if ($oldStatus !== 'COMPLETED' && $newStatus === 'COMPLETED') {
                 foreach ($opname->items as $item) {
                     $product = Products::lockForUpdate()->find($item->product_id);
                     if ($product) {
-                        $product->current_stock = $item->physical_stock;
+                        $product->initial_stock = $item->physical_stock;
                         $product->save();
                     }
                 }
             }
 
             $opname->update(['status_opname' => $newStatus]);
+
 
             ActivityLogService::log(
                 action:      'UPDATE_STATUS',
@@ -248,22 +257,36 @@ class StockOpnameService
     }
 
     /**
-     * Delete a stock opname record.
+     * Delete / Rollback a stock opname record.
+     * No current_stock restore needed — opname never modifies current_stock.
      */
     public function deleteStockOpname(StockOpname $opname): bool
     {
         return DB::transaction(function () use ($opname) {
-            $oldValues = $opname->load('items')->toArray();
+            $opname->load('items');
+            $oldValues = $opname->toArray();
             $code = $opname->opname_code;
 
+            // If COMPLETED: restore initial_stock back to the value before opname
+            if ($opname->status_opname === 'COMPLETED') {
+                foreach ($opname->items as $item) {
+                    $product = Products::lockForUpdate()->find($item->product_id);
+                    if ($product) {
+                        $product->initial_stock = $item->stock_before_opname;
+                        $product->save();
+                    }
+                }
+            }
+
             $deleted = $opname->delete();
+
 
             ActivityLogService::log(
                 action:      'DELETE',
                 module:      'STOCK_OPNAME',
                 entityType:  StockOpname::class,
                 entityId:    $opname->id,
-                description: "Deleted Stock Opname transaction: {$code}",
+                description: "Rolled back / Deleted Stock Opname transaction: {$code}",
                 oldValues:   $oldValues,
                 newValues:   null
             );

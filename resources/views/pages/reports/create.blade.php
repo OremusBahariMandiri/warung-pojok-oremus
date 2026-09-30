@@ -80,7 +80,7 @@
                 <div class="py-3 border-bottom d-flex align-items-center justify-content-between">
                     <div>
                         <h6 class="fw-bold text-dark mb-0">Detail Penjualan</h6>
-                        <span class="text-muted small">Pilih satuan jual terlebih dahulu, lalu pilih produk dan masukkan kuantitas terjual. Stok akhir dan margin terhitung otomatis.</span>
+                        <span class="text-muted small">Pilih produk terlebih dahulu, lalu pilih satuan jual dan masukkan kuantitas terjual. Stok akhir dan margin terhitung otomatis.</span>
                     </div>
                     <button type="button" class="btn btn-sm btn-outline-success rounded-2 px-3 d-inline-flex align-items-center gap-2" onclick="addReportItemRow()">
                         <i class="bi bi-plus-lg"></i> Tambah
@@ -93,8 +93,8 @@
                         <thead class="table-light">
                             <tr class="align-middle">
                                 <th class="text-center col-no" style="width: 40px;">No</th>
-                                <th class="text-center col-unit" style="width: 120px;">Satuan Jual</th>
                                 <th class="text-center col-product" style="min-width: 220px;">Nama Produk</th>
+                                <th class="text-center col-unit" style="width: 130px;">Satuan Jual</th>
                                 <th class="text-center col-info" style="width: 130px;">Informasi</th>
                                 <th class="text-center col-qty" style="width: 95px;">Jumlah Terjual</th>
                                 <th class="text-center col-stock-final" style="width: 95px;">Stok Akhir</th>
@@ -118,6 +118,16 @@
                                     @endphp
                                     <tr class="report-item-row align-middle">
                                         <td class="row-number text-center text-muted fw-medium small col-no">{{ $loop->iteration }}</td>
+                                        <td class="col-product">
+                                            <select name="items[{{ $idx }}][product_id]" class="form-select form-select-sm product-select rounded-2" onchange="onProductSelectChange(this)" required>
+                                                <option value="" disabled {{ empty($selectedProdId) ? 'selected' : '' }}>Pilih Produk...</option>
+                                                @foreach ($productsList as $p)
+                                                    <option value="{{ $p->id }}" {{ $selectedProdId == $p->id ? 'selected' : '' }}>
+                                                        {{ $p->prod_name }} ({{ $p->prod_code ?: 'PRD-' . $p->id }})
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                        </td>
                                         <td class="col-unit">
                                             <select name="items[{{ $idx }}][selling_unit_id]" class="form-select form-select-sm selling-unit-select rounded-2" onchange="onSellingUnitChange(this)" required>
                                                 <option value="" disabled {{ empty($selectedUnitId) ? 'selected' : '' }}>Pilih Satuan...</option>
@@ -126,11 +136,6 @@
                                                         {{ $u->unit_name }} ({{ $u->short_name ?: $u->unit_name }})
                                                     </option>
                                                 @endforeach
-                                            </select>
-                                        </td>
-                                        <td class="col-product">
-                                            <select name="items[{{ $idx }}][product_id]" class="form-select form-select-sm product-select rounded-2" onchange="onProductSelectChange(this)" required>
-                                                <option value="" disabled selected>Pilih Produk...</option>
                                             </select>
                                         </td>
                                         <td class="col-info text-start small">

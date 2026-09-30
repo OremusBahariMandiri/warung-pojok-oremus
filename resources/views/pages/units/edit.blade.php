@@ -50,8 +50,8 @@
         <div class="col-lg-12">
             <div class="card-box bg-white border rounded-3 p-4">
 
-                <div class="row g-3 mb-3">
-                    <div class="col-md-8">
+                <div class="row g-3 mb-4">
+                    <div class="col-md-12">
                         <label for="unit_name" class="form-label small fw-semibold text-dark">Nama Satuan<span class="text-danger">*</span></label>
                         <input type="text" class="form-control rounded-2 @error('unit_name') is-invalid @enderror" 
                             id="unit_name" name="unit_name" value="{{ old('unit_name', $unitObj->unit_name) }}" required autofocus>
@@ -60,7 +60,7 @@
                         @enderror
                     </div>
 
-                    <div class="col-md-4">
+                    <div class="col-md-12">
                         <label for="short_name" class="form-label small fw-semibold text-dark">Singkatan Satuan <span class="text-danger">*</span></label>
                         <input type="text" class="form-control font-monospace rounded-2 @error('short_name') is-invalid @enderror" 
                             id="short_name" name="short_name" value="{{ old('short_name', $unitObj->short_name) }}" required>
@@ -68,23 +68,6 @@
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
                     </div>
-                </div>
-
-                <div class="mb-4">
-                    <label for="type" class="form-label small fw-semibold text-dark">Kategori<span class="text-danger">*</span></label>
-                    <input type="text" class="form-control rounded-2 @error('type') is-invalid @enderror" 
-                        id="type" name="type" value="{{ old('type', $unitObj->type) }}" list="typeSuggestions" required>
-                    <datalist id="typeSuggestions">
-                        <option value="Kemasan Minuman">
-                        <option value="Porsi Makanan">
-                        <option value="Satuan Item">
-                        <option value="Kemasan Makanan">
-                        <option value="Satuan Berat">
-                        <option value="Satuan Volume">
-                    </datalist>
-                    @error('type')
-                        <div class="invalid-feedback">{{ $message }}</div>
-                    @enderror
                 </div>
                 
                 <!-- Submit Card -->

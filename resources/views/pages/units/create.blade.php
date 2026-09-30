@@ -45,7 +45,7 @@
         <div class="col-lg-12">
             <div class="card-box bg-white border rounded-3 p-4">
 
-                <div class="row g-3 mb-3">
+                <div class="row g-3 mb-4">
                     <div class="col-md-12">
                         <label for="unit_name" class="form-label small fw-semibold text-dark">Nama Satuan<span class="text-danger">*</span></label>
                         <input type="text" class="form-control rounded-2 @error('unit_name') is-invalid @enderror" 
@@ -63,23 +63,6 @@
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
                     </div>
-                </div>
-
-                <div class="mb-4">
-                    <label for="type" class="form-label small fw-semibold text-dark">Tipe Satuan <span class="text-danger">*</span></label>
-                    <input type="text" class="form-control rounded-2 @error('type') is-invalid @enderror" 
-                        id="type" name="type" value="{{ old('type') }}" list="typeSuggestions">
-                    <datalist id="typeSuggestions">
-                        <option value="Kemasan Minuman">
-                        <option value="Porsi Makanan">
-                        <option value="Satuan Item">
-                        <option value="Kemasan Makanan">
-                        <option value="Satuan Berat">
-                        <option value="Satuan Volume">
-                    </datalist>
-                    @error('type')
-                        <div class="invalid-feedback">{{ $message }}</div>
-                    @enderror
                 </div>
 
                 <!-- Submit Card -->

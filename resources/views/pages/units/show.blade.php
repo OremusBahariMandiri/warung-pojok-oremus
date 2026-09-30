@@ -49,10 +49,6 @@
                     <div class="fw-semibold text-dark">{{ $unitObj->short_name }}</div>
                 </div>
                 <div>
-                    <div class="text-muted small">Kategori / Tipe</div>
-                    <div class="fw-semibold text-dark">{{ $unitObj->type ?: '-' }}</div>
-                </div>
-                <div>
                     <div class="text-muted small">Produk Terkait</div>
                     <div class="fw-semibold text-dark">{{ $connectedProducts->count() }} Produk</div>
                 </div>

@@ -1,6 +1,6 @@
 ﻿@extends('layouts.admin')
 
-@section('title', 'Riwayat Restock — Warung Pojok Oremus')
+@section('title', 'Riwayat Pembelian — Warung Pojok Oremus')
 
 @push('styles')
 <!-- DataTables BSD & Bootstrap 5 CSS -->
@@ -13,7 +13,7 @@
 <nav aria-label="breadcrumb">
     <ol class="breadcrumb mb-0">
         <li class="breadcrumb-item"><a href="{{ route('admin.dashboard') }}" class="text-decoration-none text-muted">warjok</a></li>
-        <li class="breadcrumb-item active text-dark" aria-current="page">management restock</li>
+        <li class="breadcrumb-item active text-dark" aria-current="page">management pembelian</li>
     </ol>
 </nav>
 @endsection
@@ -27,7 +27,7 @@
 <!-- Header Title -->
 <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-2 mb-3">
     <div>
-        <h4 class="fw-bold text-dark mb-1">Riwayat Transaksi Restock</h4>
+        <h4 class="fw-bold text-dark mb-1">Riwayat Transaksi Pembelian</h4>
     </div>
 </div>
 
@@ -123,7 +123,7 @@
                             @if ($isDraft)
                                 <span class="badge bg-warning text-dark px-2 py-1">DRAFT</span>
                             @else
-                                <span class="badge bg-success text-white px-2 py-1">CONFIRMED</span>
+                                <span class="badge bg-success text-white px-2 py-1">SELESAI</span>
                             @endif
                         </td>
                         <td class="text-center">
@@ -145,11 +145,15 @@
                                     <a href="{{ route('restock.edit', $item->id) }}" class="btn btn-sm btn-warning text-white px-2 py-1 rounded-2 shadow-none" title="Edit Draft" style="background-color: #f59e0b; border-color: #f59e0b;">
                                         <i class="bi bi-pencil"></i>
                                     </a>
+                                    <button type="button" class="btn btn-sm btn-danger text-white px-2 py-1 rounded-2 shadow-none" title="Hapus Draft"
+                                        onclick="openDeleteModal({{ $item->id }}, '{{ addslashes($item->restock_code) }}', {{ $totalQty }}, {{ $grandTotal }})">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                @else
+                                    <a href="{{ route('restock.edit', $item->id) }}" class="btn btn-sm btn-warning text-white px-2 py-1 rounded-2 shadow-none" title="Edit Transaksi" style="background-color: #f59e0b; border-color: #f59e0b;">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
                                 @endif
-                                <button type="button" class="btn btn-sm btn-danger text-white px-2 py-1 rounded-2 shadow-none" title="Hapus / Batalkan"
-                                    onclick="openDeleteModal({{ $item->id }}, '{{ addslashes($item->restock_code) }}', {{ $totalQty }}, {{ $grandTotal }})">
-                                    <i class="bi bi-trash"></i>
-                                </button>
                             </div>
                         </td>
                     </tr>
@@ -161,6 +165,9 @@
     {{-- ═══ MOBILE: Card List ═══ --}}
     <div id="restockMobileCards" class="d-md-none px-1 pt-1">
         @forelse ($list as $item)
+            @php
+                $isDraft = $item->status_restock === 'DRAFT';
+            @endphp
             <div class="restock-list-card">
                 {{-- Header: kode + tanggal --}}
                 <div class="rlc-header">
@@ -200,15 +207,24 @@
                 </div>
 
                 {{-- Actions --}}
-                <div class="rlc-actions">
-                    <a href="{{ route('restock.show', $item->id) }}" class="rlc-btn-detail">
-                        <i class="bi bi-eye"></i> Lihat Detail
+                <div class="rlc-actions d-flex gap-2">
+                    <a href="{{ route('restock.show', $item->id) }}" class="rlc-btn-detail flex-fill text-center">
+                        <i class="bi bi-eye"></i> Detail
                     </a>
-                    <button type="button" class="rlc-btn-delete"
-                        onclick="openDeleteModal({{ $item->id }}, '{{ addslashes($item->restock_code) }}', {{ (int)($item->total_quantity ?? 0) }}, {{ (float)($item->total_value ?? 0) }})"
-                        title="Batalkan & Rollback">
-                        <i class="bi bi-x-lg"></i>
-                    </button>
+                    @if ($isDraft)
+                        <a href="{{ route('restock.edit', $item->id) }}" class="btn btn-sm btn-warning text-white rounded-2 px-3 d-inline-flex align-items-center gap-1" style="background-color: #f59e0b; border-color: #f59e0b;">
+                            <i class="bi bi-pencil"></i> Edit
+                        </a>
+                        <button type="button" class="rlc-btn-delete"
+                            onclick="openDeleteModal({{ $item->id }}, '{{ addslashes($item->restock_code) }}', {{ (int)($item->total_quantity ?? 0) }}, {{ (float)($item->total_value ?? 0) }})"
+                            title="Hapus Draft">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    @else
+                        <a href="{{ route('restock.edit', $item->id) }}" class="btn btn-sm btn-warning text-white rounded-2 px-3 d-inline-flex align-items-center gap-1" style="background-color: #f59e0b; border-color: #f59e0b;">
+                            <i class="bi bi-pencil"></i> Edit
+                        </a>
+                    @endif
                 </div>
             </div>
         @empty
@@ -262,32 +278,22 @@
     </div>
 </div>
 
-<!-- MODAL CONFIRM DELETE / ROLLBACK RESTOCK -->
+<!-- MODAL CONFIRM DELETE DRAFT RESTOCK -->
 <div class="modal fade" id="modalDeleteRestock" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-sm">
         <div class="modal-content modal-content-minimal">
             <div class="modal-body modal-body-minimal text-center py-4">
                 <div class="avatar-circle mx-auto mb-3 bg-danger bg-opacity-10 text-danger d-flex align-items-center justify-content-center rounded-circle" style="width: 54px; height: 54px; font-size: 1.5rem;">
-                    <i class="bi bi-arrow-counterclockwise"></i>
+                    <i class="bi bi-trash"></i>
                 </div>
-                <h6 class="fw-bold text-dark mb-1">Batalkan Transaksi Restock?</h6>
-                <p class="text-muted small mb-2">Transaksi "<span id="deleteRestockCode" class="fw-semibold text-dark"></span>" akan dihapus dan <span class="text-danger fw-bold">penambahan stok produk akan di-rollback</span>.</p>
-                <div class="alert alert-warning py-1 px-2 small mb-3 text-start">
-                    <div class="d-flex justify-content-between">
-                        <span>Total Unit Di-rollback:</span>
-                        <span id="deleteRestockItemCount" class="fw-bold text-dark"></span>
-                    </div>
-                    <div class="d-flex justify-content-between">
-                        <span>Total Nilai Pembelian:</span>
-                        <span id="deleteRestockTotalValue" class="fw-bold text-dark font-monospace"></span>
-                    </div>
-                </div>
+                <h6 class="fw-bold text-dark mb-1">Hapus Draft Restock?</h6>
+                <p class="text-muted small mb-2">Draft transaksi "<span id="deleteRestockCode" class="fw-semibold text-dark"></span>" akan dihapus permanen.</p>
                 <form id="deleteRestockForm" method="POST" action="">
                     @csrf
                     @method('DELETE')
                     <div class="d-flex gap-2 justify-content-center">
                         <button type="button" class="btn btn-sm btn-light border px-3 rounded-2" data-bs-dismiss="modal">Batal</button>
-                        <button type="submit" class="btn btn-sm btn-danger px-3 rounded-2">Ya, Batalkan</button>
+                        <button type="submit" class="btn btn-sm btn-danger px-3 rounded-2">Ya, Hapus</button>
                     </div>
                 </form>
             </div>

@@ -77,7 +77,7 @@ class ProductService
     }
 
     /**
-     * Create a new product along with its selling configuration (ProductHpp) & component details (ProductHppDetail).
+     * Create a new product along with its selling configurations (ProductHpp) & component details (ProductHppDetail).
      */
     public function createProduct(array $data, ?UploadedFile $thumbnail = null): Products
     {
@@ -98,8 +98,6 @@ class ProductService
                 ? $data['prod_code']
                 : CodeGenerator::generateProductCode(Products::class);
 
-            $hppMethod = strtoupper($data['hpp_method'] ?? 'MANUAL');
-
             // --- Thumbnail ---
             $thumbnailPath = 'thumbnail/default.png';
             if ($thumbnail) {
@@ -109,11 +107,29 @@ class ProductService
             }
 
             $initialStock = (int) ($data['initial_stock'] ?? 0);
-            $unitPrice    = (float) ($data['unit_price'] ?? 0);
-            $sellingPrice = (float) ($data['selling_price'] ?? 0);
+
+            // Normalize selling configurations array (supports selling_configs, configurations, or legacy single fields)
+            $sellingConfigs = $data['selling_configs'] ?? $data['configurations'] ?? [];
+            if (empty($sellingConfigs) && isset($data['selling_price'])) {
+                $sellingConfigs = [
+                    [
+                        'selling_unit_id' => $data['unit_id'] ?? 1,
+                        'hpp_method'      => $data['hpp_method'] ?? 'MANUAL',
+                        'selling_price'   => $data['selling_price'] ?? 0,
+                        'current_hpp'     => $data['current_hpp'] ?? 0,
+                        'components'      => $data['components'] ?? [],
+                    ]
+                ];
+            }
+
+            $unitPrice = isset($data['unit_price']) && $data['unit_price'] !== '' && $data['unit_price'] !== null
+                ? (float) $data['unit_price']
+                : (float) ($sellingConfigs[0]['current_hpp'] ?? 0);
+
+            $primaryUnitId = !empty($sellingConfigs) ? ($sellingConfigs[0]['selling_unit_id'] ?? ($data['unit_id'] ?? 1)) : ($data['unit_id'] ?? 1);
 
             $product = Products::create([
-                'unit_id'       => $data['unit_id'],
+                'unit_id'       => $primaryUnitId,
                 'prod_code'     => $prodCode,
                 'prod_name'     => $prodName,
                 'slug'          => $slug,
@@ -125,43 +141,52 @@ class ProductService
                 'thumbnail'     => $thumbnailPath,
             ]);
 
-            // --- Calculate and Save ProductHpp ---
-            $components = $data['components'] ?? [];
-            $componentsCostSum = 0.0;
-            if ($hppMethod === 'CALCULATED' && is_array($components)) {
-                foreach ($components as $comp) {
-                    if (!empty($comp['hpp_id'])) {
-                        $hppMaster = Hpp::find($comp['hpp_id']);
-                        if ($hppMaster) {
-                            $componentsCostSum += (float) $hppMaster->unit_cost;
-                        } elseif (!empty($comp['cost'])) {
-                            $componentsCostSum += (float) $comp['cost'];
+            // --- Calculate and Save ProductHpp for each selling configuration ---
+            foreach ($sellingConfigs as $config) {
+                $sellingUnitId = (int) ($config['selling_unit_id'] ?? $primaryUnitId);
+                $hppMethod     = strtoupper($config['hpp_method'] ?? 'MANUAL');
+                $sellingPrice  = (float) ($config['selling_price'] ?? 0);
+                $components    = $config['components'] ?? [];
+                if (empty($components) && !empty($config['hpp_id'])) {
+                    $components = [['hpp_id' => $config['hpp_id']]];
+                }
+
+                $componentsCostSum = 0.0;
+                if ($hppMethod === 'CALCULATED' && is_array($components)) {
+                    foreach ($components as $comp) {
+                        if (!empty($comp['hpp_id'])) {
+                            $hppMaster = Hpp::find($comp['hpp_id']);
+                            if ($hppMaster) {
+                                $componentsCostSum += (float) $hppMaster->unit_cost;
+                            } elseif (!empty($comp['cost'])) {
+                                $componentsCostSum += (float) $comp['cost'];
+                            }
                         }
                     }
+                    $currentHpp = $unitPrice + $componentsCostSum;
+                } else {
+                    $currentHpp = (isset($config['current_hpp']) && $config['current_hpp'] !== '' && $config['current_hpp'] !== null)
+                        ? (float) $config['current_hpp']
+                        : $unitPrice;
                 }
-                $currentHpp = $unitPrice + $componentsCostSum;
-            } else {
-                $currentHpp = (isset($data['current_hpp']) && $data['current_hpp'] !== '' && $data['current_hpp'] !== null)
-                    ? (float) $data['current_hpp']
-                    : $unitPrice;
-            }
 
-            $productHpp = ProductHpp::create([
-                'product_id'      => $product->id,
-                'selling_unit_id' => $data['unit_id'],
-                'selling_price'   => $sellingPrice,
-                'hpp_method'      => $hppMethod,
-                'current_hpp'     => $currentHpp,
-            ]);
+                $productHpp = ProductHpp::create([
+                    'product_id'      => $product->id,
+                    'selling_unit_id' => $sellingUnitId,
+                    'selling_price'   => $sellingPrice,
+                    'hpp_method'      => $hppMethod,
+                    'current_hpp'     => $currentHpp,
+                ]);
 
-            // --- Save Components to ProductHppDetail ---
-            if ($hppMethod === 'CALCULATED' && is_array($components)) {
-                foreach ($components as $comp) {
-                    if (!empty($comp['hpp_id'])) {
-                        ProductHppDetail::create([
-                            'product_hpp_id' => $productHpp->id,
-                            'hpp_id'         => (int) $comp['hpp_id'],
-                        ]);
+                // Save Components to ProductHppDetail
+                if ($hppMethod === 'CALCULATED' && is_array($components)) {
+                    foreach ($components as $comp) {
+                        if (!empty($comp['hpp_id'])) {
+                            ProductHppDetail::create([
+                                'product_hpp_id' => $productHpp->id,
+                                'hpp_id'         => (int) $comp['hpp_id'],
+                            ]);
+                        }
                     }
                 }
             }
@@ -171,7 +196,7 @@ class ProductService
                 module:      'PRODUCT',
                 entityType:  Products::class,
                 entityId:    $product->id,
-                description: "Created product: {$product->prod_name} (Method: {$hppMethod})",
+                description: "Created product: {$product->prod_name} (Selling Configs: " . count($sellingConfigs) . ")",
                 oldValues:   null,
                 newValues:   $product->load(['productHpps.details.hpp'])->toArray()
             );
@@ -202,9 +227,6 @@ class ProductService
                 $counter++;
             }
 
-            $firstHpp = $product->productHpps->first();
-            $hppMethod = isset($data['hpp_method']) ? strtoupper($data['hpp_method']) : ($firstHpp?->hpp_method ?? 'MANUAL');
-
             // --- Thumbnail ---
             $thumbnailPath = $product->thumbnail;
             if ($thumbnail) {
@@ -218,12 +240,31 @@ class ProductService
                 $thumbnailPath = $thumbnail->store('thumbnail', 'public');
             }
 
-            $unitPrice = isset($data['unit_price']) ? (float) $data['unit_price'] : $product->unit_price;
+            $unitPrice = isset($data['unit_price']) && $data['unit_price'] !== '' && $data['unit_price'] !== null
+                ? (float) $data['unit_price']
+                : $product->unit_price;
+
+            // Normalize selling configurations array
+            $sellingConfigs = $data['selling_configs'] ?? $data['configurations'] ?? [];
+            if (empty($sellingConfigs) && isset($data['selling_price'])) {
+                $sellingConfigs = [
+                    [
+                        'selling_unit_id' => $data['unit_id'] ?? $product->unit_id,
+                        'hpp_method'      => $data['hpp_method'] ?? 'MANUAL',
+                        'selling_price'   => $data['selling_price'] ?? 0,
+                        'current_hpp'     => $data['current_hpp'] ?? $unitPrice,
+                        'components'      => $data['components'] ?? [],
+                    ]
+                ];
+            }
+
+            $primaryUnitId = !empty($sellingConfigs) ? ($sellingConfigs[0]['selling_unit_id'] ?? $product->unit_id) : $product->unit_id;
 
             $product->update([
-                'unit_id'       => $data['unit_id']       ?? $product->unit_id,
+                'unit_id'       => $primaryUnitId,
                 'prod_name'     => $prodName,
                 'slug'          => $slug,
+                'initial_stock' => isset($data['initial_stock']) ? (int) $data['initial_stock'] : $product->initial_stock,
                 'current_stock' => isset($data['current_stock']) ? (int) $data['current_stock'] : $product->current_stock,
                 'min_stock'     => isset($data['min_stock'])     ? (int) $data['min_stock']     : $product->min_stock,
                 'unit_price'    => $unitPrice,
@@ -232,49 +273,56 @@ class ProductService
             ]);
 
             // --- Update ProductHpp and ProductHppDetail ---
-            if (isset($data['selling_price']) || isset($data['unit_id'])) {
-                $sellingPrice = (float) ($data['selling_price'] ?? 0);
-
-                $components = $data['components'] ?? [];
-                $componentsCostSum = 0.0;
-                if ($hppMethod === 'CALCULATED' && is_array($components)) {
-                    foreach ($components as $comp) {
-                        if (!empty($comp['hpp_id'])) {
-                            $hppMaster = Hpp::find($comp['hpp_id']);
-                            if ($hppMaster) {
-                                $componentsCostSum += (float) $hppMaster->unit_cost;
-                            } elseif (!empty($comp['cost'])) {
-                                $componentsCostSum += (float) $comp['cost'];
-                            }
-                        }
-                    }
-                    $currentHpp = $unitPrice + $componentsCostSum;
-                } else {
-                    $currentHpp = (isset($data['current_hpp']) && $data['current_hpp'] !== '' && $data['current_hpp'] !== null)
-                        ? (float) $data['current_hpp']
-                        : $unitPrice;
-                }
-
+            if (!empty($sellingConfigs)) {
                 // Delete old product_hpp and cascading product_hpp_detail
                 $oldProductHppIds = ProductHpp::where('product_id', $product->id)->pluck('id');
                 ProductHppDetail::whereIn('product_hpp_id', $oldProductHppIds)->delete();
                 ProductHpp::where('product_id', $product->id)->delete();
 
-                $productHpp = ProductHpp::create([
-                    'product_id'      => $product->id,
-                    'selling_unit_id' => $data['unit_id'] ?? $product->unit_id,
-                    'selling_price'   => $sellingPrice,
-                    'hpp_method'      => $hppMethod,
-                    'current_hpp'     => $currentHpp,
-                ]);
+                foreach ($sellingConfigs as $config) {
+                    $sellingUnitId = (int) ($config['selling_unit_id'] ?? $primaryUnitId);
+                    $hppMethod     = strtoupper($config['hpp_method'] ?? 'MANUAL');
+                    $sellingPrice  = (float) ($config['selling_price'] ?? 0);
+                    $components    = $config['components'] ?? [];
+                    if (empty($components) && !empty($config['hpp_id'])) {
+                        $components = [['hpp_id' => $config['hpp_id']]];
+                    }
 
-                if ($hppMethod === 'CALCULATED' && is_array($components)) {
-                    foreach ($components as $comp) {
-                        if (!empty($comp['hpp_id'])) {
-                            ProductHppDetail::create([
-                                'product_hpp_id' => $productHpp->id,
-                                'hpp_id'         => (int) $comp['hpp_id'],
-                            ]);
+                    $componentsCostSum = 0.0;
+                    if ($hppMethod === 'CALCULATED' && is_array($components)) {
+                        foreach ($components as $comp) {
+                            if (!empty($comp['hpp_id'])) {
+                                $hppMaster = Hpp::find($comp['hpp_id']);
+                                if ($hppMaster) {
+                                    $componentsCostSum += (float) $hppMaster->unit_cost;
+                                } elseif (!empty($comp['cost'])) {
+                                    $componentsCostSum += (float) $comp['cost'];
+                                }
+                            }
+                        }
+                        $currentHpp = $unitPrice + $componentsCostSum;
+                    } else {
+                        $currentHpp = (isset($config['current_hpp']) && $config['current_hpp'] !== '' && $config['current_hpp'] !== null)
+                            ? (float) $config['current_hpp']
+                            : $unitPrice;
+                    }
+
+                    $productHpp = ProductHpp::create([
+                        'product_id'      => $product->id,
+                        'selling_unit_id' => $sellingUnitId,
+                        'selling_price'   => $sellingPrice,
+                        'hpp_method'      => $hppMethod,
+                        'current_hpp'     => $currentHpp,
+                    ]);
+
+                    if ($hppMethod === 'CALCULATED' && is_array($components)) {
+                        foreach ($components as $comp) {
+                            if (!empty($comp['hpp_id'])) {
+                                ProductHppDetail::create([
+                                    'product_hpp_id' => $productHpp->id,
+                                    'hpp_id'         => (int) $comp['hpp_id'],
+                                ]);
+                            }
                         }
                     }
                 }

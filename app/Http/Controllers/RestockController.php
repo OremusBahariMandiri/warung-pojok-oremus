@@ -44,7 +44,7 @@ class RestockController extends Controller
      */
     public function create()
     {
-        $products         = Products::with('unit')->orderBy('prod_name', 'asc')->get();
+        $products         = Products::with(['unit', 'productHpps.sellingUnit'])->orderBy('prod_name', 'asc')->get();
         $units            = Unit::orderBy('unit_name', 'asc')->get();
         $generatedInvoice = CodeGenerator::generateInvoiceNumber(Restock::class);
         $generatedCode    = CodeGenerator::generateRestockCode(Restock::class);
@@ -94,7 +94,7 @@ class RestockController extends Controller
     public function edit(Restock $restock)
     {
         $restock->load(['creator', 'items.product.unit', 'items.unit']);
-        $products = Products::with('unit')->orderBy('prod_name', 'asc')->get();
+        $products = Products::with(['unit', 'productHpps.sellingUnit'])->orderBy('prod_name', 'asc')->get();
         $units    = Unit::orderBy('unit_name', 'asc')->get();
 
         return view('pages.restock.edit', compact('restock', 'products', 'units'));
