@@ -1,4 +1,4 @@
-﻿@extends('layouts.admin')
+@extends('layouts.admin')
 
 @section('title', 'Detail Restock — Warung Pojok Oremus')
 
@@ -36,10 +36,14 @@
             <a href="{{ route('restock.edit', $restockObj->id) }}" class="btn btn-sm btn-warning text-white rounded-2 px-3 d-inline-flex align-items-center gap-2" style="background-color: #f59e0b; border-color: #f59e0b;">
                 <i class="bi bi-pencil"></i> Edit Draft
             </a>
+            <button type="button" class="btn btn-sm btn-danger text-white rounded-2 px-3 d-inline-flex align-items-center gap-2" onclick="openDeleteModal({{ $restockObj->id }}, '{{ addslashes($restockObj->restock_code) }}', {{ (int)($itemsList->sum('quantity')) }}, {{ (float)($restockObj->grand_total ?? 0) }})">
+                <i class="bi bi-trash"></i> Hapus Draft
+            </button>
+        @else
+            <a href="{{ route('restock.edit', $restockObj->id) }}" class="btn btn-sm btn-warning text-white rounded-2 px-3 d-inline-flex align-items-center gap-2" style="background-color: #f59e0b; border-color: #f59e0b;">
+                <i class="bi bi-pencil"></i> Edit
+            </a>
         @endif
-        <button type="button" class="btn btn-sm btn-danger text-white rounded-2 px-3 d-inline-flex align-items-center gap-2" onclick="openDeleteModal({{ $restockObj->id }}, '{{ addslashes($restockObj->restock_code) }}', {{ (int)($itemsList->sum('quantity')) }}, {{ (float)($restockObj->grand_total ?? 0) }})">
-            <i class="bi bi-trash"></i> Batalkan
-        </button>
     </div>
 </div>
 
@@ -255,32 +259,22 @@
     </div>
 </div>
 
-<!-- MODAL CONFIRM DELETE / ROLLBACK RESTOCK -->
+<!-- MODAL CONFIRM DELETE DRAFT RESTOCK -->
 <div class="modal fade" id="modalDeleteRestock" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-sm">
         <div class="modal-content modal-content-minimal">
             <div class="modal-body modal-body-minimal text-center py-4">
-                <div class="avatar-circle mx-auto mb-3 bg-danger bg-opacity-10 text-danger" style="width: 54px; height: 54px; font-size: 1.5rem;">
-                    <i class="bi bi-arrow-counterclockwise"></i>
+                <div class="avatar-circle mx-auto mb-3 bg-danger bg-opacity-10 text-danger d-flex align-items-center justify-content-center rounded-circle" style="width: 54px; height: 54px; font-size: 1.5rem;">
+                    <i class="bi bi-trash"></i>
                 </div>
-                <h6 class="fw-bold text-dark mb-1">Batalkan Transaksi Restock?</h6>
-                <p class="text-muted small mb-2">Transaksi "<span id="deleteRestockCode" class="fw-semibold text-dark">{{ $restockObj->restock_code }}</span>" akan dihapus dan <span class="text-danger fw-bold">penambahan stok produk akan di-rollback</span>.</p>
-                <div class="alert alert-warning py-1 px-2 small mb-3 text-start">
-                    <div class="d-flex justify-content-between">
-                        <span>Total Unit Di-rollback:</span>
-                        <span id="deleteRestockItemCount" class="fw-bold text-dark">{{ (int)($restockObj->total_quantity ?? 0) }} Unit</span>
-                    </div>
-                    <div class="d-flex justify-content-between">
-                        <span>Total Nilai Pembelian:</span>
-                        <span id="deleteRestockTotalValue" class="fw-bold text-dark font-monospace">Rp {{ number_format($restockObj->total_value ?? 0, 0, ',', '.') }}</span>
-                    </div>
-                </div>
+                <h6 class="fw-bold text-dark mb-1">Hapus Draft Restock?</h6>
+                <p class="text-muted small mb-2">Draft transaksi "<span id="deleteRestockCode" class="fw-semibold text-dark">{{ $restockObj->restock_code }}</span>" akan dihapus permanen.</p>
                 <form id="deleteRestockForm" method="POST" action="{{ route('restock.destroy', $restockObj->id) }}">
                     @csrf
                     @method('DELETE')
                     <div class="d-flex gap-2 justify-content-center">
                         <button type="button" class="btn btn-sm btn-light border px-3 rounded-2" data-bs-dismiss="modal">Batal</button>
-                        <button type="submit" class="btn btn-sm btn-danger px-3 rounded-2">Ya, Batalkan</button>
+                        <button type="submit" class="btn btn-sm btn-danger px-3 rounded-2">Ya, Hapus</button>
                     </div>
                 </form>
             </div>

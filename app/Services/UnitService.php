@@ -31,7 +31,7 @@ class UnitService
         return DB::transaction(function () use ($data) {
             $unit = Unit::create([
                 'unit_name' => $data['unit_name'],
-                'type' => $data['type'],
+                // 'type' => $data['type'],
                 'short_name' => $data['short_name'],
             ]);
 
@@ -59,7 +59,7 @@ class UnitService
 
             $unit->update([
                 'unit_name' => $data['unit_name'] ?? $unit->unit_name,
-                'type' => $data['type'] ?? $unit->type,
+                // 'type' => $data['type'] ?? $unit->type,
                 'short_name' => $data['short_name'] ?? $unit->short_name,
             ]);
 

@@ -115,13 +115,17 @@
                 </div>
 
                 <div class="row g-2 pt-2 border-top">
-                    <div class="col-6">
-                        <div class="text-muted small">Stok Tersedia</div>
+                    <div class="col-4">
+                        <div class="text-muted small">Stok Awal</div>
+                        <div class="fw-semibold text-dark">{{ $productObj->initial_stock }} {{ $unitShort }}</div>
+                    </div>
+                    <div class="col-4">
+                        <div class="text-muted small">Stok Saat Ini</div>
                         <div class="fw-semibold {{ (int)$productObj->current_stock <= (int)$productObj->min_stock ? 'text-danger fw-bold' : 'text-dark' }}">
                             {{ $productObj->current_stock }} {{ $unitShort }}
                         </div>
                     </div>
-                    <div class="col-6">
+                    <div class="col-4">
                         <div class="text-muted small">Batas Minimal Stok</div>
                         <div class="text-dark">{{ $productObj->min_stock }} {{ $unitShort }}</div>
                     </div>

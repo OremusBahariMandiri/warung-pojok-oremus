@@ -1,4 +1,4 @@
-﻿/**
+/**
  * WARJOK — Master Satuan DataTables & CRUD JS
  * Warung Pojok Oremus | PT Oremus Bahari Mandiri
  */
@@ -39,33 +39,26 @@ $(document).ready(function () {
 
     // Modal Filter Action: Reset
     $("#btnResetFilter").on("click", function () {
-        $("#modalFilterCategory").val("");
         $("#modalFilterUsage").val("");
         applyFilters();
     });
 
     function applyFilters() {
-        const category = $("#modalFilterCategory").val();
         const usage = $("#modalFilterUsage").val();
 
-        // Category Filter (col index 3)
-        dataTable
-            .column(3)
-            .search(category ? "^" + category + "$" : "", true, false);
-
-        // Usage Filter (col index 4)
+        // Usage Filter (col index 3: Produk Terkait)
         if (usage === "used") {
-            dataTable.column(4).search("[1-9][0-9]* Produk", true, false);
+            dataTable.column(3).search("[1-9][0-9]* Produk", true, false);
         } else if (usage === "unused") {
-            dataTable.column(4).search("0 Produk", true, false);
+            dataTable.column(3).search("0 Produk", true, false);
         } else {
-            dataTable.column(4).search("");
+            dataTable.column(3).search("");
         }
 
         dataTable.draw();
 
         // Active filter badge indicator
-        if (category || usage) {
+        if (usage) {
             $("#activeFilterBadge").removeClass("d-none");
         } else {
             $("#activeFilterBadge").addClass("d-none");

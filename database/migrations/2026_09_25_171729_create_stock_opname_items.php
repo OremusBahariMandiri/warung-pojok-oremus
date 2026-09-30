@@ -18,6 +18,7 @@ return new class extends Migration
             $table->integer("system_stock");
             $table->integer("physical_stock");
             $table->integer("difference");
+            $table->integer("stock_before_opname")->nullable();
             $table->timestamps();
         });
     }

@@ -316,14 +316,6 @@ function addDesktopItemRow() {
     const productsList = window.restockProductsList || [];
     const unitsList = window.restockUnitsList || [];
 
-    let unitOptionsHtml =
-        '<option value="" disabled selected>Pilih Satuan...</option>';
-    unitsList.forEach((u) => {
-        const uName = u.unit_name || u.short_name;
-        const uShort = u.short_name || u.unit_name;
-        unitOptionsHtml += `<option value="${u.id}">${uName} (${uShort})</option>`;
-    });
-
     let productOptionsHtml =
         '<option value="" disabled selected>Pilih Produk...</option>';
     productsList.forEach((p) => {
@@ -334,25 +326,27 @@ function addDesktopItemRow() {
         productOptionsHtml += `<option value="${p.id}" data-unit-id="${p.unit_id}" data-unit="${uName}" data-stock="${stock}" data-cost="${defaultCost}">${p.prod_name} (${code})</option>`;
     });
 
+    let unitOptionsHtml =
+        '<option value="" disabled selected>Pilih Satuan...</option>';
+    unitsList.forEach((u) => {
+        const uName = u.unit_name || u.short_name;
+        const uShort = u.short_name || u.unit_name;
+        unitOptionsHtml += `<option value="${u.id}">${uName} (${uShort})</option>`;
+    });
+
     const tr = document.createElement("tr");
     tr.className = "restock-item-row align-middle";
     tr.innerHTML = `
         <td class="row-number text-center text-muted fw-medium small"></td>
-        <td>
-            <select name="items[${restockRowIndex}][restock_unit_id]" class="form-select form-select-sm select2-restock-unit rounded-2" onchange="onUnitSelectChange(this)" required>
-                ${unitOptionsHtml}
-            </select>
-        </td>
         <td>
             <select name="items[${restockRowIndex}][product_id]" class="form-select form-select-sm select2-restock-product rounded-2" onchange="onProductSelectChange(this)" required>
                 ${productOptionsHtml}
             </select>
         </td>
         <td>
-            <div class="item-info-cell">
-                <div class="item-info-stock text-dark fw-medium small">Stok: <span class="item-stock-val">-</span></div>
-                <div class="item-info-hpp text-muted small">HPP: <span class="item-hpp-val">-</span></div>
-            </div>
+            <select name="items[${restockRowIndex}][restock_unit_id]" class="form-select form-select-sm select2-restock-unit rounded-2" onchange="onUnitSelectChange(this)" required>
+                ${unitOptionsHtml}
+            </select>
         </td>
         <td>
             <input type="number" name="items[${restockRowIndex}][quantity]" class="form-control form-control-sm font-monospace text-center rounded-2 item-qty" value="1" min="1" oninput="onItemQtyOrPriceChange(this)" required>
@@ -405,14 +399,6 @@ function addMobileItemCard() {
     const productsList = window.restockProductsList || [];
     const unitsList = window.restockUnitsList || [];
 
-    let unitOptionsHtml =
-        '<option value="" disabled selected>Pilih Satuan...</option>';
-    unitsList.forEach((u) => {
-        const uName = u.unit_name || u.short_name;
-        const uShort = u.short_name || u.unit_name;
-        unitOptionsHtml += `<option value="${u.id}">${uName} (${uShort})</option>`;
-    });
-
     let productOptionsHtml =
         '<option value="" disabled selected>Pilih Produk...</option>';
     productsList.forEach((p) => {
@@ -421,6 +407,14 @@ function addMobileItemCard() {
         const code = p.prod_code || "PRD-" + p.id;
         const stock = p.current_stock || 0;
         productOptionsHtml += `<option value="${p.id}" data-unit-id="${p.unit_id}" data-unit="${uName}" data-stock="${stock}" data-cost="${defaultCost}">${p.prod_name} (${code})</option>`;
+    });
+
+    let unitOptionsHtml =
+        '<option value="" disabled selected>Pilih Satuan...</option>';
+    unitsList.forEach((u) => {
+        const uName = u.unit_name || u.short_name;
+        const uShort = u.short_name || u.unit_name;
+        unitOptionsHtml += `<option value="${u.id}">${uName} (${uShort})</option>`;
     });
 
     const cardNum =
@@ -437,32 +431,27 @@ function addMobileItemCard() {
             </button>
         </div>
         <div class="mb-2">
-            <label class="form-label small fw-semibold text-dark mb-1">Satuan Beli</label>
-            <select name="items[${restockRowIndex}][restock_unit_id]" class="form-select form-select-sm select2-restock-unit rounded-2" onchange="onUnitSelectChange(this)" required>
-                ${unitOptionsHtml}
-            </select>
-        </div>
-        <div class="mb-2">
             <label class="form-label small fw-semibold text-dark mb-1">Nama Produk</label>
             <select name="items[${restockRowIndex}][product_id]" class="form-select form-select-sm select2-restock-product rounded-2" onchange="onMobileProductSelectChange(this)" required>
                 ${productOptionsHtml}
             </select>
         </div>
-        <div class="rounded-2 bg-light border px-3 py-2 mb-2 small mobile-info-bar">
-            <span class="text-muted">Stok: </span><span class="fw-semibold mobile-stock-val">-</span>
-            &nbsp;|&nbsp;
-            <span class="text-muted">HPP: </span><span class="fw-semibold mobile-hpp-val">-</span>
+        <div class="mb-2">
+            <label class="form-label small fw-semibold text-dark mb-1">Satuan Beli</label>
+            <select name="items[${restockRowIndex}][restock_unit_id]" class="form-select form-select-sm select2-restock-unit rounded-2" onchange="onUnitSelectChange(this)" required>
+                ${unitOptionsHtml}
+            </select>
         </div>
         <div class="row g-2 mb-2">
             <div class="col-5">
-                <label class="form-label small fw-semibold text-dark mb-1">Jumlah Masuk</label>
+                <label class="form-label small fw-semibold text-dark mb-1">Jumlah</label>
                 <input type="number" name="items[${restockRowIndex}][quantity]" class="form-control form-control-sm font-monospace text-center item-qty" value="1" min="1" oninput="onMobileItemChange(this)" required>
             </div>
             <div class="col-7">
-                <label class="form-label small fw-semibold text-dark mb-1">Harga Beli/Unit</label>
+                <label class="form-label small fw-semibold text-dark mb-1">Harga Satuan</label>
                 <div class="input-group input-group-sm">
                     <span class="input-group-text bg-light border-end-0">Rp</span>
-                    <input type="number" name="items[${restockRowIndex}][purchase_price]" class="form-control form-control-sm font-monospace text-end item-price" value="" min="0" placeholder="" oninput="onMobileItemChange(this)" required>
+                    <input type="number" name="items[${restockRowIndex}][purchase_price]" class="form-control form-control-sm font-monospace item-price" value="" min="0" placeholder="" oninput="onMobileItemChange(this)" required>
                 </div>
             </div>
         </div>
@@ -504,7 +493,7 @@ function removeRestockItemRow(btn) {
 
     const tbody = document.getElementById("restockItemRows");
     if (tbody && tbody.querySelectorAll(".restock-item-row").length === 0) {
-        tbody.innerHTML = `<tr id="emptyItemRow"><td colspan="8" class="text-center py-4 text-muted small">Belum ada produk yang ditambahkan. Klik tombol "+ Tambah" di atas untuk menambahkan item.</td></tr>`;
+        tbody.innerHTML = `<tr id="emptyItemRow"><td colspan="7" class="text-center py-4 text-muted small">Belum ada produk yang ditambahkan. Klik tombol "+ Tambah" di atas untuk menambahkan item.</td></tr>`;
     }
 
     updateRestockRowNumbers();
@@ -577,53 +566,19 @@ function resetRowInfo(row) {
 
 /**
  * Event Listener saat Satuan Beli Dipilih (desktop & mobile)
- * Memfilter opsi dropdown Produk agar HANYA menampilkan produk yang memiliki unit_id sesuai satuan yang dipilih.
  */
 function onUnitSelectChange(unitSelectEl) {
-    const row =
-        unitSelectEl.closest("tr") ||
-        unitSelectEl.closest(".restock-mobile-item-card");
-    if (!row) return;
-
-    const unitId = unitSelectEl.value;
-    const productSelect = row.querySelector(".select2-restock-product");
-    if (!productSelect) return;
-
-    const productsList = window.restockProductsList || [];
-
-    // Filter produk berdasarkan unit_id jika Satuan Beli dipilih
-    const filteredProducts = unitId
-        ? productsList.filter((p) => p.unit_id == unitId)
-        : productsList;
-
-    let productOptionsHtml =
-        '<option value="" disabled selected>Pilih Produk...</option>';
-    filteredProducts.forEach((p) => {
-        const uName = p.unit ? p.unit.short_name || p.unit.unit_name : "Pcs";
-        const defaultCost = Number(p.unit_price || p.current_hpp || 0);
-        const code = p.prod_code || "PRD-" + p.id;
-        const stock = p.current_stock || 0;
-        productOptionsHtml += `<option value="${p.id}" data-unit-id="${p.unit_id}" data-unit="${uName}" data-stock="${stock}" data-cost="${defaultCost}">${p.prod_name} (${code})</option>`;
-    });
-
-    const $prodSel = $(productSelect);
-    $prodSel.html(productOptionsHtml);
-    $prodSel.val(""); // Biarkan kosong/unselected secara default
-
-    // Reset cell info (stok & HPP)
-    resetRowInfo(row);
-
-    // Trigger update Select2
-    $prodSel.trigger("change.select2");
+    onItemQtyOrPriceChange(unitSelectEl);
 }
 
 /**
- * Auto-fill info stok/HPP saat produk dipilih (desktop)
- * Catatan: HARGA BELI sengaja TIDAK diisi otomatis agar diisi manual oleh user/admin.
+ * Filter opsi Satuan Beli saat produk dipilih (desktop & mobile)
+ * Catatan: Opsi satuan produk muncul tapi TIDAK langsung terisi otomatis.
  */
 function onProductSelectChange(selectEl) {
     const option = selectEl.options[selectEl.selectedIndex];
-    const row = selectEl.closest("tr");
+    const row =
+        selectEl.closest("tr") || selectEl.closest(".restock-mobile-item-card");
     if (!row) return;
 
     if (!option || !selectEl.value) {
@@ -632,14 +587,74 @@ function onProductSelectChange(selectEl) {
         return;
     }
 
-    const unitName = option.getAttribute("data-unit") || "Pcs";
-    const stock = option.getAttribute("data-stock") || "0";
-    const defaultCost = parseFloat(option.getAttribute("data-cost")) || 0;
+    const productId = selectEl.value;
+    const productsList = window.restockProductsList || [];
+    const selectedProd = productsList.find((p) => p.id == productId);
 
-    const stockValSpan = row.querySelector(".item-stock-val");
+    const unitId =
+        option.getAttribute("data-unit-id") ||
+        (selectedProd ? selectedProd.unit_id : null);
+    const unitName =
+        option.getAttribute("data-unit") ||
+        (selectedProd && selectedProd.unit
+            ? selectedProd.unit.short_name || selectedProd.unit.unit_name
+            : "Pcs");
+    const stock =
+        option.getAttribute("data-stock") ||
+        (selectedProd ? selectedProd.current_stock : "0");
+    const defaultCost =
+        parseFloat(option.getAttribute("data-cost")) ||
+        (selectedProd
+            ? Number(selectedProd.unit_price || selectedProd.current_hpp || 0)
+            : 0);
+
+    const unitSelect = row.querySelector(".select2-restock-unit");
+    if (unitSelect) {
+        const unitsList = window.restockUnitsList || [];
+        let availableUnits = [];
+
+        // Build units from product_hpps (same pattern as penjualan / reports.js)
+        if (selectedProd && Array.isArray(selectedProd.product_hpps) && selectedProd.product_hpps.length > 0) {
+            selectedProd.product_hpps.forEach((hpp) => {
+                const uId = parseInt(hpp.selling_unit_id, 10);
+                if (!uId) return;
+                // Try to get unit from the relation data first, then fall back to global unitsList
+                const hppUnit = hpp.selling_unit || hpp.sellingUnit;
+                const globalUnit = unitsList.find((u) => parseInt(u.id, 10) === uId);
+                const unit = globalUnit || hppUnit;
+                if (unit && !availableUnits.find((u) => parseInt(u.id, 10) === uId)) {
+                    availableUnits.push(unit);
+                }
+            });
+        }
+
+        // Fallback: if product has no product_hpps configured, show all units
+        if (availableUnits.length === 0) {
+            availableUnits = unitsList;
+        }
+
+        let unitOptionsHtml =
+            '<option value="" disabled selected>Pilih Satuan...</option>';
+        availableUnits.forEach((u) => {
+            const uName = u.unit_name || u.short_name;
+            const uShort = u.short_name || u.unit_name;
+            unitOptionsHtml += `<option value="${u.id}">${uName} (${uShort})</option>`;
+        });
+
+        const $uSel = $(unitSelect);
+        $uSel.html(unitOptionsHtml);
+        $uSel.val(""); // Leave unselected — user must choose manually
+        $uSel.trigger("change.select2");
+    }
+
+    const stockValSpan =
+        row.querySelector(".item-stock-val") ||
+        row.querySelector(".mobile-stock-val");
     if (stockValSpan) stockValSpan.textContent = stock + " " + unitName;
 
-    const hppValSpan = row.querySelector(".item-hpp-val");
+    const hppValSpan =
+        row.querySelector(".item-hpp-val") ||
+        row.querySelector(".mobile-hpp-val");
     if (hppValSpan)
         hppValSpan.textContent =
             "Rp " + Math.round(defaultCost).toLocaleString("id-ID");
@@ -647,34 +662,8 @@ function onProductSelectChange(selectEl) {
     onItemQtyOrPriceChange(selectEl);
 }
 
-/**
- * Auto-fill info stok/HPP saat produk dipilih (mobile)
- * Catatan: HARGA BELI sengaja TIDAK diisi otomatis agar diisi manual oleh user/admin.
- */
 function onMobileProductSelectChange(selectEl) {
-    const option = selectEl.options[selectEl.selectedIndex];
-    const card = selectEl.closest(".restock-mobile-item-card");
-    if (!card) return;
-
-    if (!option || !selectEl.value) {
-        resetRowInfo(card);
-        calculateRestockTotals();
-        return;
-    }
-
-    const unitName = option.getAttribute("data-unit") || "Pcs";
-    const stock = option.getAttribute("data-stock") || "0";
-    const defaultCost = parseFloat(option.getAttribute("data-cost")) || 0;
-
-    const stockVal = card.querySelector(".mobile-stock-val");
-    if (stockVal) stockVal.textContent = stock + " " + unitName;
-
-    const hppVal = card.querySelector(".mobile-hpp-val");
-    if (hppVal)
-        hppVal.textContent =
-            "Rp " + Math.round(defaultCost).toLocaleString("id-ID");
-
-    onMobileItemChange(selectEl);
+    onProductSelectChange(selectEl);
 }
 
 /**
