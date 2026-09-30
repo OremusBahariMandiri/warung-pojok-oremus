@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('hpp', function (Blueprint $table) {
             $table->id();
             $table->string("name", 120);
-            $table->string("unit", 80);
+            $table->string("unit", 80)->nullable();
             $table->decimal("unit_cost", 15, 3);
             $table->timestamps();
         });

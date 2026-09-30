@@ -151,7 +151,7 @@ function addSellingConfigCard(configData = null) {
             </div>
 
             <!-- Harga Jual Produk -->
-            <div class="col-md-6">
+            <div class="col-md-6 selling-price-top ${hppMethod === "CALCULATED" ? "d-none" : ""}">
                 <label class="form-label small fw-semibold text-dark">Harga Jual Produk (Rp) <span class="text-danger">*</span></label>
                 <div class="input-group">
                     <span class="input-group-text bg-light border-end-0">Rp</span>
@@ -175,6 +175,14 @@ function addSellingConfigCard(configData = null) {
                     <div class="mt-2 pt-2 border-top text-muted small" style="font-size: 0.78rem;">
                         Estimasi Laba per Satuan: <span class="fw-bold text-dark font-monospace display-profit-amount">Rp 0</span>
                     </div>
+                </div>
+            </div>
+            <!-- Harga Jual - posisi BAWAH (full width, untuk CALCULATED) -->
+            <div class="col-12 selling-price-bottom ${hppMethod === "CALCULATED" ? "" : "d-none"}">
+                <label class="form-label small fw-semibold text-dark">Harga Jual Produk (Rp) <span class="text-danger">*</span></label>
+                <div class="input-group">
+                    <span class="input-group-text bg-light border-end-0">Rp</span>
+                    <input type="number" name="selling_configs[${cardIdx}][selling_price]" class="form-control font-monospace fw-bold text-dark selling-price-input" value="${sellingPrice}" min="0" oninput="calculateCardTotalHpp(this.closest('.selling-config-card'))" ${hppMethod === "CALCULATED" ? "required" : ""}>
                 </div>
             </div>
         </div>
@@ -272,6 +280,35 @@ function onCardHppMethodChange(selectEl) {
         if (currentHppInput) {
             currentHppInput.value =
                 unitPriceVal > 0 ? Math.round(unitPriceVal) : 0;
+        }
+    }
+
+    const sellingPriceTop = card.querySelector(".selling-price-top");
+    const sellingPriceBottom = card.querySelector(".selling-price-bottom");
+
+    if (method === "CALCULATED") {
+        if (sellingPriceTop) {
+            sellingPriceTop.classList.add("d-none");
+            sellingPriceTop.querySelector("input").removeAttribute("required");
+        }
+        if (sellingPriceBottom) {
+            sellingPriceBottom.classList.remove("d-none");
+            sellingPriceBottom
+                .querySelector("input")
+                .setAttribute("required", "required");
+        }
+    } else {
+        if (sellingPriceTop) {
+            sellingPriceTop.classList.remove("d-none");
+            sellingPriceTop
+                .querySelector("input")
+                .setAttribute("required", "required");
+        }
+        if (sellingPriceBottom) {
+            sellingPriceBottom.classList.add("d-none");
+            sellingPriceBottom
+                .querySelector("input")
+                .removeAttribute("required");
         }
     }
 

@@ -3,7 +3,7 @@
 namespace App\Services;
 
 use App\Models\Hpp;
-use App\Models\Products;
+// use App\Models\Products;
 use Illuminate\Support\Facades\DB;
 
 class HppService
@@ -32,7 +32,7 @@ class HppService
         return DB::transaction(function () use ($data) {
             $hpp = Hpp::create([
                 'name' => $data['name'],
-                'unit' => $data['unit'],
+                // 'unit' => $data['unit'],
                 'unit_cost' => $data['unit_cost'],
             ]);
 
@@ -60,7 +60,7 @@ class HppService
 
             $hpp->update([
                 'name' => $data['name'] ?? $hpp->name,
-                'unit' => $data['unit'] ?? $hpp->unit,
+                // 'unit' => $data['unit'] ?? $hpp->unit,
                 'unit_cost' => $data['unit_cost'] ?? $hpp->unit_cost,
             ]);
 

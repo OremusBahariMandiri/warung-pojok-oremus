@@ -59,6 +59,7 @@
                 </div>
 
                 <div class="row g-3 mb-4">
+                    @php if(false): /* SATUAN PEMAKAIAN — dinonaktifkan sementara */ @endphp
                     <div class="col-md-6">
                         <label for="unit" class="form-label small fw-semibold text-dark">Satuan Pemakaian <span class="text-danger">*</span></label>
 
@@ -121,11 +122,14 @@
                             <div class="invalid-feedback d-block">{{ $message }}</div>
                         @enderror
                     </div>
-                    <div class="col-md-6">
+                    @php endif; @endphp
+                    <div class="col-md-12">
+
+
                         <label for="unit_cost" class="form-label small fw-semibold text-dark">Biaya Standar Bawaan (Rp) <span class="text-danger">*</span></label>
                         <div class="input-group">
                             <span class="input-group-text bg-light border-end-0 rounded-start-2">Rp</span>
-                            <input type="number" class="form-control font-monospace fw-semibold text-end rounded-end-2 @error('unit_cost') is-invalid @enderror" 
+                            <input type="number" class="form-control font-monospace fw-semibold rounded-end-2 @error('unit_cost') is-invalid @enderror" 
                                 id="unit_cost" name="unit_cost" value="{{ old('unit_cost') }}" min="0">
                             @error('unit_cost')
                                 <div class="invalid-feedback">{{ $message }}</div>

@@ -98,7 +98,7 @@
             <tr>
                 <th style="width:50px;" class="text-center">No</th>
                 <th>Nama Komponen HPP</th>
-                <th style="width:140px;">Satuan Pemakaian</th>
+                <th style="width:140px;" class="d-none">Satuan Pemakaian</th>
                 <th class="text-end" style="width:180px;">Biaya Standar (Unit Cost)</th>
                 <th class="text-center" style="width:140px;">Produk Terkait</th>
                 <th class="text-center" style="width:140px;">Tanggal Dibuat</th>
@@ -118,7 +118,7 @@
                         {{ $item->name }}
                     </td>
 
-                    <td data-label="Satuan">
+                    <td data-label="Satuan" class="d-none">
                         <div class="text-center">
                             {{ strtoupper($item->unit) }}
                         </div>
@@ -212,7 +212,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body modal-body-minimal d-flex flex-column gap-3">
-                <div>
+                <div class="d-none">
                     <label for="modalFilterUnit" class="form-label small fw-semibold text-muted mb-1">Satuan Pemakaian</label>
                     <select id="modalFilterUnit" class="form-select form-select-sm rounded-2">
                         <option value="">Semua Satuan</option>
