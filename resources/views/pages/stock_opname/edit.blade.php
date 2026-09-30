@@ -102,8 +102,8 @@
             </div>
         </div>
 
-        <!-- Section 2: Pemeriksaan Fisik Barang (Table Repeater) -->
-        <div class="col-lg-12">
+        <!-- Section 2 + Action Buttons: digabung dalam satu card -->
+        <div class="col-lg-12 mt-4">
             <div class="card-box bg-white border rounded-3 p-4">
                 <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3 pb-2 border-bottom">
                     <div>
@@ -117,7 +117,8 @@
                     </button>
                 </div>
 
-                <div class="table-responsive opname-table-responsive">
+                {{-- ── DESKTOP TABLE (hidden on mobile) ── --}}
+                <div class="table-responsive opname-table-responsive d-none d-md-block">
                     <table class="table table-bordered align-middle mb-0" id="opnameItemsTable">
                         <thead>
                             <tr>
@@ -219,24 +220,153 @@
                         </tbody>
                     </table>
                 </div>
-            </div>
-        </div>
 
-        <!-- Section 4: Action Buttons Flow -->
-        <div class="col-lg-12">
-            <div class="card-box bg-white border rounded-3 p-3 d-flex flex-wrap align-items-center justify-content-between gap-2">
-                <a href="{{ route('stock-opname.index') }}" class="btn btn-outline-secondary rounded-2 px-4">
-                    Batal
-                </a>
-
-                <div class="d-flex flex-wrap align-items-center gap-2">
-                    <button type="button" class="btn btn-outline-secondary rounded-2 px-4 d-inline-flex align-items-center gap-2" id="btnSaveDraft">
-                        Simpan Perubahan Draft
-                    </button>
-                    <button type="button" class="btn btn-success rounded-2 px-4 d-inline-flex align-items-center gap-2" id="btnOpenConfirmModal">
-                        Simpan
-                    </button>
+                {{-- ── MOBILE CARD VIEW (hidden on desktop) ── --}}
+                <div class="d-block d-md-none" id="opnameMobileCards">
+                    {{-- JS syncMobileCards() akan mengisi ini secara dinamis --}}
+                    {{-- Fallback server-side render untuk first paint --}}
+                    @if (!empty($existingItems) && count($existingItems) > 0)
+                        @foreach ($existingItems as $idx => $item)
+                            @php
+                                $productId = is_array($item) ? ($item['product_id'] ?? null) : $item->product_id;
+                                $physStock = (int)(is_array($item) ? ($item['physical_stock'] ?? 0) : $item->physical_stock);
+                                $selectedProd = $productsList->firstWhere('id', $productId);
+                                $sysStock = $selectedProd ? (int)($selectedProd->current_stock ?? 0) : null;
+                                $diff = $sysStock !== null ? ($physStock - $sysStock) : null;
+                            @endphp
+                            <div class="opname-item-card" data-row-idx="{{ $idx }}">
+                                <div class="card-header-row">
+                                    <span class="card-num-badge">{{ $loop->iteration }}</span>
+                                    <div class="flex-grow-1 min-w-0">
+                                        <div class="fw-semibold text-dark small mobile-product-name">
+                                            @if ($selectedProd)
+                                                {{ $selectedProd->prod_code }} - {{ $selectedProd->prod_name }}
+                                            @else
+                                                <span class="text-muted">-- Belum dipilih --</span>
+                                            @endif
+                                        </div>
+                                        <div class="text-muted" style="font-size:0.75rem;">Satuan: <span class="mobile-unit-val">{{ $selectedProd->unit->unit_name ?? '-' }}</span></div>
+                                    </div>
+                                    <button type="button" class="btn-delete-row ms-2" title="Hapus"><i class="bi bi-trash3"></i></button>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="mobile-field-label">Produk <span class="text-danger">*</span></label>
+                                    <select class="form-select form-select-sm mobile-product-select" data-row-idx="{{ $idx }}">
+                                        <option value="">-- Pilih Produk --</option>
+                                        @foreach ($productsList as $prod)
+                                            <option value="{{ $prod->id }}"
+                                                data-unit="{{ $prod->unit->unit_name ?? '-' }}"
+                                                data-stock="{{ $prod->current_stock }}"
+                                                {{ $productId == $prod->id ? 'selected' : '' }}>
+                                                {{ $prod->prod_code }} - {{ $prod->prod_name }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="row g-2">
+                                    <div class="col-6">
+                                        <label class="mobile-field-label">Stok Sistem</label>
+                                        <div class="fw-bold mobile-sys-stock-val">{{ $sysStock !== null ? $sysStock : '-' }}</div>
+                                    </div>
+                                    <div class="col-6">
+                                        <label class="mobile-field-label">Stok Fisik <span class="text-danger">*</span></label>
+                                        <input type="number" class="form-control form-control-sm text-center fw-bold mobile-phys-input"
+                                            data-row-idx="{{ $idx }}" value="{{ $physStock }}" min="0">
+                                    </div>
+                                </div>
+                                <div class="mt-2">
+                                    <label class="mobile-field-label">Selisih</label>
+                                    <div class="mobile-diff-val">
+                                        @if ($diff !== null)
+                                            @if ($diff === 0)
+                                                <span class="diff-badge zero"><i class="bi bi-check-circle-fill"></i> 0 (Sesuai)</span>
+                                            @elseif ($diff > 0)
+                                                <span class="diff-badge surplus"><i class="bi bi-arrow-up-circle-fill"></i> +{{ $diff }} (Lebih)</span>
+                                            @else
+                                                <span class="diff-badge deficit"><i class="bi bi-arrow-down-circle-fill"></i> {{ $diff }} (Kurang)</span>
+                                            @endif
+                                        @else
+                                            -
+                                        @endif
+                                    </div>
+                                </div>
+                            </div>
+                        @endforeach
+                    @else
+                        <div class="opname-item-card" data-row-idx="0">
+                            <div class="card-header-row">
+                                <span class="card-num-badge">1</span>
+                                <div class="flex-grow-1 min-w-0">
+                                    <div class="fw-semibold text-dark small mobile-product-name">
+                                        <span class="text-muted">-- Belum dipilih --</span>
+                                    </div>
+                                    <div class="text-muted" style="font-size:0.75rem;">Satuan: <span class="mobile-unit-val">-</span></div>
+                                </div>
+                                <button type="button" class="btn-delete-row ms-2" title="Hapus"><i class="bi bi-trash3"></i></button>
+                            </div>
+                            <div class="mb-3">
+                                <label class="mobile-field-label">Produk <span class="text-danger">*</span></label>
+                                <select class="form-select form-select-sm mobile-product-select" data-row-idx="0">
+                                    <option value="">-- Pilih Produk --</option>
+                                    @foreach ($productsList as $prod)
+                                        <option value="{{ $prod->id }}"
+                                            data-unit="{{ $prod->unit->unit_name ?? '-' }}"
+                                            data-stock="{{ $prod->current_stock }}">
+                                            {{ $prod->prod_code }} - {{ $prod->prod_name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="row g-2">
+                                <div class="col-6">
+                                    <label class="mobile-field-label">Stok Sistem</label>
+                                    <div class="fw-bold mobile-sys-stock-val">-</div>
+                                </div>
+                                <div class="col-6">
+                                    <label class="mobile-field-label">Stok Fisik <span class="text-danger">*</span></label>
+                                    <input type="number" class="form-control form-control-sm text-center fw-bold mobile-phys-input"
+                                        data-row-idx="0" value="0" min="0">
+                                </div>
+                            </div>
+                            <div class="mt-2">
+                                <label class="mobile-field-label">Selisih</label>
+                                <div class="mobile-diff-val">-</div>
+                            </div>
+                        </div>
+                    @endif
                 </div>
+
+                {{-- ── ACTION BUTTONS ── --}}
+                {{-- DESKTOP: Batal kiri, Draft + Simpan kanan --}}
+                <div class="d-none d-md-flex align-items-center justify-content-between gap-2 mt-4 pt-3">
+                    <a href="{{ route('stock-opname.index') }}" class="btn btn-light border rounded-2 px-4">
+                        Batal
+                    </a>
+                    <div class="d-flex align-items-center gap-2">
+                        <button type="button" class="btn btn-outline-secondary rounded-2 px-4 d-inline-flex align-items-center gap-2" id="btnSaveDraft">
+                            Simpan Perubahan Draft
+                        </button>
+                        <button type="button" class="btn btn-success rounded-2 px-4 d-inline-flex align-items-center gap-2" id="btnOpenConfirmModal">
+                            Simpan
+                        </button>
+                    </div>
+                </div>
+
+                {{-- MOBILE: Draft & Simpan sejajar (between), Batal full-width di bawah --}}
+                <div class="d-flex d-md-none flex-column gap-2 mt-4 pt-3 border-top">
+                    <div class="d-flex justify-content-between gap-2">
+                        <button type="button" class="btn btn-outline-secondary rounded-2 flex-fill d-inline-flex align-items-center justify-content-center gap-2" id="btnSaveDraftMobile">
+                            Simpan Draft
+                        </button>
+                        <button type="button" class="btn btn-success rounded-2 flex-fill d-inline-flex align-items-center justify-content-center gap-2" id="btnOpenConfirmModalMobile">
+                            Simpan
+                        </button>
+                    </div>
+                    <a href="{{ route('stock-opname.index') }}" class="btn btn-light border rounded-2 w-100 text-center">
+                        Batal
+                    </a>
+                </div>
+
             </div>
         </div>
     </div>
@@ -260,7 +390,7 @@
                     <div class="fw-bold mb-1"><i class="bi bi-info-circle me-1"></i> Perhatian:</div>
                     <ul class="mb-0 ps-3">
                         <li>Stok master produk akan <strong>langsung disinkronkan</strong> dengan angka Stok Fisik.</li>
-                        <li>Status transaksi akan menjadi <span class="badge bg-success">COMPLETED</span> dan tidak dapat diedit kembali.</li>
+                        <li>Status transaksi akan menjadi <span class="badge bg-success">SELESAI</span> dan tidak dapat diedit kembali.</li>
                     </ul>
                 </div>
                 <div class="p-3 bg-light rounded-2 small text-secondary">
@@ -276,7 +406,7 @@
             </div>
             <div class="modal-footer border-top py-2">
                 <button type="button" class="btn btn-outline-secondary rounded-2 px-3" data-bs-dismiss="modal">Batal</button>
-                <button type="button" class="btn btn-primary rounded-2 px-4" id="btnConfirmCompleteSubmit">
+                <button type="button" class="btn btn-success rounded-2 px-4" id="btnConfirmCompleteSubmit">
                     <i class="bi bi-check2-all me-1"></i> Ya, Selesaikan & Sinkron Stok
                 </button>
             </div>

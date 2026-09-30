@@ -132,7 +132,7 @@
                                             </select>
                                         </td>
                                         <td class="text-center unit-cell text-muted small fw-semibold">{{ $selectedProd->unit->unit_name ?? '-' }}</td>
-                                        <td class="text-center system-stock-cell fw-bold">{{ $selectedProd->current_stock ?? 0 }}</td>
+                                        <td class="text-center system-stock-cell fw-bold">{{ $selectedProd->initial_stock ?? 0 }}</td>
                                         <td>
                                             <input type="number" name="items[{{ $idx }}][physical_stock]"
                                                 class="form-control form-control-sm text-center fw-bold physical-stock-input"
@@ -248,7 +248,7 @@
             </div>
             <div class="modal-footer border-top py-2">
                 <button type="button" class="btn btn-outline-secondary rounded-2 px-3" data-bs-dismiss="modal">Batal</button>
-                <button type="button" class="btn btn-primary rounded-2 px-4" id="btnConfirmCompleteSubmit">
+                <button type="button" class="btn btn-success rounded-2 px-4" id="btnConfirmCompleteSubmit">
                     <i class="bi bi-check2-all me-1"></i> Ya, Selesaikan & Sinkron Stok
                 </button>
             </div>

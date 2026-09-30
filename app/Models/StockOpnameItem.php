@@ -19,16 +19,18 @@ class StockOpnameItem extends Model
         'system_stock',
         'physical_stock',
         'difference',
+        'stock_before_opname',
     ];
 
     protected function casts(): array
     {
         return [
-            'opname_id'      => 'integer',
-            'product_id'     => 'integer',
-            'system_stock'   => 'integer',
-            'physical_stock' => 'integer',
-            'difference'     => 'integer',
+            'opname_id'           => 'integer',
+            'product_id'          => 'integer',
+            'system_stock'        => 'integer',
+            'physical_stock'      => 'integer',
+            'difference'          => 'integer',
+            'stock_before_opname' => 'integer',
         ];
     }
 

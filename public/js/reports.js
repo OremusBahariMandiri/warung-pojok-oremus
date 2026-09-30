@@ -23,6 +23,19 @@ function formatRupiah(val) {
 /* ════════════════════════════════════════════════════════════
    BUILD HELPERS
    ════════════════════════════════════════════════════════════ */
+function _buildProductOptions(selectedProdId = null) {
+    let html = '<option value="" disabled selected>Pilih Produk...</option>';
+    if (Array.isArray(window.reportProductsList)) {
+        window.reportProductsList.forEach((p) => {
+            const sku = p.prod_code || "PRD-" + p.id;
+            const sel =
+                selectedProdId && selectedProdId == p.id ? "selected" : "";
+            html += `<option value="${p.id}" ${sel}>${p.prod_name} (${sku})</option>`;
+        });
+    }
+    return html;
+}
+
 function _buildUnitOptions(selectedUnitId = null) {
     let html = '<option value="" disabled selected>Pilih Satuan...</option>';
     if (Array.isArray(window.reportUnitsList)) {
@@ -52,7 +65,7 @@ function _syncPairContainer(sourceContainer) {
         ? document.querySelector(`.report-item-card[data-card-idx="${idx}"]`)
         : document
               .querySelector(
-                  `#reportItemRows tr .selling-unit-select[name="items[${idx}][selling_unit_id]"]`,
+                  `#reportItemRows tr .product-select[name="items[${idx}][product_id]"]`,
               )
               ?.closest("tr");
 
@@ -76,21 +89,21 @@ function _syncPairContainer(sourceContainer) {
     }
 
     // Sync selects
-    const sUnitSource = sourceContainer.querySelector(".selling-unit-select");
-    const sUnitTarget = targetContainer.querySelector(".selling-unit-select");
-    if (sUnitSource && sUnitTarget && sUnitTarget.value !== sUnitSource.value) {
-        sUnitTarget.value = sUnitSource.value;
-    }
-
     const prodSource = sourceContainer.querySelector(".product-select");
     const prodTarget = targetContainer.querySelector(".product-select");
-    if (prodSource && prodTarget) {
-        if (prodTarget.innerHTML !== prodSource.innerHTML) {
-            prodTarget.innerHTML = prodSource.innerHTML;
-            prodTarget.disabled = prodSource.disabled;
+    if (prodSource && prodTarget && prodTarget.value !== prodSource.value) {
+        prodTarget.value = prodSource.value;
+    }
+
+    const sUnitSource = sourceContainer.querySelector(".selling-unit-select");
+    const sUnitTarget = targetContainer.querySelector(".selling-unit-select");
+    if (sUnitSource && sUnitTarget) {
+        if (sUnitTarget.innerHTML !== sUnitSource.innerHTML) {
+            sUnitTarget.innerHTML = sUnitSource.innerHTML;
+            sUnitTarget.disabled = sUnitSource.disabled;
         }
-        if (prodTarget.value !== prodSource.value) {
-            prodTarget.value = prodSource.value;
+        if (sUnitTarget.value !== sUnitSource.value) {
+            sUnitTarget.value = sUnitSource.value;
         }
     }
 
@@ -149,43 +162,179 @@ function _syncPairContainer(sourceContainer) {
 }
 
 /* ════════════════════════════════════════════════════════════
-   EVENT HANDLERS FOR SELLING UNIT & PRODUCT SELECTION
+   EVENT HANDLERS FOR PRODUCT & SELLING UNIT SELECTION
    ════════════════════════════════════════════════════════════ */
-function onSellingUnitChange(selectEl) {
-    const unitId = parseInt(selectEl.value, 10);
+function _updateItemCalculations(container) {
+    if (!container) return;
+
+    const prodSelect = container.querySelector(".product-select");
+    const unitSelect = container.querySelector(".selling-unit-select");
+
+    const productId = prodSelect ? parseInt(prodSelect.value, 10) : null;
+    const unitId = unitSelect ? parseInt(unitSelect.value, 10) : null;
+
+    if (!productId) {
+        _resetContainerData(container);
+        _syncPairContainer(container);
+        recalculateReportTotals();
+        return;
+    }
+
+    const product = window.reportProductsList.find(
+        (p) => parseInt(p.id, 10) === productId,
+    );
+    if (!product) return;
+
+    const currentStock = parseInt(
+        product.current_stock !== undefined && product.current_stock !== null
+            ? product.current_stock
+            : 0,
+        10,
+    );
+
+    let purchasePrice = 0;
+    if (
+        product.purchase_prices_by_unit &&
+        unitId &&
+        product.purchase_prices_by_unit[unitId] !== undefined
+    ) {
+        purchasePrice = parseFloat(product.purchase_prices_by_unit[unitId]);
+    } else if (
+        product.latest_purchase_price !== undefined &&
+        product.latest_purchase_price !== null
+    ) {
+        purchasePrice = parseFloat(product.latest_purchase_price);
+    } else {
+        purchasePrice = parseFloat(product.unit_price || 0);
+    }
+
+    let sellingPrice = parseFloat(product.unit_price || 0);
+    let currentHpp = parseFloat(product.unit_price || 0);
+    let hppMethod = product.hpp_method || "MANUAL";
+
+    if (unitId && Array.isArray(product.product_hpps)) {
+        const hppConfig = product.product_hpps.find(
+            (h) => parseInt(h.selling_unit_id, 10) === unitId,
+        );
+        if (hppConfig) {
+            sellingPrice = parseFloat(hppConfig.selling_price || 0);
+            currentHpp = parseFloat(hppConfig.current_hpp || 0);
+            hppMethod = hppConfig.hpp_method || "MANUAL";
+        }
+    }
+
+    let unitName = "Unit";
+    if (unitId && Array.isArray(window.reportUnitsList)) {
+        const foundUnit = window.reportUnitsList.find(
+            (u) => parseInt(u.id, 10) === unitId,
+        );
+        if (foundUnit) {
+            unitName = foundUnit.short_name || foundUnit.unit_name;
+        }
+    }
+    if (unitName === "Unit" && product.unit) {
+        unitName = product.unit.short_name || product.unit.unit_name;
+    }
+
+    container.dataset.currentStock = currentStock;
+    container.dataset.sellingPrice = sellingPrice;
+    container.dataset.hpp = currentHpp;
+    container.dataset.purchasePrice = purchasePrice;
+
+    const stockEl = container.querySelector(".item-stock-val");
+    if (stockEl) stockEl.textContent = `${currentStock} ${unitName}`;
+
+    const hppMethodEl = container.querySelector(".item-hpp-method-val");
+    if (hppMethodEl) hppMethodEl.textContent = hppMethod;
+
+    const pPriceEl = container.querySelector(".item-purchase-price-display");
+    if (pPriceEl) {
+        if (pPriceEl.tagName === "INPUT") {
+            pPriceEl.value = formatRupiah(purchasePrice);
+        } else {
+            pPriceEl.textContent = formatRupiah(purchasePrice);
+        }
+    }
+
+    const sPriceEl = container.querySelector(".item-selling-price-display");
+    if (sPriceEl) sPriceEl.textContent = formatRupiah(sellingPrice);
+    const sPriceInput = container.querySelector(".item-selling-price");
+    if (sPriceInput) sPriceInput.value = sellingPrice;
+
+    const hppEl = container.querySelector(".item-hpp-display");
+    if (hppEl) hppEl.textContent = formatRupiah(currentHpp);
+    const hppInput = container.querySelector(".item-hpp-price");
+    if (hppInput) hppInput.value = currentHpp;
+
+    const qtyInput = container.querySelector(".item-qty");
+    const qtyRaw = qtyInput ? qtyInput.value.trim() : "";
+    const qty = qtyRaw !== "" ? parseInt(qtyRaw, 10) || 0 : 0;
+
+    const stockFinalInput = container.querySelector(".item-stock-final");
+    if (stockFinalInput) {
+        stockFinalInput.value = currentStock - qty;
+    }
+
+    const totalSales = qty * sellingPrice;
+    const totalHpp = qty * currentHpp;
+    const margin = totalSales - totalHpp;
+
+    const salesEl = container.querySelector(".item-total-sales-display");
+    if (salesEl) salesEl.textContent = formatRupiah(totalSales);
+
+    const totalHppEl = container.querySelector(".item-total-hpp-display");
+    if (totalHppEl) totalHppEl.textContent = formatRupiah(totalHpp);
+
+    const marginEl = container.querySelector(".item-margin-display");
+    if (marginEl) {
+        marginEl.textContent = formatRupiah(margin);
+        marginEl.classList.toggle("text-danger", margin < 0);
+        marginEl.classList.toggle("text-success", margin >= 0);
+    }
+
+    _syncPairContainer(container);
+    recalculateReportTotals();
+}
+
+function onProductSelectChange(selectEl) {
+    const productId = parseInt(selectEl.value, 10);
     const container =
         selectEl.closest("tr") || selectEl.closest(".report-item-card");
     if (!container) return;
 
-    const prodSelect = container.querySelector(".product-select");
-    if (!prodSelect) return;
-
-    // Filter products that have product_hpps configured with this selling_unit_id
-    let filteredProds = [];
-    if (Array.isArray(window.reportProductsList)) {
-        filteredProds = window.reportProductsList.filter((p) => {
-            if (!p.product_hpps || !Array.isArray(p.product_hpps)) return false;
-            return p.product_hpps.some(
-                (hpp) => parseInt(hpp.selling_unit_id, 10) === unitId,
-            );
-        });
+    const unitSelect = container.querySelector(".selling-unit-select");
+    if (unitSelect && productId) {
+        const product = window.reportProductsList.find(
+            (p) => parseInt(p.id, 10) === productId,
+        );
+        if (product && product.product_hpps && Array.isArray(product.product_hpps) && product.product_hpps.length > 0) {
+            const currentUnitId = parseInt(unitSelect.value, 10) || null;
+            let unitOpts = '<option value="" disabled selected>Pilih Satuan...</option>';
+            product.product_hpps.forEach((hpp) => {
+                const unit = hpp.selling_unit || hpp.sellingUnit;
+                const uId = parseInt(hpp.selling_unit_id, 10);
+                if (uId) {
+                    let uName = unit ? (unit.unit_name || unit.short_name) : null;
+                    let uShort = unit ? (unit.short_name || unit.unit_name) : null;
+                    if (!uName && Array.isArray(window.reportUnitsList)) {
+                        const globalUnit = window.reportUnitsList.find(u => parseInt(u.id, 10) === uId);
+                        if (globalUnit) {
+                            uName = globalUnit.unit_name;
+                            uShort = globalUnit.short_name || globalUnit.unit_name;
+                        }
+                    }
+                    uName = uName || `Satuan #${uId}`;
+                    uShort = uShort || uName;
+                    const sel = currentUnitId === uId ? "selected" : "";
+                    unitOpts += `<option value="${uId}" ${sel}>${uName} (${uShort})</option>`;
+                }
+            });
+            unitSelect.innerHTML = unitOpts;
+            if (currentUnitId) unitSelect.value = currentUnitId;
+        }
     }
 
-    let prodOpts =
-        '<option value="" disabled selected>Pilih Produk...</option>';
-    filteredProds.forEach((p) => {
-        const sku = p.prod_code || "PRD-" + p.id;
-        prodOpts += `<option value="${p.id}">${p.prod_name} (${sku})</option>`;
-    });
-
-    prodSelect.innerHTML = prodOpts;
-    prodSelect.value = "";
-    prodSelect.disabled = false;
-
-    // Reset row data & fields
-    _resetContainerData(container);
-    _syncPairContainer(container);
-    recalculateReportTotals();
+    _updateItemCalculations(container);
 }
 
 function _resetContainerData(container) {
@@ -236,103 +385,12 @@ function _resetContainerData(container) {
     }
 }
 
-function onProductSelectChange(selectEl) {
-    const productId = parseInt(selectEl.value, 10);
+function onSellingUnitChange(selectEl) {
     const container =
         selectEl.closest("tr") || selectEl.closest(".report-item-card");
     if (!container) return;
 
-    const unitSelect = container.querySelector(".selling-unit-select");
-    const unitId = unitSelect ? parseInt(unitSelect.value, 10) : null;
-
-    if (!productId || !unitId) return;
-
-    const product = window.reportProductsList.find(
-        (p) => parseInt(p.id, 10) === productId,
-    );
-    if (!product) return;
-
-    const hppConfig = Array.isArray(product.product_hpps)
-        ? product.product_hpps.find(
-              (h) => parseInt(h.selling_unit_id, 10) === unitId,
-          )
-        : null;
-
-    const sellingPrice = hppConfig
-        ? parseFloat(hppConfig.selling_price || 0)
-        : 0;
-    const currentHpp = hppConfig ? parseFloat(hppConfig.current_hpp || 0) : 0;
-    const hppMethod = hppConfig
-        ? hppConfig.hpp_method || "MANUAL"
-        : product.hpp_method || "MANUAL";
-
-    let purchasePrice = 0;
-    if (
-        product.purchase_prices_by_unit &&
-        unitId &&
-        product.purchase_prices_by_unit[unitId] !== undefined
-    ) {
-        purchasePrice = parseFloat(product.purchase_prices_by_unit[unitId]);
-    } else if (
-        product.latest_purchase_price !== undefined &&
-        product.latest_purchase_price !== null
-    ) {
-        purchasePrice = parseFloat(product.latest_purchase_price);
-    } else {
-        purchasePrice = parseFloat(product.unit_price || 0);
-    }
-
-    const currentStock = parseInt(
-        product.current_stock !== undefined && product.current_stock !== null
-            ? product.current_stock
-            : 0,
-        10,
-    );
-    const unitName = product.unit
-        ? product.unit.short_name || product.unit.unit_name
-        : "Unit";
-
-    container.dataset.currentStock = currentStock;
-    container.dataset.sellingPrice = sellingPrice;
-    container.dataset.hpp = currentHpp;
-    container.dataset.purchasePrice = purchasePrice;
-
-    const stockEl = container.querySelector(".item-stock-val");
-    if (stockEl) stockEl.textContent = `${currentStock} ${unitName}`;
-
-    const hppMethodEl = container.querySelector(".item-hpp-method-val");
-    if (hppMethodEl) hppMethodEl.textContent = hppMethod;
-
-    const pPriceEl = container.querySelector(".item-purchase-price-display");
-    if (pPriceEl) {
-        if (pPriceEl.tagName === "INPUT") {
-            pPriceEl.value = formatRupiah(purchasePrice);
-        } else {
-            pPriceEl.textContent = formatRupiah(purchasePrice);
-        }
-    }
-
-    const sPriceEl = container.querySelector(".item-selling-price-display");
-    if (sPriceEl) sPriceEl.textContent = formatRupiah(sellingPrice);
-    const sPriceInput = container.querySelector(".item-selling-price");
-    if (sPriceInput) sPriceInput.value = sellingPrice;
-
-    const hppEl = container.querySelector(".item-hpp-display");
-    if (hppEl) hppEl.textContent = formatRupiah(currentHpp);
-    const hppInput = container.querySelector(".item-hpp-price");
-    if (hppInput) hppInput.value = currentHpp;
-
-    const qtyInput = container.querySelector(".item-qty");
-    const qtyRaw = qtyInput ? qtyInput.value.trim() : "";
-    const qty = qtyRaw !== "" ? parseInt(qtyRaw, 10) || 0 : 0;
-
-    const stockFinalInput = container.querySelector(".item-stock-final");
-    if (stockFinalInput) {
-        stockFinalInput.value = currentStock - qty;
-    }
-
-    _syncPairContainer(container);
-    onItemQtyOrStockFinalChange(selectEl);
+    _updateItemCalculations(container);
 }
 
 function onItemQtyOrStockFinalChange(inputEl) {
@@ -341,48 +399,7 @@ function onItemQtyOrStockFinalChange(inputEl) {
         inputEl.closest("tr") || inputEl.closest(".report-item-card");
     if (!container) return;
 
-    const qtyInput = container.querySelector(".item-qty");
-    const qtyRaw = qtyInput ? qtyInput.value.trim() : "";
-    const qty = qtyRaw !== "" ? parseInt(qtyRaw, 10) || 0 : 0;
-
-    const rawStock = container.dataset.currentStock;
-    const currentStock =
-        rawStock !== undefined && rawStock !== ""
-            ? parseInt(rawStock, 10)
-            : null;
-
-    // Otomatis hitung Stok Akhir = currentStock - qty
-    const stockFinalInput = container.querySelector(".item-stock-final");
-    if (stockFinalInput) {
-        if (currentStock !== null) {
-            stockFinalInput.value = currentStock - qty;
-        } else {
-            stockFinalInput.value = "";
-        }
-    }
-
-    const sellingPrice = parseFloat(container.dataset.sellingPrice || 0);
-    const hpp = parseFloat(container.dataset.hpp || 0);
-
-    const totalSales = qty * sellingPrice;
-    const totalHpp = qty * hpp;
-    const margin = totalSales - totalHpp;
-
-    const salesEl = container.querySelector(".item-total-sales-display");
-    if (salesEl) salesEl.textContent = formatRupiah(totalSales);
-
-    const totalHppEl = container.querySelector(".item-total-hpp-display");
-    if (totalHppEl) totalHppEl.textContent = formatRupiah(totalHpp);
-
-    const marginEl = container.querySelector(".item-margin-display");
-    if (marginEl) {
-        marginEl.textContent = formatRupiah(margin);
-        marginEl.classList.toggle("text-danger", margin < 0);
-        marginEl.classList.toggle("text-success", margin >= 0);
-    }
-
-    _syncPairContainer(container);
-    recalculateReportTotals();
+    _updateItemCalculations(container);
 }
 
 /* ════════════════════════════════════════════════════════════
@@ -452,7 +469,7 @@ function updateRowNumbers() {
    ════════════════════════════════════════════════════════════ */
 function addReportItemRow() {
     const idx = reportItemIndex++;
-    const unitOpts = _buildUnitOptions();
+    const prodOpts = _buildProductOptions();
 
     // Desktop Table Row
     const tbody = document.getElementById("reportItemRows");
@@ -462,14 +479,14 @@ function addReportItemRow() {
         tr.className = "report-item-row align-middle";
         tr.innerHTML = `
             <td class="row-number text-center text-muted fw-medium small col-no"></td>
-            <td class="col-unit">
-                <select name="items[${idx}][selling_unit_id]" class="form-select form-select-sm selling-unit-select rounded-2" onchange="onSellingUnitChange(this)" required>
-                    ${unitOpts}
+            <td class="col-product">
+                <select name="items[${idx}][product_id]" class="form-select form-select-sm product-select rounded-2" onchange="onProductSelectChange(this)" required>
+                    ${prodOpts}
                 </select>
             </td>
-            <td class="col-product">
-                <select name="items[${idx}][product_id]" class="form-select form-select-sm product-select rounded-2" onchange="onProductSelectChange(this)" required disabled>
-                    <option value="" disabled selected>Pilih Satuan Dulu...</option>
+            <td class="col-unit">
+                <select name="items[${idx}][selling_unit_id]" class="form-select form-select-sm selling-unit-select rounded-2" onchange="onSellingUnitChange(this)" required>
+                    <option value="" disabled selected>Pilih Satuan...</option>
                 </select>
             </td>
             <td class="col-info text-start small">
@@ -522,15 +539,15 @@ function addReportItemRow() {
                 <div class="ric-num-badge ric-row-number-mobile">-</div>
                 <div class="ric-product-wrap">
                     <div class="mb-2">
-                        <label class="form-label small fw-semibold text-dark mb-1">Satuan Jual</label>
-                        <select name="items[${idx}][selling_unit_id]" class="form-select form-select-sm selling-unit-select rounded-2" onchange="onSellingUnitChange(this)" required>
-                            ${unitOpts}
+                        <label class="form-label small fw-semibold text-dark mb-1">Nama Produk</label>
+                        <select name="items[${idx}][product_id]" class="form-select form-select-sm product-select rounded-2" onchange="onProductSelectChange(this)" required>
+                            ${prodOpts}
                         </select>
                     </div>
                     <div class="mb-2">
-                        <label class="form-label small fw-semibold text-dark mb-1">Nama Produk</label>
-                        <select name="items[${idx}][product_id]" class="form-select form-select-sm product-select rounded-2" onchange="onProductSelectChange(this)" required disabled>
-                            <option value="" disabled selected>Pilih Satuan Dulu...</option>
+                        <label class="form-label small fw-semibold text-dark mb-1">Satuan Jual</label>
+                        <select name="items[${idx}][selling_unit_id]" class="form-select form-select-sm selling-unit-select rounded-2" onchange="onSellingUnitChange(this)" required>
+                            <option value="" disabled selected>Pilih Satuan...</option>
                         </select>
                     </div>
                 </div>
@@ -681,8 +698,16 @@ document.addEventListener("DOMContentLoaded", function () {
             addReportItemRow();
         } else {
             existing.forEach((r) => {
+                const pSel = r.querySelector(".product-select");
                 const uSel = r.querySelector(".selling-unit-select");
-                if (uSel && uSel.value) onSellingUnitChange(uSel);
+                if (pSel && pSel.value) {
+                    const currentUnitVal = uSel ? uSel.value : null;
+                    onProductSelectChange(pSel);
+                    if (uSel && currentUnitVal) {
+                        uSel.value = currentUnitVal;
+                        onSellingUnitChange(uSel);
+                    }
+                }
             });
             updateRowNumbers();
             recalculateReportTotals();

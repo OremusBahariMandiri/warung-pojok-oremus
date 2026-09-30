@@ -63,7 +63,7 @@
         <!-- Left: Search Box -->
         <div class="position-relative units-search-box">
             <i class="bi bi-search position-absolute top-50 start-0 translate-middle-y ms-3 text-muted"></i>
-            <input type="text" id="dtSearchInput" class="form-control form-control-sm ps-5 pe-3 rounded-2" placeholder="Cari nama satuan, singkatan, kategori...">
+            <input type="text" id="dtSearchInput" class="form-control form-control-sm ps-5 pe-3 rounded-2" placeholder="Cari nama satuan, singkatan...">
         </div>
 
         <!-- Right: Action & Filter Buttons -->
@@ -87,7 +87,6 @@
                 <th style="width: 50px;" class="text-center">No</th>
                 <th>Nama Satuan</th>
                 <th style="width: 120px;">Singkatan</th>
-                <th>Kategori</th>
                 <th class="text-center" style="width: 160px;">Produk Terkait</th>
                 <th class="text-center" style="width: 150px;">Tanggal Dibuat</th>
                 <th class="text-center no-sort" style="width: 130px;">Aksi</th>
@@ -113,11 +112,6 @@
                         <div class="text-center">
                             {{ $item->short_name }}
                         </div>
-                    </td>
-
-                    {{-- Kategori / Tipe --}}
-                    <td data-label="Kategori" class="text-center">
-                        <span class="text-secondary">{{ $item->type ?: '-' }}</span>
                     </td>
 
                     {{-- Produk Terkait --}}
@@ -204,16 +198,6 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body modal-body-minimal d-flex flex-column gap-3">
-                <div>
-                    <label for="modalFilterCategory" class="form-label small fw-semibold text-muted mb-1">Kategori</label>
-                    <select id="modalFilterCategory" class="form-select form-select-sm rounded-2">
-                        <option value="">Semua Kategori</option>
-                        @foreach ($list->pluck('type')->unique()->filter() as $cat)
-                            <option value="{{ $cat }}">{{ $cat }}</option>
-                        @endforeach
-                    </select>
-                </div>
-
                 <div>
                     <label for="modalFilterUsage" class="form-label small fw-semibold text-muted mb-1">Status Penggunaan</label>
                     <select id="modalFilterUsage" class="form-select form-select-sm rounded-2">

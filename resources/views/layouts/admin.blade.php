@@ -101,12 +101,13 @@
                     </div>
                 </li>
 
-                <!-- ── 3. INVENTORI ── -->
+                <!-- ── 3. TRANSAKSI ── -->
                 @php
-                    $isInventoryActive = request()->routeIs('restock.*') || request()->routeIs('stock-opname.*') || request()->routeIs('stock_opname.*');
+                    // Transaksi aktif jika membuka restock atau reports (penjualan)
+                    $isInventoryActive = request()->routeIs('restock.*') || (request()->routeIs('reports.*') && !request()->routeIs('reports.summary'));
                 @endphp
                 <li class="nav-item nav-category">
-                    <span class="nav-text">Inventori</span>
+                    <span class="nav-text">Transaksi</span>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link nav-toggle {{ $isInventoryActive ? 'active' : 'collapsed' }}" 
@@ -115,8 +116,8 @@
                        role="button" 
                        aria-expanded="{{ $isInventoryActive ? 'true' : 'false' }}" 
                        aria-controls="menuInventory">
-                        <i class="bi bi-box-seam menu-icon"></i>
-                        <span class="nav-text">Inventori</span>
+                        <i class="bi bi-cash-stack menu-icon"></i>
+                        <span class="nav-text">Transaksi</span>
                         <i class="bi bi-chevron-down submenu-arrow"></i>
                     </a>
                     <div class="collapse {{ $isInventoryActive ? 'show' : '' }}" id="menuInventory">
@@ -124,13 +125,13 @@
                             <li class="submenu-item">
                                 <a href="{{ Route::has('restock.index') ? route('restock.index') : '#' }}" class="submenu-link {{ request()->routeIs('restock.*') ? 'active' : '' }}">
                                     <span class="submenu-dot"></span>
-                                    <span>Restock Barang</span>
+                                    <span>Pembelian</span>
                                 </a>
                             </li>
                             <li class="submenu-item">
-                                <a href="{{ Route::has('stock-opname.index') ? route('stock-opname.index') : '#' }}" class="submenu-link {{ (request()->routeIs('stock-opname.*') || request()->routeIs('stock_opname.*')) ? 'active' : '' }}">
+                                <a href="{{ Route::has('reports.index') ? route('reports.index') : '#' }}" class="submenu-link {{ (request()->routeIs('reports.index') || (request()->routeIs('reports.*') && !request()->routeIs('reports.summary'))) ? 'active' : '' }}">
                                     <span class="submenu-dot"></span>
-                                    <span>Stock Opname</span>
+                                    <span>Penjualan</span>
                                 </a>
                             </li>
                         </ul>
@@ -139,7 +140,8 @@
 
                 <!-- ── 4. LAPORAN ── -->
                 @php
-                    $isReportsActive = request()->routeIs('reports.*');
+                    // Laporan aktif jika membuka reports.summary atau stock-opname
+                    $isReportsActive = request()->routeIs('reports.summary') || request()->routeIs('stock-opname.*') || request()->routeIs('stock_opname.*');
                 @endphp
                 <li class="nav-item nav-category">
                     <span class="nav-text">Laporan</span>
@@ -164,9 +166,9 @@
                                 </a>
                             </li>
                             <li class="submenu-item">
-                                <a href="{{ Route::has('reports.index') ? route('reports.index') : '#' }}" class="submenu-link {{ (request()->routeIs('reports.index') || (request()->routeIs('reports.*') && !request()->routeIs('reports.summary'))) ? 'active' : '' }}">
+                                <a href="{{ Route::has('stock-opname.index') ? route('stock-opname.index') : '#' }}" class="submenu-link {{ (request()->routeIs('stock-opname.*') || request()->routeIs('stock_opname.*')) ? 'active' : '' }}">
                                     <span class="submenu-dot"></span>
-                                    <span>Laporan Penjualan</span>
+                                    <span>Stock Opname</span>
                                 </a>
                             </li>
                         </ul>

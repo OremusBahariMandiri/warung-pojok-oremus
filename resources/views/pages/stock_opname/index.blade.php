@@ -159,8 +159,8 @@
                                 <button type="button" class="btn btn-sm btn-outline-danger rounded-2 py-1 px-2"
                                     data-bs-toggle="modal"
                                     data-bs-target="#deleteOpnameModal{{ $opname->id }}"
-                                    title="Hapus Transaksi">
-                                    <i class="bi bi-trash3"></i>
+                                    title="Rollback / Hapus Transaksi">
+                                    <i class="bi bi-arrow-counterclockwise"></i>
                                 </button>
                             </div>
                         </td>
@@ -236,7 +236,7 @@
                     <button type="button" class="btn btn-sm btn-outline-danger rounded-2 flex-fill"
                         data-bs-toggle="modal"
                         data-bs-target="#deleteOpnameModal{{ $opname->id }}">
-                        <i class="bi bi-trash3 me-1"></i> Hapus
+                        <i class="bi bi-arrow-counterclockwise me-1"></i> Rollback
                     </button>
                 </div>
             </div>
@@ -265,15 +265,15 @@
         <div class="modal-content rounded-3 border-0 shadow">
             <div class="modal-header border-bottom py-3">
                 <h6 class="modal-title fw-bold text-dark d-flex align-items-center gap-2">
-                    <i class="bi bi-exclamation-triangle-fill text-danger fs-5"></i> Konfirmasi Hapus Opname
+                    <i class="bi bi-arrow-counterclockwise text-danger fs-5"></i> Konfirmasi Rollback Opname
                 </h6>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body text-start py-4">
                 <p class="text-secondary mb-2">
-                    Apakah Anda yakin ingin menghapus catatan Stock Opname <strong>{{ $opname->opname_code }}</strong>?
+                    Apakah Anda yakin ingin melakukan rollback / menghapus catatan Stock Opname <strong>{{ $opname->opname_code }}</strong>?
                 </p>
-                <p class="text-muted small mb-0">Tindakan ini tidak dapat dibatalkan.</p>
+                <p class="text-muted small mb-0">Stok produk saat ini akan dikembalikan ke kondisi sebelum opname dilakukan.</p>
             </div>
             <div class="modal-footer border-top py-2">
                 <button type="button" class="btn btn-outline-secondary rounded-2 px-3" data-bs-dismiss="modal">Batal</button>
@@ -281,7 +281,7 @@
                     @csrf
                     @method('DELETE')
                     <button type="submit" class="btn btn-danger rounded-2 px-4">
-                        <i class="bi bi-trash3 me-1"></i> Ya, Hapus
+                        <i class="bi bi-arrow-counterclockwise me-1"></i> Ya, Rollback
                     </button>
                 </form>
             </div>
