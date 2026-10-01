@@ -154,7 +154,7 @@
                        aria-expanded="{{ $isReportsActive ? 'true' : 'false' }}" 
                        aria-controls="menuReports">
                         <i class="bi bi-bar-chart-line menu-icon"></i>
-                        <span class="nav-text">Laporan & Analitik</span>
+                        <span class="nav-text">Laporan</span>
                         <i class="bi bi-chevron-down submenu-arrow"></i>
                     </a>
                     <div class="collapse {{ $isReportsActive ? 'show' : '' }}" id="menuReports">
@@ -162,13 +162,13 @@
                             <li class="submenu-item">
                                 <a href="{{ Route::has('reports.summary') ? route('reports.summary') : '#' }}" class="submenu-link {{ request()->routeIs('reports.summary') ? 'active' : '' }}">
                                     <span class="submenu-dot"></span>
-                                    <span>Ringkasan & Margin</span>
+                                    <span>Ringkasan Penjualan</span>
                                 </a>
                             </li>
                             <li class="submenu-item">
                                 <a href="{{ Route::has('stock-opname.index') ? route('stock-opname.index') : '#' }}" class="submenu-link {{ (request()->routeIs('stock-opname.*') || request()->routeIs('stock_opname.*')) ? 'active' : '' }}">
                                     <span class="submenu-dot"></span>
-                                    <span>Stock Opname</span>
+                                    <span>Stok Opname</span>
                                 </a>
                             </li>
                         </ul>
@@ -199,7 +199,7 @@
                                 <a href="{{ Route::has('users.show') ? route('users.show', auth()->id()) : '#' }}" 
                                 class="submenu-link {{ request()->routeIs('users.show') && request()->route('user')?->id == auth()->id() ? 'active' : '' }}">
                                     <span class="submenu-dot"></span>
-                                    <span>Profile</span>
+                                    <span>Profil</span>
                                 </a>
                             </li>
                             <li class="submenu-item">

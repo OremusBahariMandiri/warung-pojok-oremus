@@ -57,6 +57,17 @@
 </div>
 @endif
 
+@if (session('today_report_exists'))
+<div class="alert alert-warning alert-dismissible fade show d-flex align-items-center gap-2 py-2 px-3 mb-3 rounded-3 border-0 shadow-sm" role="alert">
+    <i class="bi bi-calendar-check-fill fs-5"></i>
+    <div class="fw-medium fs-sm">
+        Laporan penjualan hari ini sudah dibuat. Satu hari hanya bisa satu laporan.
+        Untuk menambah item penjualan, gunakan tombol <strong>Edit ✏️</strong> pada laporan hari ini.
+    </div>
+    <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
+</div>
+@endif
+
 {{-- ═══════════════════════════════════════════════════════════════
      DESKTOP LAYOUT (>= 768px) — DataTables Table
      Pola sama dengan hpp, products, restock:
@@ -81,9 +92,11 @@
                     <span class="visually-hidden">Filter Aktif</span>
                 </span>
             </button>
-            <a href="{{ route('reports.create') }}" class="btn btn-sm btn-success rounded-2 text-white fw-semibold d-inline-flex align-items-center gap-2 px-3">
-                <i class="bi bi-plus-lg"></i> Tambah
-            </a>
+            @if (!($todayReport ?? false))
+                <a href="{{ route('reports.create') }}" class="btn btn-sm btn-success rounded-2 text-white fw-semibold d-inline-flex align-items-center gap-2 px-3">
+                    <i class="bi bi-plus-lg"></i> Tambah
+                </a>
+            @endif
         </div>
     </div>
 
@@ -130,11 +143,9 @@
                             <a href="{{ route('reports.show', $r->id) }}" class="btn btn-sm btn-info text-white px-2 py-1 rounded-2 shadow-none" title="Detail" style="background-color:#0ea5e9;border-color:#0ea5e9;">
                                 <i class="bi bi-eye"></i>
                             </a>
-                            <button type="button" class="btn btn-sm btn-danger text-white px-2 py-1 rounded-2 shadow-none" title="Hapus Laporan"
-                                onclick="openDeleteModal({{ $r->id }}, '{{ $formattedDate }}', {{ (int)($r->total_quantity ?? 0) }}, {{ $totalSales }})"
-                                style="background-color:#ef4444;border-color:#ef4444;">
-                                <i class="bi bi-trash"></i>
-                            </button>
+                            <a href="{{ route('reports.edit', $r->id) }}" class="btn btn-sm btn-warning text-white px-2 py-1 rounded-2 shadow-none" title="Edit Laporan" style="background-color:#f59e0b;border-color:#f59e0b;">
+                                <i class="bi bi-pencil"></i>
+                            </a>
                         </div>
                     </td>
                 </tr>
@@ -164,9 +175,11 @@
                         <span class="visually-hidden">Filter Aktif</span>
                     </span>
                 </button>
-                <a href="{{ route('reports.create') }}" class="btn btn-sm btn-success rounded-2 text-white fw-semibold d-inline-flex align-items-center justify-content-center gap-1 px-3">
-                    <i class="bi bi-plus-lg"></i> Tambah
-                </a>
+                @if (!($todayReport ?? false))
+                    <a href="{{ route('reports.create') }}" class="btn btn-sm btn-success rounded-2 text-white fw-semibold d-inline-flex align-items-center justify-content-center gap-1 px-3">
+                        <i class="bi bi-plus-lg"></i> Tambah
+                    </a>
+                @endif
             </div>
         </div>
 
@@ -220,10 +233,9 @@
                         <a href="{{ route('reports.show', $r->id) }}" class="btn btn-sm btn-outline-secondary rounded-2 flex-grow-1">
                             <i class="bi bi-eye me-1"></i> Detail
                         </a>
-                        <button type="button" class="btn btn-sm btn-outline-danger rounded-2 px-3"
-                            onclick="openDeleteModal({{ $r->id }}, '{{ $formattedDate }}', {{ (int)($r->total_quantity ?? 0) }}, {{ $totalSales }})">
-                            <i class="bi bi-trash"></i>
-                        </button>
+                        <a href="{{ route('reports.edit', $r->id) }}" class="btn btn-sm btn-warning text-white rounded-2 px-3">
+                            <i class="bi bi-pencil"></i>
+                        </a>
                     </div>
                 </div>
             @empty
@@ -269,37 +281,36 @@
     </div>
 </div>
 
-<!-- Modal Konfirmasi Hapus -->
-<div class="modal fade" id="modalDeleteReport" tabindex="-1" aria-labelledby="modalDeleteReportLabel" aria-hidden="true">
+<!-- Modal Peringatan Laporan Hari Ini Sudah Ada -->
+<div class="modal fade" id="modalTodayReportAlert" tabindex="-1" aria-labelledby="modalTodayReportAlertLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content rounded-3 border-0 shadow">
             <div class="modal-header border-bottom py-3">
-                <h6 class="modal-title fw-bold text-danger" id="modalDeleteReportLabel">
-                    <i class="bi bi-exclamation-triangle-fill me-1"></i> Batalkan & Hapus Laporan
+                <h6 class="modal-title fw-bold text-warning d-flex align-items-center gap-2" id="modalTodayReportAlertLabel">
+                    <i class="bi bi-calendar-check-fill fs-5"></i> Laporan Hari Ini Sudah Dibuat
                 </h6>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body p-4">
-                <p class="text-dark mb-2">
-                    Apakah Anda yakin ingin menghapus laporan penjualan tanggal <strong id="deleteReportDate" class="text-dark"></strong>?
+            <div class="modal-body py-4">
+                <p class="text-secondary mb-3">
+                    Satu hari hanya bisa <strong>satu laporan penjualan</strong>.
+                    Laporan penjualan hari ini sudah dibuat.
                 </p>
-                <div class="alert alert-warning py-2 px-3 small rounded-2 mb-3">
-                    <i class="bi bi-info-circle-fill me-1"></i>
-                    <strong>Perhatian:</strong> Menghapus laporan ini akan secara otomatis <strong>mengembalikan stok</strong> seluruh produk yang terjual (<span id="deleteReportQty" class="fw-bold"></span>) ke saldo persediaan inventori.
-                </div>
-                <div class="bg-light p-2 rounded-2 border text-muted small">
-                    Total Nilai Penjualan: <span id="deleteReportSales" class="fw-bold text-dark font-monospace"></span>
+                <div class="alert alert-info border-info border-opacity-25 rounded-2 p-3 mb-0 small">
+                    <div class="fw-bold mb-1"><i class="bi bi-lightbulb me-1"></i> Informasi:</div>
+                    <ul class="mb-0 ps-3">
+                        <li>Untuk menambah item penjualan hari ini, gunakan tombol <strong>Edit ✏️</strong> pada baris laporan hari ini.</li>
+                        <li>Untuk membuat laporan baru, tunggu hingga hari berikutnya.</li>
+                    </ul>
                 </div>
             </div>
-            <div class="modal-footer border-top py-2 px-4 d-flex justify-content-between">
-                <button type="button" class="btn btn-sm btn-light border rounded-2 px-3" data-bs-dismiss="modal">Batal</button>
-                <form id="deleteReportForm" action="" method="POST" class="d-inline">
-                    @csrf
-                    @method('DELETE')
-                    <button type="submit" class="btn btn-sm btn-danger text-white fw-bold rounded-2 px-3">
-                        <i class="bi bi-trash-fill"></i> Ya, Hapus & Rollback Stok
-                    </button>
-                </form>
+            <div class="modal-footer border-top py-2">
+                <button type="button" class="btn btn-sm btn-secondary rounded-2 px-4" data-bs-dismiss="modal">Tutup</button>
+                @if ($todayReport ?? false)
+                <a href="{{ route('reports.edit', $todayReport->id) }}" class="btn btn-sm btn-warning text-white rounded-2 px-4">
+                    <i class="bi bi-pencil me-1"></i> Edit Laporan Hari Ini
+                </a>
+                @endif
             </div>
         </div>
     </div>

@@ -1,4 +1,4 @@
-@extends('layouts.admin')
+﻿@extends('layouts.admin')
 
 @section('title', 'Detail Restock — Warung Pojok Oremus')
 
@@ -20,7 +20,33 @@
 
 @php
     $restockObj = $detailedRestock;
-    $itemsList = $restockObj->items ?? collect();
+    $itemsList  = $restockObj->items ?? collect();
+
+    /**
+     * Helper: ambil harga beli per item dengan banyak fallback nama kolom.
+     * Menyesuaikan kemungkinan nama field di RestockItem model.
+     */
+    function resolveItemPrice($item): float {
+        $product = $item->product;
+        return (float)(
+            $item->price_used       ??
+            $item->unit_price       ??
+            $item->purchase_price   ??
+            $item->price_per_unit   ??
+            $item->cost             ??
+            $item->price            ??
+            ($product?->unit_price  ?? 0)
+        );
+    }
+
+    function resolveItemSubtotal($item, float $price): float {
+        return (float)(
+            $item->subtotal         ??
+            $item->total_price      ??
+            $item->line_total       ??
+            ($item->quantity * $price)
+        );
+    }
 @endphp
 
 <!-- Header Title di atas Card -->
@@ -57,17 +83,14 @@
                     <div class="text-muted small">Kode Restock</div>
                     <div class="fw-semibold font-monospace text-dark fs-6">{{ $restockObj->restock_code }}</div>
                 </div>
-                <div>
-                    <div class="text-muted small">Nomor Invoice</div>
-                    <div class="fw-semibold font-monospace text-dark">{{ $restockObj->invoice_number }}</div>
-                </div>
+                {{-- Nomor Invoice disembunyikan --}}
                 <div>
                     <div class="text-muted small">Status Transaksi</div>
                     <div>
                         @if ($restockObj->status_restock === 'DRAFT')
                             <span class="badge bg-warning text-dark px-2 py-1">DRAFT</span>
                         @else
-                            <span class="badge bg-success text-white px-2 py-1">CONFIRMED</span>
+                            <span class="badge bg-success text-white px-2 py-1">SELESAI</span>
                         @endif
                     </div>
                 </div>
@@ -94,18 +117,10 @@
                     </div>
                 </div>
                 <div class="pt-2 border-top">
-                    <div class="d-flex justify-content-between small text-muted mb-1">
-                        <span>Subtotal:</span>
-                        <span class="font-monospace text-dark">Rp {{ number_format($restockObj->subtotal ?? 0, 0, ',', '.') }}</span>
-                    </div>
-                    <div class="d-flex justify-content-between small text-muted mb-1">
-                        <span>Diskon / Potongan:</span>
-                        <span class="font-monospace text-danger">- Rp {{ number_format($restockObj->discount ?? 0, 0, ',', '.') }}</span>
-                    </div>
-                    <div class="d-flex justify-content-between fw-bold pt-1 border-top">
-                        <span class="text-dark">Grand Total:</span>
+                    <div class="d-flex justify-content-between fw-bold">
+                        <span class="text-dark">Total Price:</span>
                         <span class="font-monospace text-success fs-6">
-                            Rp {{ number_format($restockObj->grand_total ?? 0, 0, ',', '.') }}
+                            Rp {{ number_format($itemsList->sum('total_price'), 0, ',', '.') }}
                         </span>
                     </div>
                 </div>
@@ -146,10 +161,13 @@
                     <tbody>
                         @forelse ($itemsList as $item)
                             @php
-                                $product   = $item->product;
-                                $unitName  = $product && $product->unit ? ($product->unit->short_name ?: $product->unit->unit_name) : 'Pcs';
-                                $priceUsed = (float)($item->price_used ?? ($product ? $product->current_hpp : 0));
-                                $subtotal  = (float)($item->subtotal ?? ($item->quantity * $priceUsed));
+                                $product    = $item->product;
+                                $unitName   = $product && $product->unit
+                                                ? ($product->unit->short_name ?: $product->unit->unit_name)
+                                                : 'Pcs';
+                                $priceUsed  = resolveItemPrice($item);
+                                $subtotal   = resolveItemSubtotal($item, $priceUsed);
+                                $isAuto     = $product && strtolower($product->hpp_method ?? '') === 'calculated';
                             @endphp
                             <tr>
                                 <td class="text-center text-muted fw-medium">{{ $loop->iteration }}</td>
@@ -158,7 +176,7 @@
                                 </td>
                                 <td class="text-center">{{ strtoupper($unitName) }}</td>
                                 <td class="text-center">
-                                    {{ ($product && $product->hpp_method === 'calculated') ? 'Otomatis' : 'Manual' }}
+                                    {{ $isAuto ? 'Otomatis' : 'Manual' }}
                                 </td>
                                 <td class="text-center fw-bold text-dark font-monospace">+{{ $item->quantity }}</td>
                                 <td class="text-end font-monospace text-dark">Rp {{ number_format($priceUsed, 0, ',', '.') }}</td>
@@ -174,11 +192,16 @@
                     </tbody>
                     <tfoot class="table-light fw-bold">
                         <tr>
-                            <td colspan="4" class="text-end">Grand Total:</td>
-                            <td class="text-center font-monospace">{{ (int)($restockObj->total_quantity ?? 0) }} Unit</td>
+                            <td colspan="4" class="text-end">Total Keseluruhan:</td>
+                            <td class="text-center font-monospace">{{ (int)($itemsList->sum('quantity')) }} Unit</td>
                             <td></td>
                             <td class="text-end font-monospace text-dark">
-                                Rp {{ number_format($restockObj->total_value ?? 0, 0, ',', '.') }}
+                                @php
+                                    $calculatedTotal = $itemsList->sum(fn($item) =>
+                                        resolveItemSubtotal($item, resolveItemPrice($item))
+                                    );
+                                @endphp
+                                Rp {{ number_format($calculatedTotal, 0, ',', '.') }}
                             </td>
                         </tr>
                     </tfoot>
@@ -189,11 +212,13 @@
             <div class="d-block d-md-none rdm-wrap">
                 @forelse ($itemsList as $item)
                     @php
-                        $product   = $item->product;
-                        $unitName  = $product && $product->unit ? ($product->unit->short_name ?: $product->unit->unit_name) : 'Pcs';
-                        $priceUsed = (float)($item->price_used ?? ($product ? $product->current_hpp : 0));
-                        $subtotal  = (float)($item->subtotal ?? ($item->quantity * $priceUsed));
-                        $isAuto    = $product && $product->hpp_method === 'calculated';
+                        $product    = $item->product;
+                        $unitName   = $product && $product->unit
+                                        ? ($product->unit->short_name ?: $product->unit->unit_name)
+                                        : 'Pcs';
+                        $priceUsed  = resolveItemPrice($item);
+                        $subtotal   = resolveItemSubtotal($item, $priceUsed);
+                        $isAuto     = $product && strtolower($product->hpp_method ?? '') === 'calculated';
                     @endphp
                     <div class="rdm-card {{ !$loop->last ? 'rdm-card-border' : '' }}">
                         {{-- Header: no + product name --}}
@@ -244,11 +269,13 @@
                 <div class="rdm-grand-total">
                     <div class="rdm-gt-row">
                         <span class="rdm-gt-label">Total Unit Masuk</span>
-                        <span class="rdm-gt-val font-monospace">{{ (int)($restockObj->total_quantity ?? 0) }} Unit</span>
+                        <span class="rdm-gt-val font-monospace">{{ (int)($itemsList->sum('quantity')) }} Unit</span>
                     </div>
                     <div class="rdm-gt-row">
                         <span class="rdm-gt-label">Grand Total Nilai</span>
-                        <span class="rdm-gt-val rdm-gt-money font-monospace">Rp {{ number_format($restockObj->total_value ?? 0, 0, ',', '.') }}</span>
+                        <span class="rdm-gt-val rdm-gt-money font-monospace">
+                            Rp {{ number_format($restockObj->grand_total ?? $restockObj->subtotal ?? 0, 0, ',', '.') }}
+                        </span>
                     </div>
                 </div>
                 @endif

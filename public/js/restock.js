@@ -26,9 +26,26 @@ $(function () {
 
     // ── CREATE / EDIT PAGE ───────────────────────────────
     initSelect2Products();
+    refreshProductOptions();
 
     if ($("#restockItemsTable").length || $("#restockMobileItemCards").length) {
         calculateRestockTotals();
+
+        const isCreatePage =
+            document.querySelectorAll("#restockItemRows .restock-item-row")
+                .length === 0 &&
+            document.querySelectorAll(
+                "#restockMobileItemCards .restock-mobile-item-card",
+            ).length === 0;
+
+        if (isCreatePage) {
+            addRestockItemRow();
+        }
+    }
+
+    // ── EDIT PAGE: countdown rollback (jika ada deadline dari Blade) ──
+    if (window.rollbackDeadline) {
+        initRollbackCountdown(window.rollbackDeadline);
     }
 });
 
@@ -42,42 +59,29 @@ let restockRowIndex =
    INDEX — DATATABLES
 ═══════════════════════════════════════════════════════════ */
 
+/*
+ * Struktur kolom (10 kolom, index 0–9):
+ *  0 = No            → no-sort, responsivePriority 2
+ *  1 = Kode Restock
+ *  2 = Tanggal       → default sort desc
+ *  3 = Supplier      → filter kolom (column(3))
+ *  4 = Status
+ *  5 = Total Item
+ *  6 = Harga Beli    (purchase_price)
+ *  7 = Total Price   (total_price)   → className:'none' → child row
+ *  8 = Dibuat Oleh                   → className:'none' → child row
+ *  9 = Aksi          → no-sort, responsivePriority 1
+ */
+
 var restockDT = null;
 
 function initRestockDataTable() {
-    /*
-     * Struktur kolom (8 kolom visible):
-     *  0 = No          → no-sort
-     *  1 = No. Invoice
-     *  2 = Kode Restock
-     *  3 = Tanggal     → default sort desc
-     *  4 = Supplier    → filter kolom
-     *  5 = Status
-     *  6 = Total Item
-     *  7 = Aksi        → no-sort
-     *
-     * Grand Total & Petugas → responsive child row (expand/collapse ▶)
-     * Data diambil dari data-grand-total & data-petugas pada <tr>.
-     */
-    /*
-     * Struktur kolom (10 kolom total):
-     *  0 = No            → no-sort
-     *  1 = No. Invoice
-     *  2 = Kode Restock
-     *  3 = Tanggal       → default sort desc
-     *  4 = Supplier      → applyColumnFilters column(4)
-     *  5 = Status
-     *  6 = Total Item
-     *  7 = Grand Total   → className:'none' → selalu di child row
-     *  8 = Petugas       → className:'none' → selalu di child row
-     *  9 = Aksi          → no-sort
-     */
     restockDT = $("#restockDataTable").DataTable({
         dom: "t<'row mt-2 align-items-center'<'col-sm-5'i><'col-sm-7 d-flex justify-content-end'p>>",
         pageLength: 25,
         responsive: true,
         autoWidth: false,
-        order: [[3, "desc"]],
+        order: [[2, "desc"]], // sort by Tanggal desc
         language: {
             info: "Showing _START_ to _END_ of _TOTAL_ entries",
             infoFiltered: "(difilter dari _MAX_ total)",
@@ -95,9 +99,13 @@ function initRestockDataTable() {
             paginate: { first: "«", last: "»", next: "›", previous: "‹" },
         },
         columnDefs: [
+            // No & Aksi: tidak bisa di-sort
             { targets: [0, 9], orderable: false },
+            // Total Price & Dibuat Oleh: masuk child row (responsive collapse)
             { targets: [7, 8], className: "none" },
+            // Aksi: prioritas tampil tertinggi (selalu visible)
             { targets: 9, responsivePriority: 1 },
+            // No: prioritas kedua
             { targets: 0, responsivePriority: 2 },
         ],
     });
@@ -138,9 +146,10 @@ function applyColumnFilters() {
     var startDate = $("#modalFilterStartDate").val() || "";
     var endDate = $("#modalFilterEndDate").val() || "";
 
-    restockDT.column(4).search(supplier);
+    // Kolom 3 = Supplier
+    restockDT.column(3).search(supplier);
 
-    // Range filter tanggal via custom search
+    // Range filter tanggal via custom search (pakai data-date di <tr>)
     $.fn.dataTable.ext.search.push(function (settings, data, dataIndex) {
         if (settings.nTable.id !== "restockDataTable") return true;
         if (!startDate && !endDate) return true;
@@ -239,12 +248,8 @@ function initMobileFilterSearch() {
    INDEX — DELETE MODAL
 ═══════════════════════════════════════════════════════════ */
 
-function openDeleteModal(id, code, totalQty, grandTotal) {
+function openDeleteModal(id, code, totalQty, totalPrice) {
     document.getElementById("deleteRestockCode").textContent = code;
-    document.getElementById("deleteRestockItemCount").textContent =
-        totalQty + " Unit";
-    document.getElementById("deleteRestockTotalValue").textContent =
-        "Rp " + Math.round(grandTotal).toLocaleString("id-ID");
 
     var form = document.getElementById("deleteRestockForm");
     if (form) form.action = "/restock/" + id;
@@ -259,9 +264,6 @@ function openDeleteModal(id, code, totalQty, grandTotal) {
    CREATE / EDIT — SELECT2
 ═══════════════════════════════════════════════════════════ */
 
-/**
- * Inisialisasi Select2 untuk Satuan Beli & Product Selection
- */
 function initSelect2Products(context) {
     const $ctx = context ? $(context) : $(document);
 
@@ -349,7 +351,7 @@ function addDesktopItemRow() {
             </select>
         </td>
         <td>
-            <input type="number" name="items[${restockRowIndex}][quantity]" class="form-control form-control-sm font-monospace text-center rounded-2 item-qty" value="1" min="1" oninput="onItemQtyOrPriceChange(this)" required>
+            <input type="number" name="items[${restockRowIndex}][quantity]" class="form-control form-control-sm font-monospace text-center rounded-2 item-qty" min="1" oninput="onItemQtyOrPriceChange(this)" required>
         </td>
         <td>
             <div class="input-group input-group-sm">
@@ -369,6 +371,7 @@ function addDesktopItemRow() {
 
     tbody.appendChild(tr);
     initSelect2Products(tr);
+    refreshProductOptions();
 
     $(tr)
         .find(".select2-restock-product")
@@ -445,7 +448,7 @@ function addMobileItemCard() {
         <div class="row g-2 mb-2">
             <div class="col-5">
                 <label class="form-label small fw-semibold text-dark mb-1">Jumlah</label>
-                <input type="number" name="items[${restockRowIndex}][quantity]" class="form-control form-control-sm font-monospace text-center item-qty" value="1" min="1" oninput="onMobileItemChange(this)" required>
+                <input type="number" name="items[${restockRowIndex}][quantity]" class="form-control form-control-sm font-monospace text-center item-qty" min="1" oninput="onMobileItemChange(this)" required>
             </div>
             <div class="col-7">
                 <label class="form-label small fw-semibold text-dark mb-1">Harga Satuan</label>
@@ -463,6 +466,7 @@ function addMobileItemCard() {
 
     container.appendChild(div);
     initSelect2Products(div);
+    refreshProductOptions();
 
     $(div)
         .find(".select2-restock-product")
@@ -480,9 +484,6 @@ function addMobileItemCard() {
     calculateRestockTotals();
 }
 
-/**
- * Hapus Baris Item Restock (desktop)
- */
 function removeRestockItemRow(btn) {
     const row = btn.closest("tr");
     if (!row) return;
@@ -490,6 +491,7 @@ function removeRestockItemRow(btn) {
     $(row).find(".select2-restock-unit").select2("destroy");
     $(row).find(".select2-restock-product").select2("destroy");
     row.remove();
+    refreshProductOptions();
 
     const tbody = document.getElementById("restockItemRows");
     if (tbody && tbody.querySelectorAll(".restock-item-row").length === 0) {
@@ -500,9 +502,6 @@ function removeRestockItemRow(btn) {
     calculateRestockTotals();
 }
 
-/**
- * Hapus Card Item (mobile)
- */
 function removeMobileItemCard(btn) {
     const card = btn.closest(".restock-mobile-item-card");
     if (!card) return;
@@ -510,6 +509,7 @@ function removeMobileItemCard(btn) {
     $(card).find(".select2-restock-unit").select2("destroy");
     $(card).find(".select2-restock-product").select2("destroy");
     card.remove();
+    refreshProductOptions();
 
     const container = document.getElementById("restockMobileItemCards");
     if (
@@ -532,9 +532,6 @@ function removeMobileItemCard(btn) {
     calculateRestockTotals();
 }
 
-/**
- * Update Nomor Baris (desktop)
- */
 function updateRestockRowNumbers() {
     document
         .querySelectorAll("#restockItemRows .restock-item-row")
@@ -544,9 +541,6 @@ function updateRestockRowNumbers() {
         });
 }
 
-/**
- * Helper reset tampilan cell informasi stok/HPP pada baris
- */
 function resetRowInfo(row) {
     const stockValSpan =
         row.querySelector(".item-stock-val") ||
@@ -564,17 +558,30 @@ function resetRowInfo(row) {
     if (subtotalCell) subtotalCell.textContent = "Rp 0";
 }
 
-/**
- * Event Listener saat Satuan Beli Dipilih (desktop & mobile)
- */
 function onUnitSelectChange(unitSelectEl) {
     onItemQtyOrPriceChange(unitSelectEl);
 }
 
-/**
- * Filter opsi Satuan Beli saat produk dipilih (desktop & mobile)
- * Catatan: Opsi satuan produk muncul tapi TIDAK langsung terisi otomatis.
- */
+function refreshProductOptions() {
+    const scope = isMobileView()
+        ? "#restockMobileItemCards .restock-mobile-item-card"
+        : "#restockItemRows .restock-item-row";
+
+    const selects = Array.from(document.querySelectorAll(scope))
+        .map((row) => row.querySelector(".select2-restock-product"))
+        .filter(Boolean);
+
+    const chosen = selects.map((s) => s.value).filter(Boolean);
+
+    selects.forEach((sel) => {
+        Array.from(sel.options).forEach((opt) => {
+            if (!opt.value) return; // lewati placeholder
+            opt.disabled =
+                chosen.includes(opt.value) && sel.value !== opt.value;
+        });
+    });
+}
+
 function onProductSelectChange(selectEl) {
     const option = selectEl.options[selectEl.selectedIndex];
     const row =
@@ -584,6 +591,7 @@ function onProductSelectChange(selectEl) {
     if (!option || !selectEl.value) {
         resetRowInfo(row);
         calculateRestockTotals();
+        refreshProductOptions();
         return;
     }
 
@@ -591,9 +599,6 @@ function onProductSelectChange(selectEl) {
     const productsList = window.restockProductsList || [];
     const selectedProd = productsList.find((p) => p.id == productId);
 
-    const unitId =
-        option.getAttribute("data-unit-id") ||
-        (selectedProd ? selectedProd.unit_id : null);
     const unitName =
         option.getAttribute("data-unit") ||
         (selectedProd && selectedProd.unit
@@ -613,22 +618,28 @@ function onProductSelectChange(selectEl) {
         const unitsList = window.restockUnitsList || [];
         let availableUnits = [];
 
-        // Build units from product_hpps (same pattern as penjualan / reports.js)
-        if (selectedProd && Array.isArray(selectedProd.product_hpps) && selectedProd.product_hpps.length > 0) {
+        if (
+            selectedProd &&
+            Array.isArray(selectedProd.product_hpps) &&
+            selectedProd.product_hpps.length > 0
+        ) {
             selectedProd.product_hpps.forEach((hpp) => {
                 const uId = parseInt(hpp.selling_unit_id, 10);
                 if (!uId) return;
-                // Try to get unit from the relation data first, then fall back to global unitsList
                 const hppUnit = hpp.selling_unit || hpp.sellingUnit;
-                const globalUnit = unitsList.find((u) => parseInt(u.id, 10) === uId);
+                const globalUnit = unitsList.find(
+                    (u) => parseInt(u.id, 10) === uId,
+                );
                 const unit = globalUnit || hppUnit;
-                if (unit && !availableUnits.find((u) => parseInt(u.id, 10) === uId)) {
+                if (
+                    unit &&
+                    !availableUnits.find((u) => parseInt(u.id, 10) === uId)
+                ) {
                     availableUnits.push(unit);
                 }
             });
         }
 
-        // Fallback: if product has no product_hpps configured, show all units
         if (availableUnits.length === 0) {
             availableUnits = unitsList;
         }
@@ -643,7 +654,7 @@ function onProductSelectChange(selectEl) {
 
         const $uSel = $(unitSelect);
         $uSel.html(unitOptionsHtml);
-        $uSel.val(""); // Leave unselected — user must choose manually
+        $uSel.val("");
         $uSel.trigger("change.select2");
     }
 
@@ -660,15 +671,13 @@ function onProductSelectChange(selectEl) {
             "Rp " + Math.round(defaultCost).toLocaleString("id-ID");
 
     onItemQtyOrPriceChange(selectEl);
+    refreshProductOptions();
 }
 
 function onMobileProductSelectChange(selectEl) {
     onProductSelectChange(selectEl);
 }
 
-/**
- * Hitung Subtotal per Item saat Qty atau Harga Berubah (desktop)
- */
 function onItemQtyOrPriceChange(inputEl) {
     const row = inputEl.closest("tr");
     if (!row) return;
@@ -686,9 +695,6 @@ function onItemQtyOrPriceChange(inputEl) {
     calculateRestockTotals();
 }
 
-/**
- * Hitung Subtotal per Item saat Qty atau Harga Berubah (mobile)
- */
 function onMobileItemChange(inputEl) {
     const card = inputEl.closest(".restock-mobile-item-card");
     if (!card) return;
@@ -707,9 +713,6 @@ function onMobileItemChange(inputEl) {
     calculateRestockTotals();
 }
 
-/**
- * Kalkulasi Total Subtotal, Diskon, dan Grand Total Transaksi Restock
- */
 function calculateRestockTotals() {
     let subtotal = 0;
 
@@ -753,9 +756,6 @@ function calculateRestockTotals() {
     if (grandTotalInput) grandTotalInput.value = Math.round(grandTotal);
 }
 
-/**
- * Buka modal konfirmasi Rollback Restock (dari form edit, status CONFIRMED)
- */
 function openRollbackRestockModal() {
     const modalEl = document.getElementById("modalRollbackRestock");
     if (modalEl && typeof bootstrap !== "undefined") {
@@ -763,9 +763,6 @@ function openRollbackRestockModal() {
     }
 }
 
-/**
- * Simpan transaksi dengan status tertentu (DRAFT / CONFIRMED)
- */
 function submitRestockAs(status) {
     const statusInput = document.getElementById("status_restock");
     if (statusInput) statusInput.value = status;
@@ -774,9 +771,6 @@ function submitRestockAs(status) {
     if (form) form.submit();
 }
 
-/**
- * Buka modal konfirmasi untuk simpan CONFIRMED
- */
 function openConfirmRestockModal() {
     const desktopRows = document.querySelectorAll(
         "#restockItemRows .restock-item-row",
@@ -797,13 +791,61 @@ function openConfirmRestockModal() {
     }
 }
 
-/**
- * Eksekusi submit setelah konfirmasi CONFIRMED
- */
 function executeConfirmRestockSubmit() {
     const statusInput = document.getElementById("status_restock");
     if (statusInput) statusInput.value = "CONFIRMED";
 
     const form = document.getElementById("formCreateRestock");
     if (form) form.submit();
+}
+
+/* ═══════════════════════════════════════════════════════════
+   EDIT PAGE — ROLLBACK COUNTDOWN
+   Dipanggil saat window.rollbackDeadline di-set dari Blade.
+   Update tiap detik pada dua elemen:
+     #rollbackCountdown  → banner di atas form
+     #modalRollbackCountdown → di dalam modal rollback
+═══════════════════════════════════════════════════════════ */
+
+function initRollbackCountdown(isoDeadline) {
+    var deadline = new Date(isoDeadline);
+
+    function tick() {
+        var now = new Date();
+        var diffMs = deadline - now;
+
+        var elBanner = document.getElementById("rollbackCountdown");
+        var elModal = document.getElementById("modalRollbackCountdown");
+        var btnRollback = document.querySelector(
+            '[onclick="openRollbackRestockModal()"]',
+        );
+
+        if (diffMs <= 0) {
+            var expired = "Waktu rollback telah habis";
+            if (elBanner) elBanner.textContent = expired;
+            if (elModal) elModal.textContent = expired;
+            if (btnRollback) btnRollback.disabled = true;
+            return; // hentikan countdown
+        }
+
+        var totalSec = Math.floor(diffMs / 1000);
+        var hours = Math.floor(totalSec / 3600);
+        var minutes = Math.floor((totalSec % 3600) / 60);
+        var seconds = totalSec % 60;
+
+        var text;
+        if (hours > 0)
+            text =
+                hours + " jam " + minutes + " menit " + seconds + " detik lagi";
+        else if (minutes > 0)
+            text = minutes + " menit " + seconds + " detik lagi";
+        else text = seconds + " detik lagi";
+
+        if (elBanner) elBanner.textContent = text;
+        if (elModal) elModal.textContent = text;
+
+        setTimeout(tick, 1000);
+    }
+
+    tick();
 }
