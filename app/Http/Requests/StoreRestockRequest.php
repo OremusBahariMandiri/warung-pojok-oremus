@@ -14,14 +14,14 @@ class StoreRestockRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'invoice_number'          => 'nullable|string|max:100',
+            // 'invoice_number'          => 'nullable|string|max:100',
             'restock_code'            => 'nullable|string|max:100',
             'supplier_name'           => 'required|string|max:180',
             'restock_date'            => 'required|date',
             'status_restock'          => 'required|in:DRAFT,CONFIRMED',
-            'subtotal'                => 'nullable|numeric|min:0',
-            'discount'                => 'nullable|numeric|min:0',
-            'grand_total'             => 'nullable|numeric|min:0',
+            // 'subtotal'                => 'nullable|numeric|min:0',
+            // 'discount'                => 'nullable|numeric|min:0',
+            // 'grand_total'             => 'nullable|numeric|min:0',
             'notes'                   => 'nullable|string',
             'items'                   => 'required|array|min:1',
             'items.*.product_id'      => 'required|integer|exists:products,id',

@@ -553,7 +553,7 @@ table.dataTable thead > tr > th.no-sort {
         display: none !important;
     }
     .reports-cards-mobile {
-        display: block !important;
+        display: none !important;
     }
 
     .report-item-card {
@@ -946,6 +946,264 @@ table.dataTable thead > tr > th.no-sort {
         display: none !important;
     }
     .reports-mobile-wrapper {
+        display: block !important;
+    }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   CREATE FORM — EXPAND ROW LAYOUT (desktop ≥768px)
+   ══════════════════════════════════════════════════════════════ */
+
+/* ── Desktop table wrapper ─────────────────────────── */
+.reports-create-table-desktop-wrap {
+    display: block;
+}
+
+/* ── Desktop table: no forced min-width ──────────────── */
+#reportItemsTableCreate {
+    min-width: 0;
+    width: 100%;
+    table-layout: auto;
+}
+
+#reportItemsTableCreate.table-bordered,
+#reportItemsTableCreate.table-bordered th,
+#reportItemsTableCreate.table-bordered td {
+    border: 1px solid #dee2e6;
+    padding: 0.65rem 0.85rem;
+}
+
+#reportItemsTableCreate thead th {
+    background-color: #f8f9fa;
+    font-weight: 700 !important;
+    color: #334155;
+    font-size: 0.8rem;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    vertical-align: middle;
+}
+
+/* ── Expand Arrow (CSS border triangle) ─────────── */
+.row-expand-arrow {
+    display: inline-block;
+    width: 0;
+    height: 0;
+    border-top: 6px solid transparent;
+    border-bottom: 6px solid transparent;
+    border-left: 8px solid #94a3b8;
+    transition:
+        transform 0.18s ease,
+        border-left-color 0.18s ease;
+    vertical-align: middle;
+}
+
+tr.report-item-row.row-expanded .row-expand-arrow {
+    transform: rotate(90deg);
+    border-left-color: #198754;
+}
+
+/* ── Expand toggle cell ──────────────────────── */
+.report-expand-toggle {
+    width: 56px;
+    padding: 0.4rem 0.5rem !important;
+    user-select: none;
+}
+
+.row-no-num {
+    display: inline;
+    margin-left: 4px;
+    vertical-align: middle;
+}
+
+.report-expand-toggle .row-expand-arrow {
+    margin-right: 2px;
+}
+
+.report-expand-toggle:hover .row-expand-arrow {
+    border-left-color: #198754;
+}
+
+/* ── Expand detail row ───────────────────────────── */
+tr.report-item-expand-row > td {
+    padding: 0 !important;
+    border-top: none !important;
+    background-color: #f8fffe;
+}
+
+.report-expand-details {
+    border-top: 2px solid #d1fae5;
+    padding: 0;
+}
+
+/* ── Expand cell grid ────────────────────────────── */
+.expand-cell {
+    padding: 0.6rem 1rem;
+    border-right: 1px solid #e2e8f0;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.expand-cell.expand-cell-last {
+    border-right: none;
+}
+.expand-cell.expand-cell-bottom {
+    border-bottom: none;
+}
+.expand-cell.expand-cell-noborder {
+    border-right: none;
+}
+
+.expand-label {
+    font-size: 0.68rem;
+    font-weight: 600;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 2px;
+}
+
+.expand-value {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: #1e293b;
+    font-variant-numeric: tabular-nums;
+}
+
+/* ── Hidden data td: take no layout space ────────── */
+#reportItemsTableCreate .report-item-hidden-data {
+    display: none !important;
+    padding: 0 !important;
+    border: none !important;
+    width: 0 !important;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   CREATE FORM — MOBILE TABLE (13 kolom, horizontal scroll)
+   Tampil hanya di mobile (≤767px)
+   ══════════════════════════════════════════════════════════════ */
+
+/* ── Mobile table wrapper: hidden by default ─── */
+.reports-create-table-mobile-wrap {
+    display: none;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* ── Mobile table ────────────────────────────── */
+#reportItemsTableMobile {
+    min-width: 1200px;
+    width: 100%;
+    border-collapse: collapse;
+}
+
+#reportItemsTableMobile.table-bordered,
+#reportItemsTableMobile.table-bordered th,
+#reportItemsTableMobile.table-bordered td {
+    border: 1px solid #dee2e6;
+    padding: 0.4rem 0.45rem;
+}
+
+#reportItemsTableMobile thead th {
+    background-color: #f8f9fa;
+    font-weight: 700 !important;
+    color: #334155;
+    font-size: 0.75rem;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    vertical-align: middle;
+    white-space: nowrap;
+}
+
+#reportItemsTableMobile tbody td {
+    vertical-align: middle;
+}
+
+/* ── Mobile column widths ────────────────────── */
+#reportItemsTableMobile .col-no {
+    width: 36px;
+    min-width: 36px;
+}
+#reportItemsTableMobile .col-product {
+    min-width: 190px;
+}
+#reportItemsTableMobile .col-unit {
+    width: 120px;
+    min-width: 120px;
+}
+#reportItemsTableMobile .col-info {
+    width: 120px;
+    min-width: 120px;
+}
+#reportItemsTableMobile .col-qty {
+    width: 80px;
+    min-width: 80px;
+}
+#reportItemsTableMobile .col-stock-final {
+    width: 80px;
+    min-width: 80px;
+}
+#reportItemsTableMobile .col-price {
+    width: 95px;
+    min-width: 95px;
+}
+#reportItemsTableMobile .col-selling-price {
+    width: 95px;
+    min-width: 95px;
+}
+#reportItemsTableMobile .col-total-sales {
+    width: 105px;
+    min-width: 105px;
+}
+#reportItemsTableMobile .col-hpp {
+    width: 95px;
+    min-width: 95px;
+}
+#reportItemsTableMobile .col-total-hpp {
+    width: 100px;
+    min-width: 100px;
+}
+#reportItemsTableMobile .col-margin {
+    width: 100px;
+    min-width: 100px;
+}
+#reportItemsTableMobile .col-action {
+    width: 40px;
+    min-width: 40px;
+}
+
+/* ── Mobile input & badge ────────────────────── */
+#reportItemsTableMobile .item-qty-mobile,
+#reportItemsTableMobile .item-stock-final {
+    width: 100%;
+    font-size: 0.82rem;
+    padding: 0.25rem 0.35rem;
+}
+
+#reportItemsTableMobile .item-readonly-badge {
+    font-size: 0.78rem;
+    padding: 0.3rem 0.4rem;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.25rem;
+    display: block;
+    text-align: right;
+    font-family:
+        ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+#reportItemsTableMobile .col-info-text {
+    font-size: 0.7rem;
+    color: #64748b;
+    line-height: 1.6;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   BREAKPOINT: mobile (≤767px) — sembunyikan desktop, tampilkan mobile
+   ══════════════════════════════════════════════════════════════ */
+@media (max-width: 767.98px) {
+    .reports-create-table-desktop-wrap {
+        display: none !important;
+    }
+    .reports-create-table-mobile-wrap {
         display: block !important;
     }
 }

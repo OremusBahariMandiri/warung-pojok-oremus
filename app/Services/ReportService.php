@@ -230,6 +230,128 @@ class ReportService
     }
 
     /**
+     * Update an existing sales report: rollback old stock, apply new items, recalculate totals.
+     */
+    public function updateReport(Reports $report, array $data, ?int $userId = null): Reports
+    {
+        return DB::transaction(function () use ($report, $data, $userId) {
+            $creatorId = $userId ?? (auth()->guard()->check() ? auth()->guard()->id() : 1);
+
+            // 1. Rollback stok dari detail lama — kembalikan stok yang sudah dikurangi
+            $report->load('details.product');
+            foreach ($report->details as $oldDetail) {
+                $product = Products::lockForUpdate()->find($oldDetail->product_id);
+                if ($product) {
+                    // Kembalikan stok: tambah kembali quantity yang dulu terjual
+                    $product->current_stock = $product->current_stock + $oldDetail->quantity;
+                    $product->save();
+                }
+            }
+
+            // 2. Hapus semua detail lama
+            $report->details()->delete();
+
+            // 3. Terapkan item baru
+            $headerQuantity = 0;
+            $headerSales    = 0.0;
+            $headerHpp      = 0.0;
+            $headerMargin   = 0.0;
+            $detailsSummary = [];
+
+            foreach ($data['items'] as $itemData) {
+                $productId     = (int) $itemData['product_id'];
+                $sellingUnitId = (int) $itemData['selling_unit_id'];
+                $quantity      = (int) $itemData['quantity'];
+
+                $product  = Products::lockForUpdate()->findOrFail($productId);
+                $oldStock = $product->current_stock;
+
+                $stockFinal = isset($itemData['stock_final']) && $itemData['stock_final'] !== ''
+                    ? (int) $itemData['stock_final']
+                    : max(0, $oldStock - $quantity);
+
+                $config = \App\Models\ProductHpp::where('product_id', $productId)
+                    ->where('selling_unit_id', $sellingUnitId)
+                    ->first();
+
+                $sellingPrice = isset($itemData['selling_price']) && $itemData['selling_price'] !== '' && (float)$itemData['selling_price'] > 0
+                    ? (float) $itemData['selling_price']
+                    : ($config ? (float) $config->selling_price : 0.0);
+
+                $hpp = isset($itemData['hpp']) && $itemData['hpp'] !== '' && (float)$itemData['hpp'] > 0
+                    ? (float) $itemData['hpp']
+                    : ($config ? (float) $config->current_hpp : 0.0);
+
+                $totalPrice = $quantity * $sellingPrice;
+                $totalHpp   = $quantity * $hpp;
+                $margin     = $totalPrice - $totalHpp;
+
+                // Kurangi stok produk sesuai item baru
+                $product->current_stock = $stockFinal;
+                $product->save();
+
+                ReportDetails::create([
+                    'report_id'       => $report->id,
+                    'product_id'      => $productId,
+                    'selling_unit_id' => $sellingUnitId,
+                    'quantity'        => $quantity,
+                    'stock_final'     => $stockFinal,
+                    'selling_price'   => $sellingPrice,
+                    'hpp'             => $hpp,
+                    'total_price'     => $totalPrice,
+                    'total_hpp'       => $totalHpp,
+                    'margin'          => $margin,
+                ]);
+
+                $headerQuantity += $quantity;
+                $headerSales    += $totalPrice;
+                $headerHpp      += $totalHpp;
+                $headerMargin   += $margin;
+
+                $detailsSummary[] = [
+                    'product_id'      => $productId,
+                    'product_name'    => $product->prod_name,
+                    'selling_unit_id' => $sellingUnitId,
+                    'quantity'        => $quantity,
+                    'stock_final'     => $stockFinal,
+                    'selling_price'   => $sellingPrice,
+                    'hpp'             => $hpp,
+                    'total_price'     => $totalPrice,
+                    'total_hpp'       => $totalHpp,
+                    'margin'          => $margin,
+                    'old_stock'       => $oldStock,
+                    'new_stock'       => $stockFinal,
+                ];
+            }
+
+            // 4. Update notes dan totals di header report
+            $report->update([
+                'notes'          => $data['notes'] ?? $report->notes,
+                'total_quantity' => $headerQuantity,
+                'total_sales'    => $headerSales,
+                'total_hpp'      => $headerHpp,
+                'total_margin'   => $headerMargin,
+            ]);
+
+            ActivityLogService::log(
+                action:      'UPDATE',
+                module:      'REPORT',
+                entityType:  Reports::class,
+                entityId:    $report->id,
+                description: "Updated sales report ID {$report->id} (Sales: Rp " . number_format($headerSales, 0, ',', '.') . ", Margin: Rp " . number_format($headerMargin, 0, ',', '.') . ")",
+                oldValues:   null,
+                newValues:   [
+                    'report' => $report->fresh()->toArray(),
+                    'items'  => $detailsSummary,
+                ],
+                userId: $creatorId
+            );
+
+            return $report->fresh()->load(['details.product', 'details.sellingUnit']);
+        });
+    }
+
+    /**
      * Delete / Cancel a sales report and restore product stock.
      */
     public function deleteReport(Reports $report): bool

@@ -53,7 +53,7 @@
                     <div class="fw-semibold text-dark fs-6">{{ $reportObj->report_date ? $reportObj->report_date->format('d F Y, H:i') : '-' }}</div>
                 </div>
                 <div>
-                    <div class="text-muted small">Petugas / Dicatat Oleh</div>
+                    <div class="text-muted small">Dicatat Oleh</div>
                     <div class="text-dark fw-medium">{{ $reportObj->creator->employee_name ?? 'Administrator' }}</div>
                 </div>
                 <div>
