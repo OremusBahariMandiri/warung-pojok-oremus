@@ -237,7 +237,7 @@ class ReportService
         return DB::transaction(function () use ($report, $data, $userId) {
             $creatorId = $userId ?? (auth()->guard()->check() ? auth()->guard()->id() : 1);
 
-            // 1. Rollback stok dari detail lama — kembalikan stok yang sudah dikurangi
+            // 1. Rollback stok dari detail lama â€” kembalikan stok yang sudah dikurangi
             $report->load('details.product');
             foreach ($report->details as $oldDetail) {
                 $product = Products::lockForUpdate()->find($oldDetail->product_id);
@@ -264,11 +264,11 @@ class ReportService
                 $quantity      = (int) $itemData['quantity'];
 
                 $product  = Products::lockForUpdate()->findOrFail($productId);
-                $oldStock = $product->current_stock;
+                $oldStock = $product->current_stock; // sudah di-rollback, nilainya benar (stok sebelum laporan ini)
 
-                $stockFinal = isset($itemData['stock_final']) && $itemData['stock_final'] !== ''
-                    ? (int) $itemData['stock_final']
-                    : max(0, $oldStock - $quantity);
+                // FIX: selalu hitung stock_final dari oldStock (setelah rollback) dikurangi quantity baru.
+                // Tidak percaya nilai form karena stock_final di form bisa stale (nilai lama sebelum user mengubah qty).
+                $stockFinal = $oldStock - $quantity;
 
                 $config = \App\Models\ProductHpp::where('product_id', $productId)
                     ->where('selling_unit_id', $sellingUnitId)
@@ -399,5 +399,51 @@ class ReportService
 
             return $deleted;
         });
+    }
+    /**
+     * Simpan hasil kalkulasi gaji ke kolom komisi pada semua laporan di rentang tanggal.
+     * Mengembalikan jumlah baris yang diperbarui.
+     */
+    public function storeSalaryCalculation(array $data): int
+    {
+        $start = Carbon::parse($data['start_date'])->startOfDay();
+        $end   = Carbon::parse($data['end_date'])->endOfDay();
+
+        return DB::table('reports')
+            ->whereBetween('report_date', [$start, $end])
+            ->update([
+                'commission_type'     => $data['commission_type'],
+                'commission_value'    => $data['commission_value'],
+                'profit_share_amount' => $data['profit_share_amount'],
+                'owner_share_amount'  => $data['owner_share_amount'],
+                'updated_at'          => now(),
+            ]);
+    }
+
+    /**
+     * Get aggregated summary of reports for the salary calculator.
+     */
+    public function getSummaryForCalculator(string $startDate, string $endDate): array
+    {
+        $start = Carbon::parse($startDate)->startOfDay();
+        $end   = Carbon::parse($endDate)->endOfDay();
+
+        $reports = Reports::whereBetween('report_date', [$start, $end])->get();
+
+        $totalReports  = $reports->count();
+        $totalQuantity = (int) $reports->sum('total_quantity');
+        $totalSales    = (float) $reports->sum('total_sales');
+        $totalHpp      = (float) $reports->sum('total_hpp');
+        $totalMargin   = (float) $reports->sum('total_margin');
+
+        return [
+            'total_reports'  => $totalReports,
+            'total_quantity' => $totalQuantity,
+            'total_sales'    => $totalSales,
+            'total_hpp'      => $totalHpp,
+            'total_margin'   => $totalMargin,
+            'start_date'     => $startDate,
+            'end_date'       => $endDate,
+        ];
     }
 }

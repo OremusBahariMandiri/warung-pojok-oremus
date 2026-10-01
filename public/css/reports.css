@@ -1207,3 +1207,162 @@ tr.report-item-expand-row > td {
         display: block !important;
     }
 }
+
+/* ============================================================
+   salary_calculator.css
+   Kalkulator Gaji Ibu — Warung Pojok Oremus
+   ============================================================ */
+
+/* ── Label judul tiap kartu (ikon + teks) ─────────────────── */
+.sc-card-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: #374151;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    border-bottom: 1px solid #e5e7eb;
+    padding-bottom: 0.6rem;
+}
+
+.sc-card-label i {
+    font-size: 1rem;
+}
+
+/* ── Sub-judul dalam kartu ────────────────────────────────── */
+.sc-subsection-title {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+/* ── Kotak Total Margin (hijau) ───────────────────────────── */
+.sc-margin-bar {
+    background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+    border: 1.5px solid #6ee7b7;
+    color: #065f46;
+}
+
+.sc-margin-icon {
+    width: 2.2rem;
+    height: 2.2rem;
+    background: rgba(6, 95, 70, 0.1);
+    color: #065f46;
+    font-size: 1rem;
+}
+
+.sc-margin-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    opacity: 0.8;
+}
+
+.sc-margin-value {
+    font-size: 1.1rem;
+    color: #065f46;
+}
+
+.sc-margin-deco {
+    font-size: 2.5rem;
+    opacity: 0.12;
+}
+
+/* ── Baris hasil (flex row) — dipertahankan jika dipakai ──── */
+.sc-result-row {
+    border: 1.5px solid transparent;
+}
+
+.sc-result-ibu {
+    background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+    border-color: #93c5fd;
+    color: #1d4ed8;
+}
+
+.sc-result-ibu-val {
+    font-size: 1.05rem;
+    color: #1e40af;
+}
+
+.sc-result-pemilik {
+    background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+    border-color: #fcd34d;
+    color: #92400e;
+}
+
+.sc-result-pemilik-val {
+    font-size: 1.05rem;
+    color: #92400e;
+}
+
+/* ── Kotak GAJI IBU — centered / besar ────────────────────── */
+.sc-result-gaji {
+    background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+    border: 1.5px solid #93c5fd;
+}
+
+.sc-result-gaji-label {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: #1d4ed8;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.sc-result-gaji-val {
+    font-size: 2rem;
+    color: #1e40af;
+    line-height: 1.2;
+}
+
+.sc-result-gaji-sub {
+    color: #3b82f6;
+    font-size: 0.8rem;
+    min-height: 1.2em;
+}
+
+/* ── Area cetak struk ─────────────────────────────────────── */
+.sc-print-area {
+    display: none;
+}
+.sc-struk-title {
+    text-align: center;
+    font-weight: bold;
+    font-size: 0.9rem;
+    margin-bottom: 0.25rem;
+}
+.sc-struk-line {
+    border-top: 1px dashed #374151;
+    margin: 0.4rem 0;
+}
+.sc-struk-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.78rem;
+    padding: 0.1rem 0;
+}
+
+/* ── Print ────────────────────────────────────────────────── */
+@media print {
+    body > *:not(#printArea) {
+        display: none !important;
+    }
+
+    #printArea {
+        display: block !important;
+        font-family: monospace;
+        font-size: 0.8rem;
+        width: 280px;
+        margin: 0 auto;
+        padding: 0.5rem;
+        color: #000;
+    }
+}

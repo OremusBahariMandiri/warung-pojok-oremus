@@ -24,6 +24,18 @@ function formatRupiah(val) {
 }
 
 /* ════════════════════════════════════════════════════════════
+   GORENGAN HELPER
+   ════════════════════════════════════════════════════════════ */
+function _isGorenganProduct(productId) {
+    if (!productId) return false;
+    const product = window.reportProductsList.find(
+        (p) => parseInt(p.id, 10) === parseInt(productId, 10),
+    );
+    if (!product) return false;
+    return (product.prod_name || "").toLowerCase().includes("gorengan");
+}
+
+/* ════════════════════════════════════════════════════════════
    BUILD HELPERS
    ════════════════════════════════════════════════════════════ */
 function _buildProductOptions(selectedProdId = null) {
@@ -278,16 +290,39 @@ function _updateItemCalculations(container) {
     const hppInput = container.querySelector(".item-hpp-price");
     if (hppInput) hppInput.value = currentHpp;
 
+    // GORENGAN: set qty readonly dan isi otomatis dari current_stock
+    const isGorengan = _isGorenganProduct(productId);
+    if (isGorengan) {
+        const qtyGorengan = container.querySelector(".item-qty");
+        if (qtyGorengan) {
+            qtyGorengan.setAttribute("readonly", "readonly");
+            qtyGorengan.value = currentStock;
+        }
+    } else {
+        const qtyEl = container.querySelector(".item-qty");
+        if (qtyEl) {
+            qtyEl.removeAttribute("readonly");
+        }
+    }
+
     const qtyInput = container.querySelector(".item-qty");
     const qtyRaw = qtyInput ? qtyInput.value.trim() : "";
     const qty = qtyRaw !== "" ? parseInt(qtyRaw, 10) || 0 : 0;
 
     // FIX: gunakan effectiveStock (currentStock + originalQty) untuk hitung sisa stok
+    // GORENGAN: stock_final = currentStock (stok tidak berkurang)
     const stockFinalInput = container.querySelector(".item-stock-final");
     if (stockFinalInput) {
-        const originalQty = parseInt(container.dataset.originalQty || 0, 10);
-        const effectiveStock = currentStock + originalQty;
-        stockFinalInput.value = effectiveStock - qty;
+        if (isGorengan) {
+            stockFinalInput.value = currentStock;
+        } else {
+            const originalQty = parseInt(
+                container.dataset.originalQty || 0,
+                10,
+            );
+            const effectiveStock = currentStock + originalQty;
+            stockFinalInput.value = effectiveStock - qty;
+        }
     }
 
     const totalSales = qty * sellingPrice;
@@ -309,6 +344,22 @@ function _updateItemCalculations(container) {
 
     _validateItemQty(container);
     _syncExpandRow(container);
+
+    // GORENGAN: override expand row sisa stok → "Unlimited"
+    if (isGorengan) {
+        const expandRow = container.nextElementSibling;
+        if (
+            expandRow &&
+            expandRow.classList.contains("report-item-expand-row")
+        ) {
+            const sfEl = expandRow.querySelector(".expand-stock-final");
+            if (sfEl) {
+                sfEl.textContent = "Unlimited";
+                sfEl.classList.remove("text-danger", "fw-bold");
+            }
+        }
+    }
+
     _syncPairContainer(container);
     recalculateReportTotals();
 }
@@ -331,6 +382,9 @@ function onProductSelectChange(selectEl) {
             product.product_hpps.length > 0
         ) {
             const currentUnitId = parseInt(unitSelect.value, 10) || null;
+            unitSelect.blur();
+            unitSelect.innerHTML =
+                '<option value="" disabled selected>Pilih Satuan...</option>';
             let unitOpts =
                 '<option value="" disabled selected>Pilih Satuan...</option>';
             product.product_hpps.forEach((hpp) => {
@@ -358,7 +412,11 @@ function onProductSelectChange(selectEl) {
                 }
             });
             unitSelect.innerHTML = unitOpts;
-            if (currentUnitId) unitSelect.value = currentUnitId;
+            unitSelect.value = "";
+        } else {
+            unitSelect.innerHTML =
+                '<option value="" disabled selected>Pilih Satuan...</option>';
+            unitSelect.value = "";
         }
     }
 
@@ -415,6 +473,10 @@ function _resetContainerData(container) {
 
     _clearQtyValidation(container);
     _syncExpandRow(container);
+
+    // GORENGAN: kembalikan qty ke editable saat produk di-reset
+    const qtyInputReset = container.querySelector(".item-qty");
+    if (qtyInputReset) qtyInputReset.removeAttribute("readonly");
 }
 
 /* ════════════════════════════════════════════════════════════
@@ -566,6 +628,13 @@ function _validateItemQty(container) {
     const qtyInput = container.querySelector(".item-qty");
     if (!qtyInput) return true;
 
+    // GORENGAN: skip validasi stok, langsung clear dan return true
+    const _gProdSel = container.querySelector(".product-select");
+    if (_isGorenganProduct(_gProdSel ? _gProdSel.value : null)) {
+        _clearQtyValidation(container);
+        return true;
+    }
+
     const rawStock = container.dataset.currentStock;
     if (rawStock === undefined || rawStock === "" || rawStock === null) {
         _clearQtyValidation(container);
@@ -648,6 +717,10 @@ function _checkFormSubmitState() {
     const rows = document.querySelectorAll("#reportItemRows .report-item-row");
     let hasError = false;
     rows.forEach(function (row) {
+        // GORENGAN: skip validasi stok untuk produk gorengan
+        const _gSel = row.querySelector(".product-select");
+        if (_isGorenganProduct(_gSel ? _gSel.value : null)) return;
+
         const rawStock = row.dataset.currentStock;
         if (rawStock === undefined || rawStock === "" || rawStock === null)
             return;
