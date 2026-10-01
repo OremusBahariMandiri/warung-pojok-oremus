@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreReportRequest;
+use App\Http\Requests\UpdateReportRequest;
 use App\Models\Products;
 use App\Models\Reports;
 use App\Services\ReportService;
@@ -26,6 +27,9 @@ class ReportController extends Controller
         $filters = $request->only(['start_date', 'end_date']);
         $data = $this->reportService->getAllReports($filters);
 
+        // Cek apakah sudah ada report hari ini
+        $todayReport = Reports::whereDate('report_date', today())->first();
+
         if ($request->wantsJson()) {
             return response()->json([
                 'status' => 'success',
@@ -35,16 +39,25 @@ class ReportController extends Controller
         }
 
         return view('pages.reports.index', [
-            'reports' => $data['reports'],
-            'summary' => $data['summary'],
+            'reports'      => $data['reports'],
+            'summary'      => $data['summary'],
+            'todayReport'  => $todayReport,
         ]);
     }
 
     /**
      * Show the form for creating a new sales report.
+     * If a report already exists today, redirect back with warning.
      */
     public function create()
     {
+        // Jika sudah ada laporan hari ini, redirect ke index dengan pesan
+        $todayReport = Reports::whereDate('report_date', today())->first();
+        if ($todayReport) {
+            return redirect()->route('reports.index')
+                ->with('today_report_exists', $todayReport->id);
+        }
+
         $products = Products::with([
             'unit',
             'productHpps.sellingUnit',
@@ -108,6 +121,63 @@ class ReportController extends Controller
         }
 
         return view('pages.reports.show', compact('detailedReport'));
+    }
+
+    /**
+     * Show the form for editing an existing sales report.
+     */
+    public function edit(Reports $report)
+    {
+        $report->load('details.product', 'details.sellingUnit');
+
+        $products = Products::with([
+            'unit',
+            'productHpps.sellingUnit',
+            'restockItems' => function ($q) {
+                $q->orderBy('created_at', 'desc')->orderBy('id', 'desc');
+            }
+        ])
+        ->select([
+            'id', 'unit_id', 'prod_code', 'prod_name', 'current_stock', 'unit_price'
+        ])->orderBy('prod_name', 'asc')->get();
+
+        $originalQtyMap = $report->details->pluck('quantity', 'product_id')->toArray();
+        $products->each(function ($p) {
+            $p->original_qty = $originalQtyMap[$p->id] ?? 0;
+            $latestRestock = $p->restockItems->first();
+            $p->latest_purchase_price = $latestRestock ? (float) $latestRestock->purchase_price : (float) $p->unit_price;
+
+            $pricesByUnit = [];
+            foreach ($p->restockItems as $ri) {
+                if (!isset($pricesByUnit[$ri->restock_unit_id])) {
+                    $pricesByUnit[$ri->restock_unit_id] = (float) $ri->purchase_price;
+                }
+            }
+            $p->purchase_prices_by_unit = $pricesByUnit;
+        });
+
+        $units = \App\Models\Unit::orderBy('unit_name', 'asc')->get();
+
+        return view('pages.reports.edit', compact('report', 'products', 'units'));
+    }
+
+    /**
+     * Update an existing sales report (recalculate stock and totals).
+     */
+    public function update(UpdateReportRequest $request, Reports $report)
+    {
+        $userId = Auth::id() ?? 1;
+        $updatedReport = $this->reportService->updateReport($report, $request->validated(), $userId);
+
+        if ($request->wantsJson()) {
+            return response()->json([
+                'status'  => 'success',
+                'message' => 'Laporan penjualan berhasil diperbarui.',
+                'data'    => $updatedReport,
+            ]);
+        }
+
+        return redirect()->route('reports.index')->with('success', 'Laporan penjualan berhasil diperbarui.');
     }
 
     /**

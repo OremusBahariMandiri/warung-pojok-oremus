@@ -46,10 +46,10 @@ class RestockController extends Controller
     {
         $products         = Products::with(['unit', 'productHpps.sellingUnit'])->orderBy('prod_name', 'asc')->get();
         $units            = Unit::orderBy('unit_name', 'asc')->get();
-        $generatedInvoice = CodeGenerator::generateInvoiceNumber(Restock::class);
+        // $generatedInvoice = CodeGenerator::generateInvoiceNumber(Restock::class);
         $generatedCode    = CodeGenerator::generateRestockCode(Restock::class);
 
-        return view('pages.restock.create', compact('products', 'units', 'generatedInvoice', 'generatedCode'));
+        return view('pages.restock.create', compact('products', 'units', 'generatedCode'));
     }
 
     /**

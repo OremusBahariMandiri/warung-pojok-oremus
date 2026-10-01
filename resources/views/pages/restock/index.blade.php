@@ -3,7 +3,6 @@
 @section('title', 'Riwayat Pembelian — Warung Pojok Oremus')
 
 @push('styles')
-<!-- DataTables BSD & Bootstrap 5 CSS -->
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css">
 <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.bootstrap5.min.css">
 <link rel="stylesheet" href="{{ asset('css/restock.css') }}">
@@ -82,18 +81,31 @@
     </div>
 
     {{-- ═══ DESKTOP: DataTables Table ═══ --}}
+    {{--
+        Struktur kolom (9 kolom, index 0–8):
+         0 = No            → no-sort, responsivePriority 2
+         1 = Kode Restock
+         2 = Tanggal       → default sort desc
+         3 = Supplier      → filter kolom (column(3))
+         4 = Status
+         5 = Total Item
+         6 = Harga Beli    (purchase_price)
+         7 = Total Price   (total_price)   → className:'none' → child row
+         8 = Dibuat Oleh                  → className:'none' → child row
+         9 = Aksi          → no-sort, responsivePriority 1
+    --}}
     <div class="d-none d-md-block">
         <table class="table table-bordered table-hover align-middle mb-0 w-100" id="restockDataTable">
             <thead>
                 <tr>
                     <th class="text-center" style="width: 46px;">No</th>
-                    <th style="width: 155px;">No. Invoice</th>
                     <th style="width: 155px;">Kode Restock</th>
                     <th class="text-center" style="width: 150px;">Tanggal</th>
                     <th>Supplier</th>
                     <th class="text-center" style="width: 110px;">Status</th>
-                    <th class="text-center" style="width: 120px;">Total Item</th>
-                    <th class="text-end" style="width: 150px;">Grand Total</th>
+                    <th class="text-center" style="width: 130px;">Total Item</th>
+                    <th class="text-end" style="width: 150px;">Harga Beli</th>
+                    <th class="text-end" style="width: 150px;">Harga Total</th>
                     <th class="text-center" style="width: 130px;">Dibuat Oleh</th>
                     <th class="text-center no-sort" style="width: 110px;">Aksi</th>
                 </tr>
@@ -101,14 +113,14 @@
             <tbody>
                 @foreach ($list as $item)
                     @php
-                        $rawDate    = $item->restock_date ? $item->restock_date->format('Y-m-d') : '';
-                        $isDraft    = $item->status_restock === 'DRAFT';
-                        $totalQty   = $item->items->sum('quantity');
-                        $grandTotal = $item->grand_total ?? $item->total_value ?? 0;
+                        $rawDate      = $item->restock_date ? $item->restock_date->format('Y-m-d') : '';
+                        $isDraft      = $item->status_restock === 'DRAFT';
+                        $totalQty     = $item->items->sum('quantity');
+                        $hargaBeli    = (float) $item->items->sum('purchase_price');
+                        $totalPrice   = (float) $item->items->sum('total_price');
                     @endphp
                     <tr data-date="{{ $rawDate }}">
                         <td class="text-center text-muted">{{ $loop->iteration }}</td>
-                        <td class="font-monospace text-secondary small">{{ $item->invoice_number }}</td>
                         <td class="font-monospace text-dark">{{ $item->restock_code }}</td>
                         <td class="text-center text-secondary small">
                             {{ $item->restock_date ? $item->restock_date->format('d M Y, H:i') : '-' }}
@@ -131,7 +143,10 @@
                             <span class="text-muted small d-block">({{ $totalQty }} Unit)</span>
                         </td>
                         <td class="text-end font-monospace text-dark">
-                            Rp {{ number_format($grandTotal, 0, ',', '.') }}
+                            Rp {{ number_format($hargaBeli, 0, ',', '.') }}
+                        </td>
+                        <td class="text-end font-monospace fw-semibold text-dark">
+                            Rp {{ number_format($totalPrice, 0, ',', '.') }}
                         </td>
                         <td class="text-center text-secondary small">
                             {{ $item->creator->employee_name ?? 'Admin' }}
@@ -146,7 +161,7 @@
                                         <i class="bi bi-pencil"></i>
                                     </a>
                                     <button type="button" class="btn btn-sm btn-danger text-white px-2 py-1 rounded-2 shadow-none" title="Hapus Draft"
-                                        onclick="openDeleteModal({{ $item->id }}, '{{ addslashes($item->restock_code) }}', {{ $totalQty }}, {{ $grandTotal }})">
+                                        onclick="openDeleteModal({{ $item->id }}, '{{ addslashes($item->restock_code) }}', {{ $totalQty }}, {{ $totalPrice }})">
                                         <i class="bi bi-trash"></i>
                                     </button>
                                 @else
@@ -166,7 +181,10 @@
     <div id="restockMobileCards" class="d-md-none px-1 pt-1">
         @forelse ($list as $item)
             @php
-                $isDraft = $item->status_restock === 'DRAFT';
+                $isDraft    = $item->status_restock === 'DRAFT';
+                $totalQty   = $item->items->sum('quantity');
+                $hargaBeli  = (float) $item->items->sum('purchase_price');
+                $totalPrice = (float) $item->items->sum('total_price');
             @endphp
             <div class="restock-list-card">
                 {{-- Header: kode + tanggal --}}
@@ -189,19 +207,25 @@
                     </span>
                 </div>
 
-                {{-- Stats: item + nilai --}}
+                {{-- Stats: item + harga beli + total price --}}
                 <div class="rlc-stats">
                     <div class="rlc-stat">
                         <div class="rlc-stat-label">Total Item</div>
                         <div class="rlc-stat-value">
-                            {{ (int)($item->items->count()) }} Produk
-                            <span class="rlc-stat-sub">{{ (int)($item->total_quantity ?? 0) }} Unit</span>
+                            {{ $item->items->count() }} Produk
+                            <span class="rlc-stat-sub">{{ $totalQty }} Unit</span>
                         </div>
                     </div>
                     <div class="rlc-stat">
-                        <div class="rlc-stat-label">Total Biaya</div>
+                        <div class="rlc-stat-label">Harga Beli</div>
                         <div class="rlc-stat-value money">
-                            Rp {{ number_format($item->total_value ?? 0, 0, ',', '.') }}
+                            Rp {{ number_format($hargaBeli, 0, ',', '.') }}
+                        </div>
+                    </div>
+                    <div class="rlc-stat">
+                        <div class="rlc-stat-label">Harga Total</div>
+                        <div class="rlc-stat-value money">
+                            Rp {{ number_format($totalPrice, 0, ',', '.') }}
                         </div>
                     </div>
                 </div>
@@ -216,7 +240,7 @@
                             <i class="bi bi-pencil"></i> Edit
                         </a>
                         <button type="button" class="rlc-btn-delete"
-                            onclick="openDeleteModal({{ $item->id }}, '{{ addslashes($item->restock_code) }}', {{ (int)($item->total_quantity ?? 0) }}, {{ (float)($item->total_value ?? 0) }})"
+                            onclick="openDeleteModal({{ $item->id }}, '{{ addslashes($item->restock_code) }}', {{ $totalQty }}, {{ $totalPrice }})"
                             title="Hapus Draft">
                             <i class="bi bi-trash"></i>
                         </button>

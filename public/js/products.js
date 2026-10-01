@@ -155,7 +155,7 @@ function addSellingConfigCard(configData = null) {
                 <label class="form-label small fw-semibold text-dark">Harga Jual Produk (Rp) <span class="text-danger">*</span></label>
                 <div class="input-group">
                     <span class="input-group-text bg-light border-end-0">Rp</span>
-                    <input type="number" name="selling_configs[${cardIdx}][selling_price]" class="form-control font-monospace fw-bold text-dark selling-price-input" value="${sellingPrice}" min="0" oninput="calculateCardTotalHpp(this.closest('.selling-config-card'))" required>
+                    <input type="number" name="selling_configs[${cardIdx}][selling_price]" class="form-control font-monospace fw-bold text-dark selling-price-input" value="${sellingPrice}" min="0" oninput="calculateCardTotalHpp(this.closest('.selling-config-card'))" ${hppMethod === "CALCULATED" ? "disabled" : "required"}>
                 </div>
             </div>
 
@@ -182,7 +182,7 @@ function addSellingConfigCard(configData = null) {
                 <label class="form-label small fw-semibold text-dark">Harga Jual Produk (Rp) <span class="text-danger">*</span></label>
                 <div class="input-group">
                     <span class="input-group-text bg-light border-end-0">Rp</span>
-                    <input type="number" name="selling_configs[${cardIdx}][selling_price]" class="form-control font-monospace fw-bold text-dark selling-price-input" value="${sellingPrice}" min="0" oninput="calculateCardTotalHpp(this.closest('.selling-config-card'))" ${hppMethod === "CALCULATED" ? "required" : ""}>
+                    <input type="number" name="selling_configs[${cardIdx}][selling_price]" class="form-control font-monospace fw-bold text-dark selling-price-input" value="${sellingPrice}" min="0" oninput="calculateCardTotalHpp(this.closest('.selling-config-card'))" ${hppMethod === "CALCULATED" ? "required" : "disabled"}>
                 </div>
             </div>
         </div>
@@ -290,12 +290,18 @@ function onCardHppMethodChange(selectEl) {
         if (sellingPriceTop) {
             sellingPriceTop.classList.add("d-none");
             sellingPriceTop.querySelector("input").removeAttribute("required");
+            sellingPriceTop
+                .querySelector("input")
+                .setAttribute("disabled", "disabled");
         }
         if (sellingPriceBottom) {
             sellingPriceBottom.classList.remove("d-none");
             sellingPriceBottom
                 .querySelector("input")
                 .setAttribute("required", "required");
+            sellingPriceBottom
+                .querySelector("input")
+                .removeAttribute("disabled");
         }
     } else {
         if (sellingPriceTop) {
@@ -303,12 +309,16 @@ function onCardHppMethodChange(selectEl) {
             sellingPriceTop
                 .querySelector("input")
                 .setAttribute("required", "required");
+            sellingPriceTop.querySelector("input").removeAttribute("disabled");
         }
         if (sellingPriceBottom) {
             sellingPriceBottom.classList.add("d-none");
             sellingPriceBottom
                 .querySelector("input")
                 .removeAttribute("required");
+            sellingPriceBottom
+                .querySelector("input")
+                .setAttribute("disabled", "disabled");
         }
     }
 
@@ -477,7 +487,13 @@ function calculateCardTotalHpp(card) {
             "Rp " + Math.round(totalHpp).toLocaleString("id-ID");
     }
 
-    const sellingPriceInput = card.querySelector(".selling-price-input");
+    const visiblePriceWrapper =
+        method === "CALCULATED"
+            ? card.querySelector(".selling-price-bottom")
+            : card.querySelector(".selling-price-top");
+    const sellingPriceInput = visiblePriceWrapper
+        ? visiblePriceWrapper.querySelector(".selling-price-input")
+        : null;
     const sellingPrice =
         parseFloat(sellingPriceInput ? sellingPriceInput.value : 0) || 0;
     const profit = sellingPrice - totalHpp;
