@@ -216,4 +216,40 @@ class ReportController extends Controller
 
         return redirect()->route('reports.index')->with('success', 'Laporan penjualan berhasil dihapus.');
     }
+    /**
+     * Display the salary calculator page based on report margin.
+     */
+    public function salaryCalculator(Request $request)
+    {
+        $startDate = $request->input('start_date', today()->toDateString());
+        $endDate   = $request->input('end_date', today()->toDateString());
+
+        $summary = $this->reportService->getSummaryForCalculator($startDate, $endDate);
+
+        return view('pages.reports.salary_calculator', compact('summary', 'startDate', 'endDate'));
+    }
+
+    /**
+     * Simpan hasil kalkulasi gaji ke kolom komisi pada laporan di rentang tanggal.
+     */
+    public function storeSalaryCalculation(Request $request)
+    {
+        $validated = $request->validate([
+            'start_date'          => 'required|date',
+            'end_date'            => 'required|date|after_or_equal:start_date',
+            'commission_type'     => 'required|in:persentase,nominal',
+            'commission_value'    => 'required|numeric|min:0',
+            'profit_share_amount' => 'required|numeric|min:0',
+            'owner_share_amount'  => 'required|numeric|min:0',
+            'notes'               => 'nullable|string|max:500',
+        ]);
+
+        $updated = $this->reportService->storeSalaryCalculation($validated);
+
+        return response()->json([
+            'status'  => 'success',
+            'message' => 'Data komisi berhasil disimpan.',
+            'updated' => $updated,
+        ]);
+    }
 }

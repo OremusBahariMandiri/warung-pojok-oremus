@@ -78,6 +78,9 @@ Route::middleware(['auth', 'remember'])->group(function () {
     Route::get('reports/summary', [ReportController::class, 'summary'])
         ->name('reports.summary')
         ->middleware('user.access:reports,index');
+    Route::get('reports/salary-calculator', [ReportController::class, 'salaryCalculator'])
+        ->name('reports.salary_calculator')
+        ->middleware('user.access:reports,index');
     Route::resource('reports', ReportController::class)->middleware('user.access:reports');
 
     // Activity Logs
@@ -87,4 +90,8 @@ Route::middleware(['auth', 'remember'])->group(function () {
     Route::get('activity-logs/{activityLog}', [ActivityLogController::class, 'show'])
         ->name('activity_logs.show')
         ->middleware('user.access:activity_logs,show');
+
+        // Salary Calculation Submission Route
+    Route::post('reports/salary-calculator', [ReportController::class, 'storeSalaryCalculation'])
+    ->name('reports.salary_calculator.store');
 });
