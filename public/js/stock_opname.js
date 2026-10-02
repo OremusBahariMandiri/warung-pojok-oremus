@@ -95,6 +95,51 @@ $(document).ready(function () {
 
     var rowIndex = $("#opnameItemsTable tbody tr.opname-row").length || 0;
 
+    // ── READONLY MODE GUARD ───────────────────────────────────────
+    // Deteksi dari data-readonly pada form (di-set oleh blade via $readonly)
+    var isReadonly = $("#formStockOpname").data("readonly") === "true";
+
+    if (isReadonly) {
+        // Destroy Select2 dan render sebagai teks agar terlihat rapi
+        $(".product-select").each(function () {
+            if ($(this).hasClass("select2-hidden-accessible")) {
+                $(this).select2("destroy");
+            }
+            var selectedText = $(this).find("option:selected").text();
+            $(this)
+                .closest("td")
+                .find(".product-select")
+                .replaceWith(
+                    '<span class="fw-semibold small text-dark">' +
+                        selectedText +
+                        "</span>",
+                );
+        });
+
+        // Disable semua input stok fisik (backup selain readonly di blade)
+        $(".physical-stock-input").prop("readonly", true).addClass("bg-light");
+
+        // Sembunyikan tombol hapus baris (backup selain kondisi blade)
+        $(".btn-delete-row").hide();
+
+        // Sembunyikan tombol tambah produk (backup selain kondisi blade)
+        $("#btnAddRow").hide();
+
+        // Hitung selisih awal untuk tampilan (tetap perlu meski readonly)
+        $("#opnameItemsTable tbody tr.opname-row").each(function () {
+            calculateRowDiffReadonly($(this));
+        });
+
+        // Sync mobile cards dalam mode readonly
+        if (window.innerWidth < 768) {
+            syncMobileCardsReadonly();
+        }
+
+        // Stop — tidak perlu register event listener interaktif
+        return;
+    }
+    // ─────────────────────────────────────────────────────────────
+
     // ── 1. Initialize Select2 ─────────────────────────────────────
     function initSelect2(element) {
         if ($(element).hasClass("select2-hidden-accessible")) {
@@ -299,7 +344,7 @@ $(document).ready(function () {
                         ? productName
                         : '<span class="text-muted">-- Belum dipilih --</span>') +
                     "</div>" +
-                    '<div class="text-muted" style="font-size:0.75rem;">Satuan: <span class="mobile-unit-val">' +
+                    '<div class="text-muted d-none" style="font-size:0.75rem;">Satuan: <span class="mobile-unit-val">' +
                     (unitName || "-") +
                     "</span></div>" +
                     "</div>" +
@@ -536,3 +581,205 @@ $("#btnSaveDraftMobile").on("click", function () {
 $("#btnOpenConfirmModalMobile").on("click", function () {
     $("#btnOpenConfirmModal").trigger("click");
 });
+
+// ════════════════════════════════════════════════════════════════
+// READONLY HELPERS — Hanya dipakai saat mode readonly (COMPLETED)
+// ════════════════════════════════════════════════════════════════
+
+/**
+ * Hitung & tampilkan selisih satu baris dalam mode readonly.
+ * Dipakai saat isReadonly = true karena select sudah disabled,
+ * maka data diambil langsung dari system-stock-cell & physical-stock-input.
+ */
+function calculateRowDiffReadonly($row) {
+    var systemStock = parseInt(
+        $row.find(".system-stock-cell").text().trim() || 0,
+        10,
+    );
+    var physicalStockRaw = $row.find(".physical-stock-input").val();
+    var physicalStock =
+        physicalStockRaw !== "" ? parseInt(physicalStockRaw, 10) : 0;
+
+    if (isNaN(systemStock)) return;
+
+    var diff = physicalStock - systemStock;
+
+    var badgeHtml = "";
+    if (diff === 0) {
+        badgeHtml =
+            '<span class="diff-badge zero"><i class="bi bi-check-circle-fill"></i> 0 (Sesuai)</span>';
+    } else if (diff > 0) {
+        badgeHtml =
+            '<span class="diff-badge surplus"><i class="bi bi-arrow-up-circle-fill"></i> +' +
+            diff +
+            " (Lebih)</span>";
+    } else {
+        badgeHtml =
+            '<span class="diff-badge deficit"><i class="bi bi-arrow-down-circle-fill"></i> ' +
+            diff +
+            " (Kurang)</span>";
+    }
+
+    $row.find(".diff-cell, .diff-badge-container").html(badgeHtml);
+}
+
+/**
+ * Render mobile cards dalam mode readonly — semua input & select disabled.
+ */
+function syncMobileCardsReadonly() {
+    var $container = $("#opnameMobileCards");
+    $container.empty();
+
+    $("#opnameItemsTable tbody tr.opname-row").each(function (idx) {
+        var $row = $(this);
+
+        // Ambil nama produk dari hidden input atau teks yang ada
+        var productName = $row
+            .find("td:nth-child(2) span.fw-semibold")
+            .text()
+            .trim();
+        if (!productName) {
+            productName = $row
+                .find(".product-select option:selected")
+                .text()
+                .trim();
+        }
+
+        var systemStock = $row.find(".system-stock-cell").text().trim() || "-";
+        var physRaw = $row.find(".physical-stock-input").val();
+        var physStock = physRaw !== "" ? parseInt(physRaw, 10) : 0;
+        var sysInt = parseInt(systemStock, 10);
+        var diff = !isNaN(sysInt) ? physStock - sysInt : null;
+
+        var diffBadgeHtml = "-";
+        if (diff !== null) {
+            if (diff === 0) {
+                diffBadgeHtml =
+                    '<span class="diff-badge zero"><i class="bi bi-check-circle-fill"></i> 0 (Sesuai)</span>';
+            } else if (diff > 0) {
+                diffBadgeHtml =
+                    '<span class="diff-badge surplus"><i class="bi bi-arrow-up-circle-fill"></i> +' +
+                    diff +
+                    " (Lebih)</span>";
+            } else {
+                diffBadgeHtml =
+                    '<span class="diff-badge deficit"><i class="bi bi-arrow-down-circle-fill"></i> ' +
+                    diff +
+                    " (Kurang)</span>";
+            }
+        }
+
+        var $card = $(
+            '<div class="opname-item-card" data-row-idx="' +
+                idx +
+                '">' +
+                '<div class="card-header-row">' +
+                '<span class="card-num-badge">' +
+                (idx + 1) +
+                "</span>" +
+                '<div class="flex-grow-1 min-w-0">' +
+                '<div class="fw-semibold text-dark small mobile-product-name">' +
+                (productName ||
+                    '<span class="text-muted">-- Tidak diketahui --</span>') +
+                "</div>" +
+                "</div>" +
+                // Tidak ada tombol hapus di readonly
+                "</div>" +
+                '<div class="row g-2 mt-2">' +
+                '<div class="col-6">' +
+                '<label class="mobile-field-label">Stok Sistem</label>' +
+                '<div class="fw-bold mobile-sys-stock-val">' +
+                systemStock +
+                "</div>" +
+                "</div>" +
+                '<div class="col-6">' +
+                '<label class="mobile-field-label">Stok Fisik</label>' +
+                '<input type="number" class="form-control form-control-sm text-center fw-bold bg-light" ' +
+                'value="' +
+                physRaw +
+                '" min="0" readonly>' +
+                "</div>" +
+                "</div>" +
+                '<div class="mt-2">' +
+                '<label class="mobile-field-label">Selisih</label>' +
+                '<div class="mobile-diff-val">' +
+                diffBadgeHtml +
+                "</div>" +
+                "</div>" +
+                "</div>",
+        );
+
+        $container.append($card);
+    });
+}
+
+// ════════════════════════════════════════════════════════════════
+// ROLLBACK COUNTDOWN — Live timer untuk batas waktu rollback
+// ════════════════════════════════════════════════════════════════
+(function () {
+    // Ambil deadline dari atribut data-deadline pada tag <script> ini sendiri
+    var scriptTag = document.currentScript;
+    var deadline = scriptTag
+        ? parseInt(scriptTag.getAttribute("data-deadline") || 0, 10)
+        : 0;
+
+    // Tidak ada deadline atau bukan halaman rollback — stop
+    if (!deadline) return;
+
+    var elCountdownBanner = document.getElementById("rollbackCountdown");
+    var elCountdownModal = document.getElementById("rollbackCountdownModal");
+    var elInfoAvailable = document.getElementById("rollbackInfoAvailable");
+    var elInfoExpired = document.getElementById("rollbackInfoExpired");
+    var elBtnDesktop = document.getElementById("btnRollbackDesktop");
+    var elBtnMobile = document.getElementById("btnRollbackMobile");
+
+    // ── Format sisa waktu ke string ─────────────────────────────
+    function formatCountdown(msLeft) {
+        var totalSec = Math.floor(msLeft / 1000);
+        var h = Math.floor(totalSec / 3600);
+        var m = Math.floor((totalSec % 3600) / 60);
+        var s = totalSec % 60;
+        var parts = [];
+        if (h > 0) parts.push(h + " jam");
+        if (m > 0 || h > 0) parts.push(m + " menit");
+        parts.push(s + " detik");
+        return parts.join(" ") + " lagi";
+    }
+
+    // ── Nonaktifkan tombol rollback saat waktu habis ─────────────
+    function disableRollbackButtons() {
+        [elBtnDesktop, elBtnMobile].forEach(function (btn) {
+            if (!btn) return;
+            btn.disabled = true;
+            btn.classList.add("disabled");
+            btn.removeAttribute("data-bs-toggle");
+            btn.removeAttribute("data-bs-target");
+            btn.setAttribute("title", "Batas waktu rollback sudah habis");
+        });
+
+        // Banner: sembunyikan info "tersedia", tampilkan info "expired"
+        if (elInfoAvailable) elInfoAvailable.style.display = "none";
+        if (elInfoExpired) elInfoExpired.style.display = "flex";
+    }
+
+    // ── Tick: update tiap detik ──────────────────────────────────
+    function tick() {
+        var msLeft = deadline - Date.now();
+
+        if (msLeft <= 0) {
+            if (elCountdownBanner) elCountdownBanner.textContent = "0 detik";
+            if (elCountdownModal) elCountdownModal.textContent = "0 detik";
+            disableRollbackButtons();
+            clearInterval(timer);
+            return;
+        }
+
+        var text = formatCountdown(msLeft);
+        if (elCountdownBanner) elCountdownBanner.textContent = text;
+        if (elCountdownModal) elCountdownModal.textContent = text;
+    }
+
+    // Jalankan langsung lalu tiap detik
+    tick();
+    var timer = setInterval(tick, 1000);
+})();

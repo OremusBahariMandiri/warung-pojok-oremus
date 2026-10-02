@@ -221,11 +221,20 @@ class ReportController extends Controller
      */
     public function salaryCalculator(Request $request)
     {
-        $startDate = $request->input('start_date', today()->toDateString());
-        $endDate   = $request->input('end_date', today()->toDateString());
-
+        // Jika ada tanggal dari query param (dari tombol kalkulator di index),
+        // simpan ke session lalu redirect ke URL bersih tanpa params
+        if ($request->has('start_date') || $request->has('end_date')) {
+            $request->session()->put('salary_calc_start', $request->input('start_date', today()->toDateString()));
+            $request->session()->put('salary_calc_end',   $request->input('end_date',   today()->toDateString()));
+            return redirect()->route('reports.salary_calculator');
+        }
+ 
+        // Ambil tanggal dari session, default hari ini jika belum ada
+        $startDate = $request->session()->get('salary_calc_start', today()->toDateString());
+        $endDate   = $request->session()->get('salary_calc_end',   today()->toDateString());
+ 
         $summary = $this->reportService->getSummaryForCalculator($startDate, $endDate);
-
+ 
         return view('pages.reports.salary_calculator', compact('summary', 'startDate', 'endDate'));
     }
 

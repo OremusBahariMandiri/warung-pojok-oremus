@@ -129,7 +129,7 @@
                             <tr>
                                 <th class="text-center" style="width: 45px;">No</th>
                                 <th class="text-center" style="min-width: 180px;">Nama Produk</th>
-                                <th class="text-center" style="width: 160px;">Satuan</th>
+                                <th class="text-center d-none" style="width: 160px;">Satuan</th>
                                 <th class="text-center" style="width: 100px;">Jumlah</th>
                                 <th class="text-center" style="width: 140px;">Harga Satuan</th>
                                 <th class="text-center" style="width: 120px;">Subtotal</th>
@@ -167,7 +167,7 @@
                                                 @endforeach
                                             </select>
                                         </td>
-                                        <td>
+                                        <td class="d-none">
                                             <select name="items[{{ $idx }}][restock_unit_id]" class="form-select form-select-sm select2-restock-unit rounded-2" onchange="onUnitSelectChange(this)" required>
                                                 <option value="" disabled {{ empty($selectedUnitId) ? 'selected' : '' }}>Pilih Satuan...</option>
                                                 @foreach ($unitsList as $u)
@@ -246,7 +246,7 @@
                                         @endforeach
                                     </select>
                                 </div>
-                                <div class="mb-2">
+                                <div class="mb-2 d-none">
                                     <label class="form-label small fw-semibold text-dark mb-1">Satuan Beli</label>
                                     <select name="items[{{ $idx }}][restock_unit_id]" class="form-select form-select-sm select2-restock-unit rounded-2" onchange="onUnitSelectChange(this)" required>
                                         <option value="" disabled {{ empty($selectedUnitId) ? 'selected' : '' }}>Pilih Satuan...</option>

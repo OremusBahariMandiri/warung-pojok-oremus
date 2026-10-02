@@ -8,7 +8,6 @@ use App\Models\StockOpname;
 use App\Models\StockOpnameItem;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 
 class StockOpnameService
 {
@@ -63,14 +62,12 @@ class StockOpnameService
 
     /**
      * Create a new stock opname transaction.
-     * Difference = physical_stock - initial_stock (initial stock is the permanent baseline).
-     * Opname does NOT modify current_stock — that is solely managed by restock operations.
      */
     public function createStockOpname(array $data, int $userId): StockOpname
     {
         return DB::transaction(function () use ($data, $userId) {
-            $opnameCode = !empty($data['opname_code']) 
-                ? $data['opname_code'] 
+            $opnameCode = !empty($data['opname_code'])
+                ? $data['opname_code']
                 : CodeGenerator::generateStockOpnameCode(StockOpname::class);
             $opnameDate = !empty($data['opname_date']) ? Carbon::parse($data['opname_date']) : Carbon::now();
             $status     = $this->normalizeStatus($data['status_opname'] ?? 'DRAFT');
@@ -89,7 +86,6 @@ class StockOpnameService
                 $productId     = (int) $itemData['product_id'];
                 $physicalStock = (int) $itemData['physical_stock'];
 
-                // Lock product row — system_stock is current_stock for display/diff calculation
                 $product     = Products::lockForUpdate()->findOrFail($productId);
                 $systemStock = (int) $product->current_stock;
                 $difference  = $physicalStock - $systemStock;
@@ -100,11 +96,10 @@ class StockOpnameService
                     'system_stock'        => $systemStock,
                     'physical_stock'      => $physicalStock,
                     'difference'          => $difference,
-                    // Save old initial_stock here so rollback can restore it
                     'stock_before_opname' => (int) $product->initial_stock,
                 ]);
 
-                // If COMPLETED: update initial_stock to the physical count result
+                // Jika COMPLETED: update initial_stock ke hasil hitung fisik
                 if ($status === 'COMPLETED') {
                     $product->initial_stock = $physicalStock;
                     $product->save();
@@ -118,8 +113,6 @@ class StockOpnameService
                     'difference'     => $difference,
                 ];
             }
-
-
 
             ActivityLogService::log(
                 action:      'CREATE',
@@ -140,7 +133,7 @@ class StockOpnameService
     }
 
     /**
-     * Update an existing stock opname transaction (e.g. from DRAFT).
+     * Update an existing stock opname transaction (e.g. dari DRAFT).
      */
     public function updateStockOpname(StockOpname $opname, array $data, int $userId): StockOpname
     {
@@ -155,7 +148,6 @@ class StockOpnameService
                 'status_opname' => $newStatus,
             ]);
 
-            // Re-sync items if provided
             if (isset($data['items']) && is_array($data['items'])) {
                 $opname->items()->delete();
 
@@ -174,11 +166,10 @@ class StockOpnameService
                         'system_stock'        => $systemStock,
                         'physical_stock'      => $physicalStock,
                         'difference'          => $difference,
-                        // Save old initial_stock so rollback can restore it
                         'stock_before_opname' => (int) $product->initial_stock,
                     ]);
 
-                    // If COMPLETED: update initial_stock to the physical count result
+                    // Jika COMPLETED: update initial_stock ke hasil hitung fisik
                     if ($newStatus === 'COMPLETED') {
                         $product->initial_stock = $physicalStock;
                         $product->save();
@@ -193,8 +184,6 @@ class StockOpnameService
                     ];
                 }
             }
-
-
 
             ActivityLogService::log(
                 action:      'UPDATE',
@@ -213,7 +202,6 @@ class StockOpnameService
 
     /**
      * Update status of stock opname transaction (e.g. DRAFT -> COMPLETED).
-     * Opname does NOT modify current_stock regardless of status change.
      */
     public function updateStatus(StockOpname $opname, string $newStatus, int $userId): StockOpname
     {
@@ -227,7 +215,7 @@ class StockOpnameService
 
             $opname->load('items');
 
-            // If DRAFT/REVIEW → COMPLETED: update initial_stock to physical_stock result
+            // DRAFT/REVIEW → COMPLETED: update initial_stock ke physical_stock
             if ($oldStatus !== 'COMPLETED' && $newStatus === 'COMPLETED') {
                 foreach ($opname->items as $item) {
                     $product = Products::lockForUpdate()->find($item->product_id);
@@ -239,7 +227,6 @@ class StockOpnameService
             }
 
             $opname->update(['status_opname' => $newStatus]);
-
 
             ActivityLogService::log(
                 action:      'UPDATE_STATUS',
@@ -257,36 +244,79 @@ class StockOpnameService
     }
 
     /**
-     * Delete / Rollback a stock opname record.
-     * No current_stock restore needed — opname never modifies current_stock.
+     * Rollback a COMPLETED stock opname back to DRAFT.
+     *
+     * Data opname & items TIDAK dihapus.
+     * Yang dilakukan:
+     *  1. Restore initial_stock produk ke nilai sebelum opname (stock_before_opname).
+     *  2. Ubah status opname kembali ke DRAFT.
+     *  3. Catat activity log.
+     *
+     * Setelah rollback, admin/user bisa membuka kembali form edit dan
+     * memperbaiki data sebelum menyelesaikannya lagi.
+     */
+    public function rollbackStockOpname(StockOpname $opname, int $userId): StockOpname
+    {
+        return DB::transaction(function () use ($opname, $userId) {
+            // Hanya opname berstatus COMPLETED yang bisa di-rollback
+            if ($opname->status_opname !== 'COMPLETED') {
+                throw new \Exception("Hanya transaksi berstatus COMPLETED yang dapat di-rollback.");
+            }
+
+            $opname->load('items');
+            $oldValues = $opname->toArray();
+
+            // 1. Restore initial_stock tiap produk ke nilai sebelum opname
+            foreach ($opname->items as $item) {
+                $product = Products::lockForUpdate()->find($item->product_id);
+                if ($product) {
+                    $product->initial_stock = $item->stock_before_opname;
+                    $product->save();
+                }
+            }
+
+            // 2. Kembalikan status ke DRAFT — data tetap ada, bisa diedit kembali
+            $opname->update(['status_opname' => 'DRAFT']);
+
+            // 3. Activity log
+            ActivityLogService::log(
+                action:      'ROLLBACK',
+                module:      'STOCK_OPNAME',
+                entityType:  StockOpname::class,
+                entityId:    $opname->id,
+                description: "Rolled back Stock Opname {$opname->opname_code} from COMPLETED to DRAFT. Stock restored.",
+                oldValues:   $oldValues,
+                newValues:   $opname->fresh()->toArray(),
+                userId:      $userId
+            );
+
+            return $opname->fresh()->load(['creator', 'items.product.unit']);
+        });
+    }
+
+    /**
+     * Hard delete stock opname — HANYA untuk data DRAFT yang ingin dihapus permanen.
+     * Tidak boleh dipanggil untuk rollback opname COMPLETED.
      */
     public function deleteStockOpname(StockOpname $opname): bool
     {
         return DB::transaction(function () use ($opname) {
-            $opname->load('items');
-            $oldValues = $opname->toArray();
-            $code = $opname->opname_code;
-
-            // If COMPLETED: restore initial_stock back to the value before opname
+            // Guard: jangan izinkan hard-delete opname yang sudah COMPLETED
             if ($opname->status_opname === 'COMPLETED') {
-                foreach ($opname->items as $item) {
-                    $product = Products::lockForUpdate()->find($item->product_id);
-                    if ($product) {
-                        $product->initial_stock = $item->stock_before_opname;
-                        $product->save();
-                    }
-                }
+                throw new \Exception("Transaksi COMPLETED tidak dapat dihapus. Gunakan rollback.");
             }
 
-            $deleted = $opname->delete();
+            $oldValues = $opname->load('items')->toArray();
+            $code      = $opname->opname_code;
 
+            $deleted = $opname->delete();
 
             ActivityLogService::log(
                 action:      'DELETE',
                 module:      'STOCK_OPNAME',
                 entityType:  StockOpname::class,
                 entityId:    $opname->id,
-                description: "Rolled back / Deleted Stock Opname transaction: {$code}",
+                description: "Deleted DRAFT Stock Opname: {$code}",
                 oldValues:   $oldValues,
                 newValues:   null
             );

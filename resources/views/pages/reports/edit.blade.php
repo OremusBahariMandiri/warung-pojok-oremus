@@ -1,6 +1,6 @@
 ﻿@extends('layouts.admin')
 
-@section('title', 'Edit Laporan Penjualan â€" Warung Pojok Oremus')
+@section('title', 'Edit Laporan Penjualan – Warung Pojok Oremus')
 
 @push('styles')
 <link rel="stylesheet" href="{{ asset('css/reports.css') }}">
@@ -90,40 +90,40 @@
                     </button>
                 </div>
 
-                {{-- DESKTOP TABLE VIEW --}}
-                <div class="reports-table-responsive d-none d-md-block">
-                    <table class="table table-bordered table-hover align-middle mb-0 w-100" id="reportItemsTable">
+                {{-- ══════════════════════════════════════════════════════════════
+                     DESKTOP TABLE — 6-col + expand row (≥768px)
+                     ══════════════════════════════════════════════════════════════ --}}
+                <div class="reports-create-table-desktop-wrap">
+                    <table class="table table-bordered table-hover align-middle mb-0 w-100" id="reportItemsTableCreate">
                         <thead class="table-light">
                             <tr class="align-middle">
-                                <th class="text-center col-no" style="width: 40px;">No</th>
-                                <th class="text-center col-product" style="min-width: 220px;">Produk</th>
-                                <th class="text-center col-unit" style="width: 130px;">Satuan</th>
-                                <th class="text-center col-info" style="width: 130px;">Informasi</th>
-                                <th class="text-center col-qty" style="width: 95px;">Jumlah</th>
-                                <th class="text-center col-stock-final" style="width: 95px;">Sisa Stok</th>
-                                <th class="text-center col-price" style="width: 110px;">Harga Beli</th>
-                                <th class="text-center col-selling-price" style="width: 110px;">Harga Jual</th>
-                                <th class="text-center col-total-sales" style="width: 125px;">Total Penjualan</th>
-                                <th class="text-center col-hpp" style="width: 110px;">HPP</th>
-                                <th class="text-center col-total-hpp" style="width: 120px;">Total HPP</th>
-                                <th class="text-center col-margin" style="width: 120px;">Margin</th>
-                                <th class="text-center no-sort col-action" style="width: 45px;">Aksi</th>
+                                <th class="text-center col-no" style="width:56px;">No</th>
+                                <th class="col-product-unit" style="min-width:260px;">Produk / Satuan</th>
+                                <th class="text-center col-qty" style="width:95px;">Jumlah</th>
+                                <th class="text-center col-total-sales" style="width:130px;">Total Penjualan</th>
+                                <th class="text-center col-margin" style="width:125px;">Margin</th>
+                                <th class="text-center no-sort col-action" style="width:45px;">Aksi</th>
                             </tr>
                         </thead>
                         <tbody id="reportItemRows">
                             @if (!empty($oldItems) && is_array($oldItems))
                                 @foreach ($oldItems as $idx => $item)
                                     @php
-                                        $selectedUnitId = $item['selling_unit_id'] ?? null;
-                                        $selectedProdId = $item['product_id'] ?? null;
-                                        $qtyVal         = isset($item['quantity']) && $item['quantity'] !== '' ? $item['quantity'] : '';
-                                        $stockFinalVal  = isset($item['stock_final']) && $item['stock_final'] !== '' ? $item['stock_final'] : '';
+                                        $selectedUnitId  = $item['selling_unit_id'] ?? null;
+                                        $selectedProdId  = $item['product_id'] ?? null;
+                                        $qtyVal          = isset($item['quantity']) && $item['quantity'] !== '' ? $item['quantity'] : '';
+                                        $stockFinalVal   = isset($item['stock_final']) && $item['stock_final'] !== '' ? $item['stock_final'] : '';
+                                        $sellingPriceVal = $item['selling_price'] ?? 0;
+                                        $hppVal          = $item['hpp'] ?? 0;
                                     @endphp
-                                    {{-- FIX: gunakan $item['quantity'] bukan $detail->quantity --}}
+                                    {{-- Main row --}}
                                     <tr class="report-item-row align-middle" data-original-qty="{{ $item['quantity'] ?? 0 }}">
-                                        <td class="row-number text-center text-muted fw-medium small col-no">{{ $loop->iteration }}</td>
-                                        <td class="col-product">
-                                            <select name="items[{{ $idx }}][product_id]" class="form-select form-select-sm product-select rounded-2" onchange="onProductSelectChange(this)" required>
+                                        <td class="row-number text-center text-muted fw-medium small col-no report-expand-toggle" onclick="_toggleExpandRow(this)" style="cursor:pointer;">
+                                            <span class="row-expand-arrow"></span>
+                                            <span class="row-no-num">{{ $loop->iteration }}</span>
+                                        </td>
+                                        <td class="col-product-unit">
+                                            <select name="items[{{ $idx }}][product_id]" class="form-select form-select-sm product-select rounded-2 mb-1" onchange="onProductSelectChange(this)" required>
                                                 <option value="" disabled {{ empty($selectedProdId) ? 'selected' : '' }}>Pilih Produk...</option>
                                                 @foreach ($productsList as $p)
                                                     <option value="{{ $p->id }}" {{ $selectedProdId == $p->id ? 'selected' : '' }}>
@@ -131,8 +131,6 @@
                                                     </option>
                                                 @endforeach
                                             </select>
-                                        </td>
-                                        <td class="col-unit">
                                             <select name="items[{{ $idx }}][selling_unit_id]" class="form-select form-select-sm selling-unit-select rounded-2" onchange="onSellingUnitChange(this)" required>
                                                 <option value="" disabled {{ empty($selectedUnitId) ? 'selected' : '' }}>Pilih Satuan...</option>
                                                 @foreach ($unitsList as $u)
@@ -142,34 +140,13 @@
                                                 @endforeach
                                             </select>
                                         </td>
-                                        <td class="col-info text-start small">
-                                            <div class="item-info-stock text-dark fw-medium" style="font-size: 0.78rem;">Stok saat ini: <span class="item-stock-val">-</span></div>
-                                            <div class="item-info-hpp text-muted" style="font-size: 0.72rem;">Metode HPP: <span class="item-hpp-method-val">-</span></div>
-                                        </td>
                                         <td class="col-qty">
-                                            <input type="number" name="items[{{ $idx }}][quantity]" class="form-control form-control-sm font-monospace text-center rounded-2 item-qty" value="{{ $qtyVal }}" min="1" oninput="onItemQtyOrStockFinalChange(this)" required>
-                                        </td>
-                                        <td class="col-stock-final">
-                                            <input type="number" name="items[{{ $idx }}][stock_final]" class="form-control form-control-sm font-monospace text-center rounded-2 item-stock-final bg-light text-secondary" value="{{ $stockFinalVal }}" readonly tabindex="-1" required>
-                                        </td>
-                                        <td class="col-price text-end font-monospace small">
-                                            <input type="text" class="form-control form-control-sm font-monospace text-end rounded-2 bg-light text-muted item-purchase-price-display" value="Rp 0" disabled tabindex="-1">
-                                        </td>
-                                        <td class="col-selling-price text-end font-monospace small">
-                                            <span class="item-readonly-badge item-selling-price-display">Rp 0</span>
-                                            <input type="hidden" name="items[{{ $idx }}][selling_price]" class="item-selling-price" value="0">
+                                            <input type="number" name="items[{{ $idx }}][quantity]" class="form-control form-control-sm font-monospace text-center rounded-2 item-qty" value="{{ $qtyVal }}" min="1" placeholder="" oninput="onItemQtyOrStockFinalChange(this)" required>
                                         </td>
                                         <td class="col-total-sales text-end font-monospace fw-semibold text-dark">
                                             <span class="item-readonly-badge item-total-sales-display">Rp 0</span>
                                         </td>
-                                        <td class="col-hpp text-end font-monospace small">
-                                            <span class="item-readonly-badge item-hpp-display">Rp 0</span>
-                                            <input type="hidden" name="items[{{ $idx }}][hpp]" class="item-hpp-price" value="0">
-                                        </td>
-                                        <td class="col-total-hpp text-end font-monospace small text-muted">
-                                            <span class="item-readonly-badge item-total-hpp-display">Rp 0</span>
-                                        </td>
-                                        <td class="col-margin text-end font-monospace fw-bold text-success">
+                                        <td class="col-margin text-end font-monospace fw-bold">
                                             <span class="item-readonly-badge item-margin-display text-success">Rp 0</span>
                                         </td>
                                         <td class="text-center col-action">
@@ -177,15 +154,67 @@
                                                 <i class="bi bi-trash3-fill fs-6"></i>
                                             </button>
                                         </td>
+                                        {{-- Hidden data container --}}
+                                        <td class="report-item-hidden-data" style="display:none;">
+                                            <div class="item-info-stock"><span class="item-stock-val">-</span></div>
+                                            <div class="item-info-hpp"><span class="item-hpp-method-val">-</span></div>
+                                            <input type="text" class="item-purchase-price-display" value="Rp 0" readonly tabindex="-1">
+                                            <span class="item-selling-price-display">Rp 0</span>
+                                            <input type="hidden" name="items[{{ $idx }}][selling_price]" class="item-selling-price" value="{{ $sellingPriceVal }}">
+                                            <span class="item-hpp-display">Rp 0</span>
+                                            <input type="hidden" name="items[{{ $idx }}][hpp]" class="item-hpp-price" value="{{ $hppVal }}">
+                                            <span class="item-total-hpp-display">Rp 0</span>
+                                            <input type="number" name="items[{{ $idx }}][stock_final]" class="item-stock-final" value="{{ $stockFinalVal }}" readonly tabindex="-1" required>
+                                        </td>
+                                    </tr>
+                                    {{-- Expand detail row --}}
+                                    <tr class="report-item-expand-row d-none" data-expand-for="{{ $idx }}">
+                                        <td colspan="6" class="p-0">
+                                            <div class="report-expand-details">
+                                                <div class="row g-0">
+                                                    <div class="col-4 expand-cell">
+                                                        <div class="expand-label">Stok saat ini</div>
+                                                        <div class="expand-value expand-stock-val">-</div>
+                                                    </div>
+                                                    <div class="col-4 expand-cell">
+                                                        <div class="expand-label">Metode HPP</div>
+                                                        <div class="expand-value expand-hpp-method-val">-</div>
+                                                    </div>
+                                                    <div class="col-4 expand-cell expand-cell-last">
+                                                        <div class="expand-label">Sisa Stok</div>
+                                                        <div class="expand-value expand-stock-final">-</div>
+                                                    </div>
+                                                    <div class="col-4 expand-cell expand-cell-bottom">
+                                                        <div class="expand-label">Harga Beli</div>
+                                                        <div class="expand-value expand-purchase-price">Rp 0</div>
+                                                    </div>
+                                                    <div class="col-4 expand-cell expand-cell-bottom">
+                                                        <div class="expand-label">Harga Jual</div>
+                                                        <div class="expand-value expand-selling-price">Rp 0</div>
+                                                    </div>
+                                                    <div class="col-4 expand-cell expand-cell-last expand-cell-bottom">
+                                                        <div class="expand-label">HPP / Unit</div>
+                                                        <div class="expand-value expand-hpp">Rp 0</div>
+                                                    </div>
+                                                    <div class="col-6 expand-cell expand-cell-bottom expand-cell-noborder">
+                                                        <div class="expand-label">Total HPP</div>
+                                                        <div class="expand-value expand-total-hpp">Rp 0</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </td>
                                     </tr>
                                 @endforeach
                             @elseif ($existingDetails->count() > 0)
                                 @foreach ($existingDetails as $idx => $detail)
-                                    {{-- FIX: tambahkan data-original-qty="{{ $detail->quantity }}" --}}
+                                    {{-- Main row --}}
                                     <tr class="report-item-row align-middle" data-original-qty="{{ $detail->quantity }}">
-                                        <td class="row-number text-center text-muted fw-medium small col-no">{{ $loop->iteration }}</td>
-                                        <td class="col-product">
-                                            <select name="items[{{ $idx }}][product_id]" class="form-select form-select-sm product-select rounded-2" onchange="onProductSelectChange(this)" required>
+                                        <td class="row-number text-center text-muted fw-medium small col-no report-expand-toggle" onclick="_toggleExpandRow(this)" style="cursor:pointer;">
+                                            <span class="row-expand-arrow"></span>
+                                            <span class="row-no-num">{{ $loop->iteration }}</span>
+                                        </td>
+                                        <td class="col-product-unit">
+                                            <select name="items[{{ $idx }}][product_id]" class="form-select form-select-sm product-select rounded-2 mb-1" onchange="onProductSelectChange(this)" required>
                                                 <option value="" disabled>Pilih Produk...</option>
                                                 @foreach ($productsList as $p)
                                                     <option value="{{ $p->id }}" {{ $detail->product_id == $p->id ? 'selected' : '' }}>
@@ -193,8 +222,6 @@
                                                     </option>
                                                 @endforeach
                                             </select>
-                                        </td>
-                                        <td class="col-unit">
                                             <select name="items[{{ $idx }}][selling_unit_id]" class="form-select form-select-sm selling-unit-select rounded-2" onchange="onSellingUnitChange(this)" required>
                                                 <option value="" disabled>Pilih Satuan...</option>
                                                 @foreach ($unitsList as $u)
@@ -204,46 +231,74 @@
                                                 @endforeach
                                             </select>
                                         </td>
-                                        <td class="col-info text-start small">
-                                            <div class="item-info-stock text-dark fw-medium" style="font-size: 0.78rem;">Stok saat ini: <span class="item-stock-val">-</span></div>
-                                            <div class="item-info-hpp text-muted" style="font-size: 0.72rem;">Metode HPP: <span class="item-hpp-method-val">-</span></div>
-                                        </td>
                                         <td class="col-qty">
                                             <input type="number" name="items[{{ $idx }}][quantity]" class="form-control form-control-sm font-monospace text-center rounded-2 item-qty" value="{{ $detail->quantity }}" min="1" oninput="onItemQtyOrStockFinalChange(this)" required>
-                                        </td>
-                                        <td class="col-stock-final">
-                                            <input type="number" name="items[{{ $idx }}][stock_final]" class="form-control form-control-sm font-monospace text-center rounded-2 item-stock-final bg-light text-secondary" value="{{ $detail->stock_final }}" readonly tabindex="-1" required>
-                                        </td>
-                                        <td class="col-price text-end font-monospace small">
-                                            <input type="text" class="form-control form-control-sm font-monospace text-end rounded-2 bg-light text-muted item-purchase-price-display" value="Rp 0" disabled tabindex="-1">
-                                        </td>
-                                        <td class="col-selling-price text-end font-monospace small">
-                                            <span class="item-readonly-badge item-selling-price-display">Rp {{ number_format($detail->selling_price, 0, ',', '.') }}</span>
-                                            <input type="hidden" name="items[{{ $idx }}][selling_price]" class="item-selling-price" value="{{ $detail->selling_price }}">
                                         </td>
                                         <td class="col-total-sales text-end font-monospace fw-semibold text-dark">
                                             <span class="item-readonly-badge item-total-sales-display">Rp {{ number_format($detail->total_price, 0, ',', '.') }}</span>
                                         </td>
-                                        <td class="col-hpp text-end font-monospace small">
-                                            <span class="item-readonly-badge item-hpp-display">Rp {{ number_format($detail->hpp, 0, ',', '.') }}</span>
-                                            <input type="hidden" name="items[{{ $idx }}][hpp]" class="item-hpp-price" value="{{ $detail->hpp }}">
-                                        </td>
-                                        <td class="col-total-hpp text-end font-monospace small text-muted">
-                                            <span class="item-readonly-badge item-total-hpp-display">Rp {{ number_format($detail->total_hpp, 0, ',', '.') }}</span>
-                                        </td>
-                                        <td class="col-margin text-end font-monospace fw-bold text-success">
-                                            <span class="item-readonly-badge item-margin-display text-success">Rp {{ number_format($detail->margin, 0, ',', '.') }}</span>
+                                        <td class="col-margin text-end font-monospace fw-bold">
+                                            <span class="item-readonly-badge item-margin-display {{ $detail->margin >= 0 ? 'text-success' : 'text-danger' }}">Rp {{ number_format($detail->margin, 0, ',', '.') }}</span>
                                         </td>
                                         <td class="text-center col-action">
                                             <button type="button" class="btn btn-sm btn-link text-danger p-0 border-0 shadow-none" onclick="removeReportItemRow(this)" title="Hapus Baris">
                                                 <i class="bi bi-trash3-fill fs-6"></i>
                                             </button>
                                         </td>
+                                        {{-- Hidden data container --}}
+                                        <td class="report-item-hidden-data" style="display:none;">
+                                            <div class="item-info-stock"><span class="item-stock-val">-</span></div>
+                                            <div class="item-info-hpp"><span class="item-hpp-method-val">-</span></div>
+                                            <input type="text" class="item-purchase-price-display" value="Rp 0" readonly tabindex="-1">
+                                            <span class="item-selling-price-display">Rp {{ number_format($detail->selling_price, 0, ',', '.') }}</span>
+                                            <input type="hidden" name="items[{{ $idx }}][selling_price]" class="item-selling-price" value="{{ $detail->selling_price }}">
+                                            <span class="item-hpp-display">Rp {{ number_format($detail->hpp, 0, ',', '.') }}</span>
+                                            <input type="hidden" name="items[{{ $idx }}][hpp]" class="item-hpp-price" value="{{ $detail->hpp }}">
+                                            <span class="item-total-hpp-display">Rp {{ number_format($detail->total_hpp, 0, ',', '.') }}</span>
+                                            <input type="number" name="items[{{ $idx }}][stock_final]" class="item-stock-final" value="{{ $detail->stock_final }}" readonly tabindex="-1" required>
+                                        </td>
+                                    </tr>
+                                    {{-- Expand detail row --}}
+                                    <tr class="report-item-expand-row d-none" data-expand-for="{{ $idx }}">
+                                        <td colspan="6" class="p-0">
+                                            <div class="report-expand-details">
+                                                <div class="row g-0">
+                                                    <div class="col-4 expand-cell">
+                                                        <div class="expand-label">Stok saat ini</div>
+                                                        <div class="expand-value expand-stock-val">-</div>
+                                                    </div>
+                                                    <div class="col-4 expand-cell">
+                                                        <div class="expand-label">Metode HPP</div>
+                                                        <div class="expand-value expand-hpp-method-val">-</div>
+                                                    </div>
+                                                    <div class="col-4 expand-cell expand-cell-last">
+                                                        <div class="expand-label">Sisa Stok</div>
+                                                        <div class="expand-value expand-stock-final">-</div>
+                                                    </div>
+                                                    <div class="col-4 expand-cell expand-cell-bottom">
+                                                        <div class="expand-label">Harga Beli</div>
+                                                        <div class="expand-value expand-purchase-price">Rp 0</div>
+                                                    </div>
+                                                    <div class="col-4 expand-cell expand-cell-bottom">
+                                                        <div class="expand-label">Harga Jual</div>
+                                                        <div class="expand-value expand-selling-price">Rp 0</div>
+                                                    </div>
+                                                    <div class="col-4 expand-cell expand-cell-last expand-cell-bottom">
+                                                        <div class="expand-label">HPP / Unit</div>
+                                                        <div class="expand-value expand-hpp">Rp 0</div>
+                                                    </div>
+                                                    <div class="col-6 expand-cell expand-cell-bottom expand-cell-noborder">
+                                                        <div class="expand-label">Total HPP</div>
+                                                        <div class="expand-value expand-total-hpp">Rp 0</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </td>
                                     </tr>
                                 @endforeach
                             @else
                                 <tr id="emptyItemRow">
-                                    <td colspan="13" class="text-center py-4 text-muted small">
+                                    <td colspan="6" class="text-center py-4 text-muted small">
                                         Belum ada produk yang ditambahkan. Klik tombol "+ Tambah" di atas untuk menambahkan item penjualan.
                                     </td>
                                 </tr>
@@ -252,12 +307,173 @@
                     </table>
                 </div>
 
-                {{-- MOBILE CARD VIEW --}}
-                <div class="reports-cards-mobile d-block d-md-none" id="reportCardsMobile">
-                    <div class="reports-mobile-empty" id="reportMobileEmptyState">
-                        Belum ada produk. Klik "+ Tambah" di atas.
-                    </div>
+                {{-- ══════════════════════════════════════════════════════════════
+                     MOBILE TABLE — 13-col horizontal scroll (≤767px)
+                     Input tanpa attribute name — form submit tetap dari desktop table
+                     ══════════════════════════════════════════════════════════════ --}}
+                <div class="reports-create-table-mobile-wrap">
+                    <table class="table table-bordered align-middle mb-0" id="reportItemsTableMobile">
+                        <thead class="table-light">
+                            <tr class="align-middle">
+                                <th class="col-no text-center">No</th>
+                                <th class="col-product">Produk</th>
+                                <th class="col-unit">Satuan</th>
+                                <th class="col-info">Informasi</th>
+                                <th class="col-qty text-center">Jumlah</th>
+                                <th class="col-stock-final text-center">Sisa Stok</th>
+                                <th class="col-price text-end">Harga Beli</th>
+                                <th class="col-selling-price text-end">Harga Jual</th>
+                                <th class="col-total-sales text-end">Total Penjualan</th>
+                                <th class="col-hpp text-end">HPP</th>
+                                <th class="col-total-hpp text-end">Total HPP</th>
+                                <th class="col-margin text-end">Margin</th>
+                                <th class="col-action text-center no-sort">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="reportItemRowsMobile">
+                            @if (!empty($oldItems) && is_array($oldItems))
+                                @foreach ($oldItems as $idx => $item)
+                                    @php
+                                        $selectedUnitId = $item['selling_unit_id'] ?? null;
+                                        $selectedProdId = $item['product_id'] ?? null;
+                                        $qtyVal         = isset($item['quantity']) && $item['quantity'] !== '' ? $item['quantity'] : '';
+                                        $stockFinalVal  = isset($item['stock_final']) && $item['stock_final'] !== '' ? $item['stock_final'] : '';
+                                    @endphp
+                                    {{-- Mobile mirror row — NO name attributes (tidak disubmit) --}}
+                                    <tr class="report-item-row-mobile align-middle" data-mobile-idx="{{ $idx }}">
+                                        <td class="col-no text-center text-muted fw-medium small">
+                                            <span class="row-no-num">{{ $loop->iteration }}</span>
+                                        </td>
+                                        <td class="col-product">
+                                            <select class="form-select form-select-sm product-select-mobile rounded-2" onchange="onMobileProductChange(this)">
+                                                <option value="" disabled {{ empty($selectedProdId) ? 'selected' : '' }}>Pilih Produk...</option>
+                                                @foreach ($productsList as $p)
+                                                    <option value="{{ $p->id }}" {{ $selectedProdId == $p->id ? 'selected' : '' }}>
+                                                        {{ $p->prod_name }} ({{ $p->prod_code ?: 'PRD-' . $p->id }})
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                        </td>
+                                        <td class="col-unit">
+                                            <select class="form-select form-select-sm selling-unit-select-mobile rounded-2" onchange="onMobileUnitChange(this)">
+                                                <option value="" disabled {{ empty($selectedUnitId) ? 'selected' : '' }}>Pilih Satuan...</option>
+                                                @foreach ($unitsList as $u)
+                                                    <option value="{{ $u->id }}" {{ $selectedUnitId == $u->id ? 'selected' : '' }}>
+                                                        {{ $u->unit_name }} ({{ $u->short_name ?: $u->unit_name }})
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                        </td>
+                                        <td class="col-info">
+                                            <div class="col-info-text">Stok: <span class="item-stock-val">-</span></div>
+                                            <div class="col-info-text">HPP: <span class="item-hpp-method-val">-</span></div>
+                                        </td>
+                                        <td class="col-qty">
+                                            <input type="number" class="form-control form-control-sm font-monospace text-center rounded-2 item-qty-mobile" value="{{ $qtyVal }}" min="1" placeholder="" oninput="onMobileQtyChange(this)">
+                                        </td>
+                                        <td class="col-stock-final">
+                                            <input type="number" class="form-control form-control-sm font-monospace text-center rounded-2 item-stock-final bg-light text-secondary" value="{{ $stockFinalVal }}" readonly tabindex="-1">
+                                        </td>
+                                        <td class="col-price text-end">
+                                            <span class="item-readonly-badge item-purchase-price-display">Rp 0</span>
+                                        </td>
+                                        <td class="col-selling-price text-end">
+                                            <span class="item-readonly-badge item-selling-price-display">Rp 0</span>
+                                        </td>
+                                        <td class="col-total-sales text-end">
+                                            <span class="item-readonly-badge item-total-sales-display">Rp 0</span>
+                                        </td>
+                                        <td class="col-hpp text-end">
+                                            <span class="item-readonly-badge item-hpp-display">Rp 0</span>
+                                        </td>
+                                        <td class="col-total-hpp text-end">
+                                            <span class="item-readonly-badge item-total-hpp-display">Rp 0</span>
+                                        </td>
+                                        <td class="col-margin text-end">
+                                            <span class="item-readonly-badge item-margin-display text-success">Rp 0</span>
+                                        </td>
+                                        <td class="col-action text-center">
+                                            <button type="button" class="btn btn-sm btn-link text-danger p-0 border-0 shadow-none" onclick="removeReportItemMobileRow(this)" title="Hapus Baris">
+                                                <i class="bi bi-trash3-fill fs-6"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            @elseif ($existingDetails->count() > 0)
+                                @foreach ($existingDetails as $idx => $detail)
+                                    {{-- Mobile mirror row dari existing details --}}
+                                    <tr class="report-item-row-mobile align-middle" data-mobile-idx="{{ $idx }}">
+                                        <td class="col-no text-center text-muted fw-medium small">
+                                            <span class="row-no-num">{{ $loop->iteration }}</span>
+                                        </td>
+                                        <td class="col-product">
+                                            <select class="form-select form-select-sm product-select-mobile rounded-2" onchange="onMobileProductChange(this)">
+                                                <option value="" disabled>Pilih Produk...</option>
+                                                @foreach ($productsList as $p)
+                                                    <option value="{{ $p->id }}" {{ $detail->product_id == $p->id ? 'selected' : '' }}>
+                                                        {{ $p->prod_name }} ({{ $p->prod_code ?: 'PRD-' . $p->id }})
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                        </td>
+                                        <td class="col-unit">
+                                            <select class="form-select form-select-sm selling-unit-select-mobile rounded-2" onchange="onMobileUnitChange(this)">
+                                                <option value="" disabled>Pilih Satuan...</option>
+                                                @foreach ($unitsList as $u)
+                                                    <option value="{{ $u->id }}" {{ $detail->selling_unit_id == $u->id ? 'selected' : '' }}>
+                                                        {{ $u->unit_name }} ({{ $u->short_name ?: $u->unit_name }})
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                        </td>
+                                        <td class="col-info">
+                                            <div class="col-info-text">Stok: <span class="item-stock-val">-</span></div>
+                                            <div class="col-info-text">HPP: <span class="item-hpp-method-val">-</span></div>
+                                        </td>
+                                        <td class="col-qty">
+                                            <input type="number" class="form-control form-control-sm font-monospace text-center rounded-2 item-qty-mobile" value="{{ $detail->quantity }}" min="1" oninput="onMobileQtyChange(this)">
+                                        </td>
+                                        <td class="col-stock-final">
+                                            <input type="number" class="form-control form-control-sm font-monospace text-center rounded-2 item-stock-final bg-light text-secondary" value="{{ $detail->stock_final }}" readonly tabindex="-1">
+                                        </td>
+                                        <td class="col-price text-end">
+                                            <span class="item-readonly-badge item-purchase-price-display">Rp 0</span>
+                                        </td>
+                                        <td class="col-selling-price text-end">
+                                            <span class="item-readonly-badge item-selling-price-display">Rp {{ number_format($detail->selling_price, 0, ',', '.') }}</span>
+                                        </td>
+                                        <td class="col-total-sales text-end">
+                                            <span class="item-readonly-badge item-total-sales-display">Rp {{ number_format($detail->total_price, 0, ',', '.') }}</span>
+                                        </td>
+                                        <td class="col-hpp text-end">
+                                            <span class="item-readonly-badge item-hpp-display">Rp {{ number_format($detail->hpp, 0, ',', '.') }}</span>
+                                        </td>
+                                        <td class="col-total-hpp text-end">
+                                            <span class="item-readonly-badge item-total-hpp-display">Rp {{ number_format($detail->total_hpp, 0, ',', '.') }}</span>
+                                        </td>
+                                        <td class="col-margin text-end">
+                                            <span class="item-readonly-badge item-margin-display {{ $detail->margin >= 0 ? 'text-success' : 'text-danger' }}">Rp {{ number_format($detail->margin, 0, ',', '.') }}</span>
+                                        </td>
+                                        <td class="col-action text-center">
+                                            <button type="button" class="btn btn-sm btn-link text-danger p-0 border-0 shadow-none" onclick="removeReportItemMobileRow(this)" title="Hapus Baris">
+                                                <i class="bi bi-trash3-fill fs-6"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            @else
+                                <tr id="emptyItemRowMobile">
+                                    <td colspan="13" class="text-center py-4 text-muted small">
+                                        Belum ada produk. Klik "+ Tambah" di atas.
+                                    </td>
+                                </tr>
+                            @endif
+                        </tbody>
+                    </table>
                 </div>
+
+                {{-- Mobile card container — disembunyikan (d-none), tetap ada agar JS tidak error --}}
+                <div class="reports-cards-mobile d-none" id="reportCardsMobile"></div>
 
                 <!-- Live Summary Preview & Action Bar -->
                 <div class="p-3 bg-light d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-3 mt-3">
