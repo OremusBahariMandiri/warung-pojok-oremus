@@ -739,48 +739,69 @@ function _checkFormSubmitState() {
 }
 
 function refreshReportProductOptions() {
-    // Desktop rows
-    const desktopSelects = Array.from(
-        document.querySelectorAll(
-            "#reportItemRows .report-item-row .product-select",
-        ),
+    // Kumpulkan pasangan product_id + unit_id yang sudah dipilih per baris desktop
+    const desktopRows = Array.from(
+        document.querySelectorAll("#reportItemRows .report-item-row"),
     );
-    const desktopChosen = desktopSelects.map((s) => s.value).filter(Boolean);
-    desktopSelects.forEach((sel) => {
-        Array.from(sel.options).forEach((opt) => {
+
+    // Untuk setiap baris, disable satuan yang sudah dipakai oleh baris LAIN dengan produk yang sama
+    desktopRows.forEach((row) => {
+        const prodSel = row.querySelector(".product-select");
+        const unitSel = row.querySelector(".selling-unit-select");
+        if (!prodSel || !unitSel) return;
+
+        const thisProdId = prodSel.value;
+        if (!thisProdId) return;
+
+        // Kumpulkan unit_id yang sudah dipakai oleh baris LAIN dengan produk yang sama
+        const usedUnitIds = desktopRows
+            .filter((r) => r !== row)
+            .map((r) => {
+                const pSel = r.querySelector(".product-select");
+                const uSel = r.querySelector(".selling-unit-select");
+                if (!pSel || !uSel) return null;
+                return pSel.value === thisProdId ? uSel.value : null;
+            })
+            .filter(Boolean);
+
+        // Enable/disable opsi satuan
+        Array.from(unitSel.options).forEach((opt) => {
             if (!opt.value) return;
             opt.disabled =
-                desktopChosen.includes(opt.value) && sel.value !== opt.value;
+                usedUnitIds.includes(opt.value) && unitSel.value !== opt.value;
         });
     });
 
-    // Mobile table rows
-    const mobileSelects = Array.from(
+    // Mirror ke mobile table
+    const mobileRows = Array.from(
         document.querySelectorAll(
-            "#reportItemRowsMobile .report-item-row-mobile .product-select-mobile",
+            "#reportItemRowsMobile .report-item-row-mobile",
         ),
     );
-    const mobileChosen = mobileSelects.map((s) => s.value).filter(Boolean);
-    mobileSelects.forEach((sel) => {
-        Array.from(sel.options).forEach((opt) => {
-            if (!opt.value) return;
-            opt.disabled =
-                mobileChosen.includes(opt.value) && sel.value !== opt.value;
-        });
-    });
 
-    // Old mobile cards (backward compat)
-    const mobileCardSelects = Array.from(
-        document.querySelectorAll(".report-item-card .product-select"),
-    );
-    const mobileCardChosen = mobileCardSelects
-        .map((s) => s.value)
-        .filter(Boolean);
-    mobileCardSelects.forEach((sel) => {
-        Array.from(sel.options).forEach((opt) => {
+    mobileRows.forEach((mRow) => {
+        const idx = mRow.dataset.mobileIdx;
+        const mProdSel = mRow.querySelector(".product-select-mobile");
+        const mUnitSel = mRow.querySelector(".selling-unit-select-mobile");
+        if (!mProdSel || !mUnitSel) return;
+
+        const thisProdId = mProdSel.value;
+        if (!thisProdId) return;
+
+        const usedUnitIds = mobileRows
+            .filter((r) => r !== mRow)
+            .map((r) => {
+                const pSel = r.querySelector(".product-select-mobile");
+                const uSel = r.querySelector(".selling-unit-select-mobile");
+                if (!pSel || !uSel) return null;
+                return pSel.value === thisProdId ? uSel.value : null;
+            })
+            .filter(Boolean);
+
+        Array.from(mUnitSel.options).forEach((opt) => {
             if (!opt.value) return;
             opt.disabled =
-                mobileCardChosen.includes(opt.value) && sel.value !== opt.value;
+                usedUnitIds.includes(opt.value) && mUnitSel.value !== opt.value;
         });
     });
 }
@@ -1248,7 +1269,7 @@ if (typeof jQuery !== "undefined") {
                       },
                   },
 
-            order: [[1, "asc"]],
+            order: [[1, "desc"]],
 
             columnDefs: [
                 { targets: "no-sort", orderable: false },
@@ -1294,3 +1315,247 @@ function showTodayReportAlert() {
         new bootstrap.Modal(modalEl).show();
     }
 }
+
+/* ════════════════════════════════════════════════════════════
+   SALARY CALCULATOR — Kalkulator Gaji Pekerja
+   Dijalankan hanya di halaman salary_calculator
+   ════════════════════════════════════════════════════════════ */
+(function initSalaryCalculator() {
+    const scDataEl = document.getElementById("scData");
+    if (!scDataEl) return; // bukan halaman salary calculator
+
+    /* ── Ambil data dari PHP via data-attribute ── */
+    const baseMargin = parseFloat(scDataEl.dataset.baseMargin) || 0;
+    const saveUrl = scDataEl.dataset.saveUrl;
+    const csrfToken = scDataEl.dataset.csrf;
+    const startDate = scDataEl.dataset.startDate;
+    const endDate = scDataEl.dataset.endDate;
+
+    /* ── Elemen DOM ── */
+    const komisiOpsi = document.getElementById("komisiOpsi");
+    const komisiNilai = document.getElementById("komisiNilai");
+    const prefixLabel = document.getElementById("prefixLabel");
+    const labelSatuan = document.getElementById("labelSatuan");
+    const rumusDisplay = document.getElementById("rumusDisplay");
+    const hasilGaji = document.getElementById("hasilGaji");
+    const hasilGajiSub = document.getElementById("hasilGajiSub");
+    const hasilPemilik = document.getElementById("hasilPemilik");
+    const btnSimpan = document.getElementById("btnSimpan");
+    const btnCetak = document.getElementById("btnCetakStruk");
+    const btnKonfirm = document.getElementById("btnSimpanKonfirm");
+    const simpanSum = document.getElementById("simpanSummary");
+    const catatanEl = document.getElementById("catatanKomisi");
+
+    if (!komisiOpsi || !komisiNilai) return;
+
+    /* ── Format angka Rupiah ── */
+    function fRp(val) {
+        const num = Math.round(parseFloat(val) || 0);
+        return "Rp " + num.toLocaleString("id-ID");
+    }
+
+    /* ── Update prefix % / Rp saat opsi komisi berubah ── */
+    function updatePrefix() {
+        const isNominal = komisiOpsi.value === "nominal";
+        prefixLabel.textContent = isNominal ? "Rp" : "%";
+        labelSatuan.textContent = isNominal ? "(Rp)" : "(%)";
+        // Reset input saat opsi berubah supaya tidak salah hitung
+        komisiNilai.value = "";
+        calculate();
+    }
+
+    /* ── Kalkulasi utama ── */
+    function calculate() {
+        const nilaiRaw = parseFloat(komisiNilai.value);
+        const opsi = komisiOpsi.value;
+
+        // Belum ada input atau tidak valid
+        if (!komisiNilai.value || isNaN(nilaiRaw) || nilaiRaw < 0) {
+            rumusDisplay.textContent = "—";
+            hasilGaji.textContent = "Rp 0";
+            hasilGajiSub.textContent = "";
+            hasilPemilik.textContent = "Rp 0";
+            return;
+        }
+
+        let gajiPekerja = 0;
+        let rumus = "";
+
+        if (opsi === "persentase") {
+            // Gaji = baseMargin × (nilai / 100)
+            gajiPekerja = baseMargin * (nilaiRaw / 100);
+            rumus =
+                fRp(baseMargin) + " × " + nilaiRaw + "% = " + fRp(gajiPekerja);
+            hasilGajiSub.textContent = nilaiRaw + "% dari total margin";
+        } else {
+            // Nominal langsung
+            gajiPekerja = nilaiRaw;
+            rumus = "Nominal tetap = " + fRp(gajiPekerja);
+            hasilGajiSub.textContent = "Nominal tetap";
+        }
+
+        const bagianPemilik = baseMargin - gajiPekerja;
+
+        rumusDisplay.textContent = rumus;
+        hasilGaji.textContent = fRp(gajiPekerja);
+        hasilPemilik.textContent = fRp(bagianPemilik);
+
+        // Warna merah jika pemilik minus
+        hasilPemilik.classList.toggle("text-danger", bagianPemilik < 0);
+        hasilPemilik.classList.toggle("text-dark", bagianPemilik >= 0);
+    }
+
+    /* ── Event listeners ── */
+    komisiOpsi.addEventListener("change", updatePrefix);
+    komisiNilai.addEventListener("input", calculate);
+
+    // Inisialisasi prefix saat halaman load
+    updatePrefix();
+
+    /* ── Tombol Simpan → buka modal konfirmasi ── */
+    if (btnSimpan) {
+        btnSimpan.addEventListener("click", function () {
+            const nilaiRaw = parseFloat(komisiNilai.value);
+            if (!komisiNilai.value || isNaN(nilaiRaw) || nilaiRaw < 0) {
+                alert("Masukkan nilai komisi terlebih dahulu.");
+                return;
+            }
+
+            const opsi = komisiOpsi.value;
+            const gajiPekerja =
+                opsi === "persentase"
+                    ? baseMargin * (nilaiRaw / 100)
+                    : nilaiRaw;
+            const bagianPemilik = baseMargin - gajiPekerja;
+
+            if (simpanSum) {
+                simpanSum.innerHTML = `
+                    <div class="d-flex justify-content-between py-1 border-bottom small">
+                        <span class="text-muted">Periode</span>
+                        <span class="fw-semibold">${startDate === endDate ? startDate : startDate + " – " + endDate}</span>
+                    </div>
+                    <div class="d-flex justify-content-between py-1 border-bottom small">
+                        <span class="text-muted">Total Margin</span>
+                        <span class="fw-semibold font-monospace">${fRp(baseMargin)}</span>
+                    </div>
+                    <div class="d-flex justify-content-between py-1 border-bottom small">
+                        <span class="text-muted">Opsi Komisi</span>
+                        <span class="fw-semibold">${opsi === "persentase" ? "Persentase (" + nilaiRaw + "%)" : "Nominal"}</span>
+                    </div>
+                    <div class="d-flex justify-content-between py-1 border-bottom small">
+                        <span class="text-muted">Gaji Pekerja</span>
+                        <span class="fw-bold text-primary font-monospace">${fRp(gajiPekerja)}</span>
+                    </div>
+                    <div class="d-flex justify-content-between py-1 small">
+                        <span class="text-muted">Bagian Pemilik</span>
+                        <span class="fw-bold font-monospace ${bagianPemilik < 0 ? "text-danger" : "text-dark"}">${fRp(bagianPemilik)}</span>
+                    </div>`;
+            }
+
+            const modalEl = document.getElementById("modalSimpanKonfirmasi");
+            if (modalEl && typeof bootstrap !== "undefined") {
+                new bootstrap.Modal(modalEl).show();
+            }
+        });
+    }
+
+    /* ── Tombol Konfirmasi Simpan → POST ke server ── */
+    if (btnKonfirm) {
+        btnKonfirm.addEventListener("click", function () {
+            const nilaiRaw = parseFloat(komisiNilai.value) || 0;
+            const opsi = komisiOpsi.value;
+            const gajiPekerja =
+                opsi === "persentase"
+                    ? baseMargin * (nilaiRaw / 100)
+                    : nilaiRaw;
+            const bagianPemilik = baseMargin - gajiPekerja;
+            const catatan = catatanEl ? catatanEl.value : "";
+
+            btnKonfirm.disabled = true;
+            btnKonfirm.innerHTML =
+                '<span class="spinner-border spinner-border-sm me-1"></span> Menyimpan...';
+
+            fetch(saveUrl, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRF-TOKEN": csrfToken,
+                },
+                body: JSON.stringify({
+                    start_date: startDate,
+                    end_date: endDate,
+                    commission_type: opsi,
+                    commission_value: nilaiRaw,
+                    profit_share_amount: gajiPekerja,
+                    owner_share_amount: bagianPemilik,
+                    notes: catatan,
+                }),
+            })
+                .then(function (res) {
+                    return res.json();
+                })
+                .then(function (data) {
+                    const modalEl = document.getElementById(
+                        "modalSimpanKonfirmasi",
+                    );
+                    if (modalEl) bootstrap.Modal.getInstance(modalEl)?.hide();
+
+                    const toast = document.getElementById("scToast");
+                    const toastMsg = document.getElementById("scToastMsg");
+                    if (toast && toastMsg) {
+                        const ok = data.status === "success";
+                        toast.className =
+                            "toast align-items-center border-0 text-white " +
+                            (ok ? "bg-success" : "bg-danger");
+                        toastMsg.textContent = ok
+                            ? "Data komisi berhasil disimpan."
+                            : data.message || "Gagal menyimpan.";
+                        new bootstrap.Toast(toast, { delay: 4000 }).show();
+                    }
+                })
+                .catch(function () {
+                    alert("Terjadi kesalahan. Coba lagi.");
+                })
+                .finally(function () {
+                    btnKonfirm.disabled = false;
+                    btnKonfirm.innerHTML =
+                        '<i class="bi bi-check-lg me-1"></i> Ya, Simpan';
+                });
+        });
+    }
+
+    /* ── Tombol Cetak Struk ── */
+    if (btnCetak) {
+        btnCetak.addEventListener("click", function () {
+            const nilaiRaw = parseFloat(komisiNilai.value) || 0;
+            const opsi = komisiOpsi.value;
+            const gajiPekerja =
+                opsi === "persentase"
+                    ? baseMargin * (nilaiRaw / 100)
+                    : nilaiRaw;
+            const bagianPemilik = baseMargin - gajiPekerja;
+            const catatan = catatanEl ? catatanEl.value : "";
+            const tgl =
+                startDate === endDate
+                    ? startDate
+                    : startDate + " s/d " + endDate;
+
+            const printArea = document.getElementById("printArea");
+            if (!printArea) return;
+            printArea.innerHTML = `
+                <div class="sc-struk-title">WARUNG POJOK OREMUS</div>
+                <div class="sc-struk-title" style="font-size:.8rem;">Struk Kalkulasi Gaji Pekerja</div>
+                <div class="sc-struk-line"></div>
+                <div class="sc-struk-row"><span>Periode</span><span>${tgl}</span></div>
+                <div class="sc-struk-row"><span>Total Margin</span><span>${fRp(baseMargin)}</span></div>
+                <div class="sc-struk-row"><span>Opsi Komisi</span><span>${opsi === "persentase" ? nilaiRaw + "%" : "Nominal"}</span></div>
+                <div class="sc-struk-line"></div>
+                <div class="sc-struk-row"><span>Gaji Pekerja</span><span>${fRp(gajiPekerja)}</span></div>
+                <div class="sc-struk-row"><span>Bagian Pemilik</span><span>${fRp(bagianPemilik)}</span></div>
+                ${catatan ? '<div class="sc-struk-line"></div><div style="font-size:.75rem;">Catatan: ' + catatan + "</div>" : ""}
+                <div class="sc-struk-line"></div>
+                <div style="text-align:center;font-size:.72rem;">Terima kasih</div>`;
+            window.print();
+        });
+    }
+})();

@@ -13,6 +13,29 @@ class UpdateRestockRequest extends FormRequest
 
     public function rules(): array
     {
+        $isConfirmed = strtoupper($this->input('status_restock')) === 'CONFIRMED';
+
+        // Jika status CONFIRMED dan form di-lock (tidak ada items yang dikirim dari
+        // disabled inputs), lewati validasi items — service akan pakai items dari DB.
+        // Jika status DRAFT atau ada items yang dikirim, validasi normal.
+        $hasItems = $this->has('items') && is_array($this->input('items')) && count($this->input('items')) > 0;
+
+        if ($isConfirmed && !$hasItems) {
+            // Form locked (CONFIRMED), items tidak dikirim — skip validasi items
+            return [
+                'invoice_number' => 'nullable|string|max:100',
+                'restock_code'   => 'nullable|string|max:100',
+                'supplier_name'  => 'required|string|max:180',
+                'restock_date'   => 'required|date',
+                'status_restock' => 'required|in:DRAFT,CONFIRMED',
+                'subtotal'       => 'nullable|numeric|min:0',
+                'discount'       => 'nullable|numeric|min:0',
+                'grand_total'    => 'nullable|numeric|min:0',
+                'notes'          => 'nullable|string',
+            ];
+        }
+
+        // DRAFT atau ada items dikirim — validasi items normal
         return [
             'invoice_number'          => 'nullable|string|max:100',
             'restock_code'            => 'nullable|string|max:100',

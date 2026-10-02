@@ -105,7 +105,7 @@
                             <tr>
                                 <th class="col-no text-center">No</th>
                                 <th class="col-product">Produk <span class="text-danger">*</span></th>
-                                <th class="col-unit text-center">Satuan</th>
+                                <th class="col-unit text-center d-none">Satuan</th>
                                 <th class="col-sys-stock text-center">Stok Sistem</th>
                                 <th class="col-phys-stock text-center">Stok Fisik <span class="text-danger">*</span></th>
                                 <th class="col-diff text-center">Selisih</th>
@@ -131,7 +131,7 @@
                                                 @endforeach
                                             </select>
                                         </td>
-                                        <td class="text-center unit-cell text-muted small fw-semibold">{{ $selectedProd->unit->unit_name ?? '-' }}</td>
+                                        <td class="text-center unit-cell text-muted small fw-semibold d-none">{{ $selectedProd->unit->unit_name ?? '-' }}</td>
                                         <td class="text-center system-stock-cell fw-bold">{{ $selectedProd->initial_stock ?? 0 }}</td>
                                         <td>
                                             <input type="number" name="items[{{ $idx }}][physical_stock]"
@@ -159,7 +159,7 @@
                                             @endforeach
                                         </select>
                                     </td>
-                                    <td class="text-center unit-cell text-muted small fw-semibold">-</td>
+                                    <td class="text-center unit-cell text-muted small fw-semibold d-none">-</td>
                                     <td class="text-center system-stock-cell fw-bold">-</td>
                                     <td>
                                         <input type="number" name="items[0][physical_stock]"
@@ -272,7 +272,7 @@
                 @endforeach
             </select>
         </td>
-        <td class="text-center unit-cell text-muted small fw-semibold">-</td>
+        <td class="text-center unit-cell text-muted small fw-semibold d-none">-</td>
         <td class="text-center system-stock-cell fw-bold">-</td>
         <td>
             <input type="number" name="items[__INDEX__][physical_stock]"

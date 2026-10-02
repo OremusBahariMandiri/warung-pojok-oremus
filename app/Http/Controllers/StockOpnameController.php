@@ -8,6 +8,7 @@ use App\Http\Requests\UpdateStockOpnameRequest;
 use App\Models\Products;
 use App\Models\StockOpname;
 use App\Services\StockOpnameService;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -44,7 +45,7 @@ class StockOpnameController extends Controller
     public function create()
     {
         $generatedCode = CodeGenerator::generateStockOpnameCode(StockOpname::class);
-        $products = Products::with('unit')->orderBy('prod_name', 'asc')->get();
+        $products      = Products::with('unit')->orderBy('prod_name', 'asc')->get();
 
         return view('pages.stock_opname.create', compact('products', 'generatedCode'));
     }
@@ -65,7 +66,7 @@ class StockOpnameController extends Controller
             ], 201);
         }
 
-        $msg = $opname->status_opname === 'COMPLETED' 
+        $msg = $opname->status_opname === 'COMPLETED'
             ? 'Transaksi Stock Opname berhasil diselesaikan dan stok produk telah diperbarui.'
             : 'Draft Stock Opname berhasil disimpan.';
 
@@ -105,7 +106,7 @@ class StockOpnameController extends Controller
      */
     public function update(UpdateStockOpnameRequest $request, StockOpname $stockOpname)
     {
-        $userId = Auth::id() ?? 1;
+        $userId        = Auth::id() ?? 1;
         $updatedOpname = $this->opnameService->updateStockOpname($stockOpname, $request->validated(), $userId);
 
         if ($request->wantsJson()) {
@@ -116,7 +117,7 @@ class StockOpnameController extends Controller
             ]);
         }
 
-        $msg = $updatedOpname->status_opname === 'COMPLETED' 
+        $msg = $updatedOpname->status_opname === 'COMPLETED'
             ? 'Transaksi Stock Opname berhasil diselesaikan dan stok produk telah diperbarui.'
             : 'Draft Stock Opname berhasil diperbarui.';
 
@@ -132,7 +133,7 @@ class StockOpnameController extends Controller
             'status_opname' => 'required|in:DRAFT,REVIEW,AWAITING CONFIRMATION,COMPLETED,CONFIRMED',
         ]);
 
-        $userId = Auth::id() ?? 1;
+        $userId        = Auth::id() ?? 1;
         $updatedOpname = $this->opnameService->updateStatus($stockOpname, $request->input('status_opname'), $userId);
 
         if ($request->wantsJson()) {
@@ -143,14 +144,58 @@ class StockOpnameController extends Controller
             ]);
         }
 
-        return redirect()->route('stock-opname.show', $stockOpname->id)->with('success', 'Status Stock Opname berhasil diperbarui.');
+        return redirect()->route('stock-opname.show', $stockOpname->id)
+            ->with('success', 'Status Stock Opname berhasil diperbarui.');
     }
 
     /**
-     * Remove the specified stock opname from storage.
+     * Rollback: kembalikan COMPLETED opname ke status DRAFT.
+     *
+     * Data opname & items TIDAK dihapus — hanya:
+     *  1. initial_stock produk dikembalikan ke nilai sebelum opname.
+     *  2. Status opname dikembalikan ke DRAFT.
+     *
+     * Setelah rollback admin/user bisa membuka edit form dan memperbaiki data.
+     *
+     * Endpoint: DELETE /stock-opname/{stockOpname}
+     * (Dipakai oleh tombol "Rollback Opname" di blade — dalam window 3 jam)
      */
     public function destroy(Request $request, StockOpname $stockOpname)
     {
+        // Cek apakah masih dalam window 3 jam sejak updated_at / opname_date
+        $completedAt      = $stockOpname->updated_at ?? $stockOpname->opname_date;
+        $rollbackDeadline = $completedAt ? $completedAt->copy()->addHours(3) : null;
+
+        if ($stockOpname->status_opname === 'COMPLETED') {
+            // Validasi window rollback
+            if (!$rollbackDeadline || now()->greaterThanOrEqualTo($rollbackDeadline)) {
+                if ($request->wantsJson()) {
+                    return response()->json([
+                        'status'  => 'error',
+                        'message' => 'Batas waktu rollback (3 jam) sudah terlewat. Transaksi tidak dapat di-rollback.',
+                    ], 422);
+                }
+
+                return redirect()->route('stock-opname.edit', $stockOpname->id)
+                    ->with('error', 'Batas waktu rollback (3 jam) sudah terlewat. Transaksi tidak dapat di-rollback.');
+            }
+
+            // Lakukan rollback — data tetap ada, status kembali DRAFT
+            $userId = Auth::id() ?? 1;
+            $this->opnameService->rollbackStockOpname($stockOpname, $userId);
+
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'status'  => 'success',
+                    'message' => 'Stock Opname berhasil di-rollback. Status kembali ke DRAFT dan stok produk telah dipulihkan.',
+                ]);
+            }
+
+            return redirect()->route('stock-opname.index', $stockOpname->id)
+                ->with('success', 'Stock Opname berhasil di-rollback. Silakan periksa dan perbaiki data sebelum menyelesaikannya kembali.');
+        }
+
+        // Jika bukan COMPLETED (masih DRAFT) — hard delete diizinkan
         $this->opnameService->deleteStockOpname($stockOpname);
 
         if ($request->wantsJson()) {
@@ -160,6 +205,7 @@ class StockOpnameController extends Controller
             ]);
         }
 
-        return redirect()->route('stock-opname.index')->with('success', 'Transaksi Stock Opname berhasil dihapus.');
+        return redirect()->route('stock-opname.index')
+            ->with('success', 'Transaksi Stock Opname berhasil dihapus.');
     }
 }

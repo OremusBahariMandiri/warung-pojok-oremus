@@ -345,7 +345,7 @@ function addDesktopItemRow() {
                 ${productOptionsHtml}
             </select>
         </td>
-        <td>
+        <td class="d-none">
             <select name="items[${restockRowIndex}][restock_unit_id]" class="form-select form-select-sm select2-restock-unit rounded-2" onchange="onUnitSelectChange(this)" required>
                 ${unitOptionsHtml}
             </select>
@@ -439,7 +439,7 @@ function addMobileItemCard() {
                 ${productOptionsHtml}
             </select>
         </div>
-        <div class="mb-2">
+        <div class="mb-2 d-none">
             <label class="form-label small fw-semibold text-dark mb-1">Satuan Beli</label>
             <select name="items[${restockRowIndex}][restock_unit_id]" class="form-select form-select-sm select2-restock-unit rounded-2" onchange="onUnitSelectChange(this)" required>
                 ${unitOptionsHtml}
@@ -763,9 +763,52 @@ function openRollbackRestockModal() {
     }
 }
 
+/**
+ * Nonaktifkan (disabled) semua input & select pada container yang sedang
+ * disembunyikan oleh Bootstrap responsive class (d-none / d-block).
+ *
+ * LATAR BELAKANG BUG:
+ * Pada edit.blade.php, items di-render DUA kali di dalam form yang SAMA:
+ *   - Desktop table  (#restockItemRows)        → visible  saat ≥768px
+ *   - Mobile cards   (#restockMobileItemCards) → visible  saat <768px
+ * Keduanya memakai name yang identik (misal items[0][quantity]).
+ * Ketika form di-submit dari desktop, PHP menerima DUA nilai untuk key
+ * yang sama dan menggunakan nilai TERAKHIR — yaitu nilai dari mobile card
+ * yang masih menyimpan data lama dari Blade (sebelum user mengeditnya di
+ * desktop table). Akibatnya nilai lama yang masuk ke service, bukan nilai
+ * yang baru diubah user.
+ *
+ * FIX: sebelum form.submit(), disable semua input[name]/select[name] pada
+ * container yang sedang tidak tampil sehingga browser tidak mengirim
+ * nilai dari container tersebut.
+ */
+function _disableHiddenViewInputs() {
+    if (isMobileView()) {
+        // Di mobile: desktop table tersembunyi → disable inputnya
+        document
+            .querySelectorAll(
+                "#restockItemRows input[name], #restockItemRows select[name]",
+            )
+            .forEach(function (el) {
+                el.disabled = true;
+            });
+    } else {
+        // Di desktop: mobile cards tersembunyi → disable inputnya
+        document
+            .querySelectorAll(
+                "#restockMobileItemCards input[name], #restockMobileItemCards select[name]",
+            )
+            .forEach(function (el) {
+                el.disabled = true;
+            });
+    }
+}
+
 function submitRestockAs(status) {
     const statusInput = document.getElementById("status_restock");
     if (statusInput) statusInput.value = status;
+
+    _disableHiddenViewInputs();
 
     const form = document.getElementById("formCreateRestock");
     if (form) form.submit();
@@ -794,6 +837,8 @@ function openConfirmRestockModal() {
 function executeConfirmRestockSubmit() {
     const statusInput = document.getElementById("status_restock");
     if (statusInput) statusInput.value = "CONFIRMED";
+
+    _disableHiddenViewInputs();
 
     const form = document.getElementById("formCreateRestock");
     if (form) form.submit();
