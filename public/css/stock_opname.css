@@ -259,3 +259,91 @@
 .text-navy {
     color: #0f172a;
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   LOCKED BANNER — Edit form saat status COMPLETED
+   Mirip dengan restock: ikon gembok + teks + tombol rollback
+   ═══════════════════════════════════════════════════════════════ */
+.opname-locked-banner {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.9rem;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    border-left: 4px solid #f59e0b;
+    border-radius: 10px;
+    padding: 1rem 1.25rem;
+}
+
+/* Ikon gembok */
+.opname-locked-banner__icon {
+    flex-shrink: 0;
+    font-size: 1.35rem;
+    color: #f59e0b;
+    margin-top: 1px;
+}
+
+/* Konten teks */
+.opname-locked-banner__body {
+    flex: 1;
+    min-width: 0;
+}
+
+.opname-locked-banner__title {
+    font-weight: 700;
+    font-size: 0.9rem;
+    color: #1e293b;
+    line-height: 1.4;
+    margin-bottom: 0.2rem;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+}
+
+.opname-locked-banner__desc {
+    font-size: 0.83rem;
+    color: #64748b;
+    line-height: 1.5;
+}
+
+/* Info baris rollback window */
+.opname-locked-banner__rollback-info {
+    font-size: 0.8rem;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.2rem;
+}
+
+/* Masih bisa rollback → warna hijau/biru */
+.opname-locked-banner__rollback-info--available {
+    color: #0369a1;
+}
+
+/* Sudah expired → warna merah */
+.opname-locked-banner__rollback-info--expired {
+    color: #dc2626;
+}
+
+/* Tombol rollback di kanan */
+.opname-locked-banner__action {
+    flex-shrink: 0;
+    align-self: center;
+}
+
+/* Responsif: pada layar sempit, tombol rollback pindah ke bawah */
+@media (max-width: 575.98px) {
+    .opname-locked-banner {
+        flex-wrap: wrap;
+    }
+    .opname-locked-banner__action {
+        width: 100%;
+        margin-top: 0.5rem;
+    }
+    .opname-locked-banner__action .btn {
+        width: 100%;
+        justify-content: center;
+    }
+}

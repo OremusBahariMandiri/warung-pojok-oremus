@@ -50,77 +50,54 @@ class RestockService
 
     /**
      * Create a new restock transaction.
-     * If status_restock is CONFIRMED, current_stock on master product is incremented
-     * and unit_price (harga bahan utama) is replaced with purchase_price from this restock.
      */
     public function createRestock(array $data, int $userId): Restock
     {
         return DB::transaction(function () use ($data, $userId) {
-            $restockCode = !empty($data['restock_code']) ? $data['restock_code'] : \App\Helpers\CodeGenerator::generateRestockCode(Restock::class);
-            // $invoiceNum  = !empty($data['invoice_number']) ? $data['invoice_number'] : \App\Helpers\CodeGenerator::generateInvoiceNumber(Restock::class);
+            $restockCode = !empty($data['restock_code'])
+                ? $data['restock_code']
+                : \App\Helpers\CodeGenerator::generateRestockCode(Restock::class);
             $restockDate = !empty($data['restock_date']) ? Carbon::parse($data['restock_date']) : Carbon::now();
             $status      = strtoupper($data['status_restock'] ?? 'DRAFT');
-
-            // $subtotal = 0.0;
-            $itemsToCreate = [];
-
-            foreach ($data['items'] as $itemData) {
-                $productId     = (int) $itemData['product_id'];
-                $product       = Products::find($productId);
-                $restockUnitId = !empty($itemData['restock_unit_id']) ? (int) $itemData['restock_unit_id'] : ($product ? $product->unit_id : 1);
-                $quantity      = (int) $itemData['quantity'];
-                $purchasePrice = (float) $itemData['purchase_price'];
-                $itemTotal     = $quantity * $purchasePrice;
-
-                // $subtotal += $itemTotal;
-
-                $itemsToCreate[] = [
-                    'product_id'      => $productId,
-                    'restock_unit_id' => $restockUnitId,
-                    'quantity'        => $quantity,
-                    'purchase_price'  => $purchasePrice,
-                    'total_price'     => $itemTotal,
-                ];
-            }
-
-            // $discount   = (float) ($data['discount'] ?? 0);
-            // $grandTotal = max(0.0, $subtotal - $discount);
 
             $restock = Restock::create([
                 'created_by'     => $userId,
                 'restock_code'   => $restockCode,
-                // 'invoice_number' => $invoiceNum,
                 'restock_date'   => $restockDate,
                 'supplier_name'  => $data['supplier_name'] ?? 'Supplier Umum',
                 'status_restock' => $status,
-                // 'subtotal'       => $subtotal,
-                // 'discount'       => $discount,
-                // 'grand_total'    => $grandTotal,
                 'notes'          => $data['notes'] ?? '',
             ]);
 
-            foreach ($itemsToCreate as $itemData) {
-                // If transaction is CONFIRMED, simpan unit_price lama sebelum ditimpa
-                $previousUnitPrice = null;
-                if ($status === 'CONFIRMED') {
-                    $prod = Products::lockForUpdate()->find($itemData['product_id']);
-                    if ($prod) {
-                        // Simpan harga bahan utama sebelum restock ini
-                        $previousUnitPrice = $prod->unit_price;
+            foreach ($data['items'] as $itemData) {
+                $productId     = (int) $itemData['product_id'];
+                // $product       = Products::find($productId);
+                // $restockUnitId = !empty($itemData['restock_unit_id'])
+                //     ? (int) $itemData['restock_unit_id']
+                //     : ($product ? $product->unit_id : 1);
+                $quantity      = (int) $itemData['quantity'];
+                $purchasePrice = (float) $itemData['purchase_price'];
+                $itemTotal     = $quantity * $purchasePrice;
 
-                        $prod->current_stock = $prod->current_stock + $itemData['quantity'];
-                        $prod->unit_price    = $itemData['purchase_price'];
+                $previousUnitPrice = null;
+
+                if ($status === 'CONFIRMED') {
+                    $prod = Products::lockForUpdate()->find($productId);
+                    if ($prod) {
+                        $previousUnitPrice   = (float) $prod->unit_price;
+                        $prod->current_stock = $prod->current_stock + $quantity;
+                        $prod->unit_price    = $purchasePrice;
                         $prod->save();
                     }
                 }
 
                 RestockItems::create([
                     'restock_id'          => $restock->id,
-                    'product_id'          => $itemData['product_id'],
-                    'restock_unit_id'     => $itemData['restock_unit_id'],
-                    'quantity'            => $itemData['quantity'],
-                    'purchase_price'      => $itemData['purchase_price'],
-                    'total_price'         => $itemData['total_price'],
+                    'product_id'          => $productId,
+                    // 'restock_unit_id'     => $restockUnitId,
+                    'quantity'            => $quantity,
+                    'purchase_price'      => $purchasePrice,
+                    'total_price'         => $itemTotal,
                     'previous_unit_price' => $previousUnitPrice,
                 ]);
             }
@@ -130,7 +107,7 @@ class RestockService
                 module:      'RESTOCK',
                 entityType:  Restock::class,
                 entityId:    $restock->id,
-                description: "Created Restock {$restock->restock_code} (Status: {$status}",
+                description: "Created Restock {$restock->restock_code} (Status: {$status})",
                 oldValues:   null,
                 newValues:   $restock->load(['creator', 'items.product', 'items.unit'])->toArray(),
                 userId:      $userId
@@ -141,77 +118,136 @@ class RestockService
     }
 
     /**
-     * Update an existing restock transaction (e.g. from DRAFT).
+     * Update an existing restock transaction.
+     *
+     * ═══════════════════════════════════════════════════════════════════════
+     * ALUR LOGIKA:
+     *
+     * STEP 1 — Baca items LAMA dari DB (fresh query, bukan Eloquent cache)
+     *
+     * STEP 2 — Jika oldStatus = CONFIRMED:
+     *          Rollback efek ke produk SEBELUM items dihapus:
+     *          a. current_stock dikurangi qty lama
+     *          b. unit_price di-restore ke previous_unit_price lama
+     *
+     * STEP 3 — Update header restock
+     *
+     * STEP 4 — Hapus items lama dari DB
+     *
+     * STEP 5 — Tentukan sumber items baru:
+     *          - Jika ada items dari request (form DRAFT yang diedit) → pakai itu
+     *          - Jika tidak ada items dari request (form CONFIRMED yang locked,
+     *            hanya bisa rollback, TIDAK ada path edit dari CONFIRMED) →
+     *            ini seharusnya tidak terjadi dari UI, tapi untuk robustness
+     *            fallback ke items lama yang sudah dibaca di STEP 1
+     *
+     * STEP 6 — Insert items baru & apply efek ke produk jika newStatus = CONFIRMED:
+     *          a. Capture previous_unit_price dari unit_price produk SAAT INI
+     *             (sudah di-restore di STEP 2 jika sebelumnya CONFIRMED)
+     *          b. current_stock ditambah qty baru
+     *          c. unit_price ditimpa dengan purchase_price baru
+     * ═══════════════════════════════════════════════════════════════════════
      */
     public function updateRestock(Restock $restock, array $data, int $userId): Restock
     {
         return DB::transaction(function () use ($restock, $data, $userId) {
-            $oldValues = $restock->load(['creator', 'items.product', 'items.unit'])->toArray();
             $oldStatus = $restock->status_restock;
             $newStatus = strtoupper($data['status_restock'] ?? $oldStatus);
 
-            // If old status was CONFIRMED, rollback previous stock increments
+            // ── STEP 1: Baca items LAMA langsung dari DB ──────────────────────────
+            // Pakai fresh query — jangan pakai $restock->items yang bisa ter-cache.
+            $oldItems  = RestockItems::where('restock_id', $restock->id)->get();
+            $oldValues = $restock->load(['creator', 'items.product', 'items.unit'])->toArray();
+
+            // ── STEP 2: Rollback efek ke produk jika oldStatus = CONFIRMED ────────
             if ($oldStatus === 'CONFIRMED') {
-                foreach ($restock->items as $oldItem) {
+                foreach ($oldItems as $oldItem) {
                     $prod = Products::lockForUpdate()->find($oldItem->product_id);
-                    if ($prod) {
-                        $prod->current_stock = max(0, $prod->current_stock - $oldItem->quantity);
-                        $prod->save();
+                    if (!$prod) continue;
+
+                    // a. Kembalikan stok
+                    $prod->current_stock = max(0, $prod->current_stock - (int) $oldItem->quantity);
+
+                    // b. Kembalikan unit_price ke snapshot sebelum restock ini
+                    $prevPrice = $oldItem->previous_unit_price;
+                    if (!is_null($prevPrice)) {
+                        $prod->unit_price = (float) $prevPrice;
                     }
+
+                    $prod->save();
                 }
             }
 
-            $restockDate = !empty($data['restock_date']) ? Carbon::parse($data['restock_date']) : $restock->restock_date;
-
-            // $subtotal = 0.0;
-            $itemsToCreate = [];
-
-            if (!empty($data['items']) && is_array($data['items'])) {
-                foreach ($data['items'] as $itemData) {
-                    $productId     = (int) $itemData['product_id'];
-                    $product       = Products::find($productId);
-                    $restockUnitId = !empty($itemData['restock_unit_id']) ? (int) $itemData['restock_unit_id'] : ($product ? $product->unit_id : 1);
-                    $quantity      = (int) $itemData['quantity'];
-                    $purchasePrice = (float) $itemData['purchase_price'];
-                    $itemTotal     = $quantity * $purchasePrice;
-
-                    // $subtotal += $itemTotal;
-
-                    $itemsToCreate[] = [
-                        'product_id'      => $productId,
-                        'restock_unit_id' => $restockUnitId,
-                        'quantity'        => $quantity,
-                        'purchase_price'  => $purchasePrice,
-                        'total_price'     => $itemTotal,
-                    ];
-                }
-            }
-
-            // $discount   = (float) ($data['discount'] ?? 0);
-            // $grandTotal = max(0.0, $subtotal - $discount);
+            // ── STEP 3: Update header restock ─────────────────────────────────────
+            $restockDate = !empty($data['restock_date'])
+                ? Carbon::parse($data['restock_date'])
+                : $restock->restock_date;
 
             $restock->update([
                 'supplier_name'  => $data['supplier_name'] ?? $restock->supplier_name,
                 'restock_date'   => $restockDate,
                 'status_restock' => $newStatus,
-                // 'subtotal'       => $subtotal,
-                // 'discount'       => $discount,
-                // 'grand_total'    => $grandTotal,
                 'notes'          => $data['notes'] ?? $restock->notes,
             ]);
 
-            // Replace items
+            // ── STEP 4: Hapus items lama ──────────────────────────────────────────
             RestockItems::where('restock_id', $restock->id)->delete();
 
-            foreach ($itemsToCreate as $itemData) {
-                // If new status is CONFIRMED, simpan unit_price lama sebelum ditimpa
+            // ── STEP 5: Tentukan sumber items baru ───────────────────────────────
+            // Cek apakah request mengirim items yang valid (ada dan product_id-nya
+            // tidak kosong). Ini terjadi saat form DRAFT diedit dan disubmit.
+            $requestItems = (!empty($data['items']) && is_array($data['items']))
+                ? array_values(array_filter($data['items'], function ($item) {
+                    return !empty($item['product_id']) && (int) $item['product_id'] > 0;
+                }))
+                : [];
+
+            if (!empty($requestItems)) {
+                // ── Sumber: items dari request (form DRAFT yang diedit) ──
+                $newItemsData = array_map(function ($itemData) {
+                    $productId     = (int) $itemData['product_id'];
+                    // $product       = Products::find($productId);
+                    // $restockUnitId = !empty($itemData['restock_unit_id'])
+                    //     ? (int) $itemData['restock_unit_id']
+                    //     : ($product ? $product->unit_id : 1);
+                    $quantity      = (int) $itemData['quantity'];
+                    $purchasePrice = (float) $itemData['purchase_price'];
+
+                    return [
+                        'product_id'      => $productId,
+                        // 'restock_unit_id' => $restockUnitId,
+                        'quantity'        => $quantity,
+                        'purchase_price'  => $purchasePrice,
+                        'total_price'     => $quantity * $purchasePrice,
+                    ];
+                }, $requestItems);
+            } else {
+                // ── Fallback: pakai items lama dari DB ──
+                // Ini terjadi jika form dikirim tanpa items (misal form CONFIRMED
+                // yang locked — seharusnya tidak terjadi dari UI karena form CONFIRMED
+                // hanya punya tombol Rollback, bukan Simpan. Tapi handle untuk safety.)
+                $newItemsData = $oldItems->map(function ($oldItem) {
+                    return [
+                        'product_id'      => $oldItem->product_id,
+                        // 'restock_unit_id' => $oldItem->restock_unit_id,
+                        'quantity'        => (int) $oldItem->quantity,
+                        'purchase_price'  => (float) $oldItem->purchase_price,
+                        'total_price'     => (float) $oldItem->total_price,
+                    ];
+                })->toArray();
+            }
+
+            // ── STEP 6: Insert items baru & apply efek ke produk jika CONFIRMED ──
+            foreach ($newItemsData as $itemData) {
                 $previousUnitPrice = null;
+
                 if ($newStatus === 'CONFIRMED') {
+                    // Re-fetch dengan lock — nilai stok & harga sudah benar
+                    // (di-restore di STEP 2 jika sebelumnya CONFIRMED)
                     $prod = Products::lockForUpdate()->find($itemData['product_id']);
                     if ($prod) {
-                        // Simpan harga bahan utama sebelum restock ini
-                        $previousUnitPrice = $prod->unit_price;
-
+                        // Capture unit_price SAAT INI sebelum ditimpa
+                        $previousUnitPrice   = (float) $prod->unit_price;
                         $prod->current_stock = $prod->current_stock + $itemData['quantity'];
                         $prod->unit_price    = $itemData['purchase_price'];
                         $prod->save();
@@ -221,7 +257,7 @@ class RestockService
                 RestockItems::create([
                     'restock_id'          => $restock->id,
                     'product_id'          => $itemData['product_id'],
-                    'restock_unit_id'     => $itemData['restock_unit_id'],
+                    // 'restock_unit_id'     => $itemData['restock_unit_id'],
                     'quantity'            => $itemData['quantity'],
                     'purchase_price'      => $itemData['purchase_price'],
                     'total_price'         => $itemData['total_price'],
@@ -234,7 +270,7 @@ class RestockService
                 module:      'RESTOCK',
                 entityType:  Restock::class,
                 entityId:    $restock->id,
-                description: "Updated Restock {$restock->restock_code} (Status: {$newStatus}",
+                description: "Updated Restock {$restock->restock_code} (Status: {$newStatus})",
                 oldValues:   $oldValues,
                 newValues:   $restock->fresh()->load(['creator', 'items.product', 'items.unit'])->toArray(),
                 userId:      $userId
@@ -246,6 +282,7 @@ class RestockService
 
     /**
      * Update status of restock transaction (e.g. from DRAFT to CONFIRMED).
+     * Dipakai oleh route PATCH /restock/{id}/status — bukan dari form edit.
      */
     public function updateStatus(Restock $restock, string $newStatus, int $userId): Restock
     {
@@ -257,30 +294,31 @@ class RestockService
                 return $restock;
             }
 
-            $restock->load('items');
+            $items = RestockItems::where('restock_id', $restock->id)->get();
 
-            // If changing DRAFT -> CONFIRMED: add stock
-            // and update unit_price (harga bahan utama) with purchase_price from this restock
             if ($oldStatus === 'DRAFT' && $newStatus === 'CONFIRMED') {
-                foreach ($restock->items as $item) {
+                foreach ($items as $item) {
                     $product = Products::lockForUpdate()->find($item->product_id);
                     if ($product) {
-                        // Simpan harga bahan utama sebelum restock ini ditimpa
-                        $item->previous_unit_price = $product->unit_price;
+                        $item->previous_unit_price = (float) $product->unit_price;
                         $item->save();
 
-                        $product->current_stock = $product->current_stock + $item->quantity;
-                        $product->unit_price    = $item->purchase_price;
+                        $product->current_stock = $product->current_stock + (int) $item->quantity;
+                        $product->unit_price    = (float) $item->purchase_price;
                         $product->save();
                     }
                 }
-            }
-            // If changing CONFIRMED -> DRAFT: rollback stock addition
-            elseif ($oldStatus === 'CONFIRMED' && $newStatus === 'DRAFT') {
-                foreach ($restock->items as $item) {
+            } elseif ($oldStatus === 'CONFIRMED' && $newStatus === 'DRAFT') {
+                foreach ($items as $item) {
                     $product = Products::lockForUpdate()->find($item->product_id);
                     if ($product) {
-                        $product->current_stock = max(0, $product->current_stock - $item->quantity);
+                        $product->current_stock = max(0, $product->current_stock - (int) $item->quantity);
+
+                        $prevPrice = $item->previous_unit_price;
+                        if (!is_null($prevPrice)) {
+                            $product->unit_price = (float) $prevPrice;
+                        }
+
                         $product->save();
                     }
                 }
@@ -304,37 +342,37 @@ class RestockService
     }
 
     /**
-     * Rollback restock transaction:
-     * - Kembalikan current_stock produk seperti sebelum restock
-     * - Kembalikan unit_price (harga bahan utama) ke harga sebelum restock ini di-confirm
-     * - Ubah status kembali ke DRAFT (data restock TIDAK dihapus)
+     * Rollback restock transaction (DELETE /restock/{id}):
+     *   - Kurangi current_stock produk sebesar qty restock
+     *   - Kembalikan unit_price ke previous_unit_price
+     *   - Ubah status ke DRAFT, data TIDAK dihapus
      */
     public function deleteRestock(Restock $restock): bool
     {
         return DB::transaction(function () use ($restock) {
-            $restock->load('items');
+            $items     = RestockItems::where('restock_id', $restock->id)->get();
             $oldValues = $restock->toArray();
             $code      = $restock->restock_code;
 
-            // Rollback stok dan unit_price jika status sebelumnya CONFIRMED
             if ($restock->status_restock === 'CONFIRMED') {
-                foreach ($restock->items as $item) {
+                foreach ($items as $item) {
                     $product = Products::lockForUpdate()->find($item->product_id);
-                    if ($product) {
-                        // Kembalikan stok seperti sebelum restock ini
-                        $product->current_stock = max(0, $product->current_stock - $item->quantity);
+                    if (!$product) continue;
 
-                        // Kembalikan unit_price ke harga sebelum restock ini dikonfirmasi
-                        if ($item->previous_unit_price !== null) {
-                            $product->unit_price = $item->previous_unit_price;
-                        }
+                    // Kembalikan stok
+                    $product->current_stock = max(0, $product->current_stock - (int) $item->quantity);
 
-                        $product->save();
+                    // Kembalikan unit_price ke snapshot sebelum restock ini dikonfirmasi
+                    $prevPrice = $item->previous_unit_price;
+                    if (!is_null($prevPrice)) {
+                        $product->unit_price = (float) $prevPrice;
                     }
+
+                    $product->save();
                 }
             }
 
-            // Ubah status kembali ke DRAFT — data restock TIDAK dihapus
+            // Ubah status ke DRAFT — data TIDAK dihapus
             $restock->update(['status_restock' => 'DRAFT']);
 
             ActivityLogService::log(

@@ -146,7 +146,10 @@
                             <a href="{{ route('reports.edit', $r->id) }}" class="btn btn-sm btn-warning text-white px-2 py-1 rounded-2 shadow-none" title="Edit Laporan" style="background-color:#f59e0b;border-color:#f59e0b;">
                                 <i class="bi bi-pencil"></i>
                             </a>
-                            <a href="{{ route('reports.salary_calculator') }}" class="btn btn-sm btn-primary px-2 py-1 rounded-2 shadow-none" title="Hitung Bagi Hasil">
+                            <a href="{{ route('reports.salary_calculator', [
+                                'start_date' => $r->report_date->toDateString(),
+                                'end_date'   => $r->report_date->toDateString(),
+                            ]) }}" class="btn btn-sm btn-primary px-2 py-1 rounded-2 shadow-none" title="Hitung Bagi Hasil">
                                 <i class="bi bi-calculator"></i>
                             </a>
                         </div>

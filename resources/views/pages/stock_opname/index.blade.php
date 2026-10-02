@@ -79,7 +79,7 @@
             <button type="button" class="btn btn-sm btn-outline-secondary rounded-2 d-flex d-md-none align-items-center gap-1" data-bs-toggle="modal" data-bs-target="#opnameMobileSearchModal">
                 <i class="bi bi-search"></i>
             </button>
-            <!-- Filter Button — ukuran kecil (btn-sm) -->
+            <!-- Filter Button -->
             <button type="button" class="btn btn-sm btn-outline-secondary rounded-2 d-inline-flex align-items-center gap-1" data-bs-toggle="modal" data-bs-target="#opnameFilterModal">
                 <i class="bi bi-funnel"></i>
                 <span>Filter</span>
@@ -89,7 +89,7 @@
                     </span>
                 @endif
             </button>
-            <!-- Catat Stock Opname — ukuran kecil (btn-sm) -->
+            <!-- Catat Stock Opname -->
             <a href="{{ route('stock-opname.create') }}" class="btn btn-sm btn-success rounded-2 px-3 d-inline-flex align-items-center gap-1">
                 <i class="bi bi-plus-lg"></i> Catat Stock Opname
             </a>
@@ -98,8 +98,6 @@
 
     {{-- ════════════════════════════════════════════════════════════ --}}
     {{-- DESKTOP: DataTables (d-none d-md-block)                     --}}
-    {{-- Tabel SELALU render agar DataTables info "Showing X..." ada --}}
-    {{-- Empty state ditangani oleh DataTables language.emptyTable   --}}
     {{-- ════════════════════════════════════════════════════════════ --}}
     <div class="d-none d-md-block">
         <table class="table table-bordered table-hover align-middle mb-0 w-100 text-nowrap" id="opnameDataTable">
@@ -147,21 +145,18 @@
                             @endif
                         </td>
                         <td class="text-center">
+                            {{-- PERUBAHAN: hapus tombol rollback, ganti dengan tombol edit untuk semua status --}}
                             <div class="d-inline-flex gap-1">
-                                <a href="{{ route('stock-opname.show', $opname->id) }}" class="btn btn-sm btn-outline-info rounded-2 py-1 px-2" title="Lihat Detail">
+                                <a href="{{ route('stock-opname.show', $opname->id) }}"
+                                   class="btn btn-sm btn-outline-info rounded-2 py-1 px-2"
+                                   title="Lihat Detail">
                                     <i class="bi bi-eye"></i>
                                 </a>
-                                @if ($status === 'DRAFT')
-                                    <a href="{{ route('stock-opname.edit', $opname->id) }}" class="btn btn-sm btn-outline-warning rounded-2 py-1 px-2 text-warning-emphasis" title="Edit Opname">
-                                        <i class="bi bi-pencil"></i>
-                                    </a>
-                                @endif
-                                <button type="button" class="btn btn-sm btn-outline-danger rounded-2 py-1 px-2"
-                                    data-bs-toggle="modal"
-                                    data-bs-target="#deleteOpnameModal{{ $opname->id }}"
-                                    title="Rollback / Hapus Transaksi">
-                                    <i class="bi bi-arrow-counterclockwise"></i>
-                                </button>
+                                <a href="{{ route('stock-opname.edit', $opname->id) }}"
+                                   class="btn btn-sm btn-outline-warning rounded-2 py-1 px-2 text-warning-emphasis"
+                                   title="{{ ($status === 'COMPLETED' || $status === 'CONFIRMED') ? 'Periksa Opname' : 'Edit Opname' }}">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
                             </div>
                         </td>
                     </tr>
@@ -224,20 +219,15 @@
                 </div>
 
                 <!-- Card Actions -->
+                {{-- PERUBAHAN: hapus tombol rollback, ganti dengan tombol edit untuk semua status --}}
                 <div class="d-flex gap-2">
                     <a href="{{ route('stock-opname.show', $opname->id) }}" class="btn btn-sm btn-outline-info rounded-2 flex-fill">
                         <i class="bi bi-eye me-1"></i> Detail
                     </a>
-                    @if ($status === 'DRAFT')
-                        <a href="{{ route('stock-opname.edit', $opname->id) }}" class="btn btn-sm btn-outline-warning rounded-2 flex-fill text-warning-emphasis">
-                            <i class="bi bi-pencil me-1"></i> Edit
-                        </a>
-                    @endif
-                    <button type="button" class="btn btn-sm btn-outline-danger rounded-2 flex-fill"
-                        data-bs-toggle="modal"
-                        data-bs-target="#deleteOpnameModal{{ $opname->id }}">
-                        <i class="bi bi-arrow-counterclockwise me-1"></i> Rollback
-                    </button>
+                    <a href="{{ route('stock-opname.edit', $opname->id) }}"
+                       class="btn btn-sm btn-outline-warning rounded-2 flex-fill text-warning-emphasis">
+                        <i class="bi bi-pencil me-1"></i> {{ ($status === 'COMPLETED' || $status === 'CONFIRMED') ? 'Lihat' : 'Edit' }}
+                    </a>
                 </div>
             </div>
         @empty
@@ -255,40 +245,6 @@
         </div>
     </div>
 </div>
-
-{{-- ════════════════════════════════════════════════════════════ --}}
-{{-- DELETE CONFIRMATION MODALS                                  --}}
-{{-- ════════════════════════════════════════════════════════════ --}}
-@foreach ($opnames as $opname)
-<div class="modal fade" id="deleteOpnameModal{{ $opname->id }}" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content rounded-3 border-0 shadow">
-            <div class="modal-header border-bottom py-3">
-                <h6 class="modal-title fw-bold text-dark d-flex align-items-center gap-2">
-                    <i class="bi bi-arrow-counterclockwise text-danger fs-5"></i> Konfirmasi Rollback Opname
-                </h6>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body text-start py-4">
-                <p class="text-secondary mb-2">
-                    Apakah Anda yakin ingin melakukan rollback / menghapus catatan Stock Opname <strong>{{ $opname->opname_code }}</strong>?
-                </p>
-                <p class="text-muted small mb-0">Stok produk saat ini akan dikembalikan ke kondisi sebelum opname dilakukan.</p>
-            </div>
-            <div class="modal-footer border-top py-2">
-                <button type="button" class="btn btn-outline-secondary rounded-2 px-3" data-bs-dismiss="modal">Batal</button>
-                <form action="{{ route('stock-opname.destroy', $opname->id) }}" method="POST" class="d-inline">
-                    @csrf
-                    @method('DELETE')
-                    <button type="submit" class="btn btn-danger rounded-2 px-4">
-                        <i class="bi bi-arrow-counterclockwise me-1"></i> Ya, Rollback
-                    </button>
-                </form>
-            </div>
-        </div>
-    </div>
-</div>
-@endforeach
 
 {{-- ════════════════════════════════════════════════════════════ --}}
 {{-- FILTER MODAL                                                --}}
@@ -336,8 +292,7 @@
                     @endif
                     <div class="d-flex justify-content-between w-100">
                         <button type="button" class="btn btn-outline-secondary rounded-2 px-3" data-bs-dismiss="modal">Batal</button>
-                        <button type="submit" class="btn btn-success rounded-2 px-4">Terapkan
-                        </button>
+                        <button type="submit" class="btn btn-success rounded-2 px-4">Terapkan</button>
                     </div>
                 </div>
             </form>

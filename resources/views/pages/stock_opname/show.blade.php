@@ -69,10 +69,6 @@
             <a href="{{ route('stock-opname.edit', $detailedOpname->id) }}" class="btn btn-sm btn-outline-warning rounded-2 px-3 text-warning-emphasis d-inline-flex align-items-center gap-2">
                 <i class="bi bi-pencil"></i> Edit Draft
             </a>
-
-            <button type="button" class="btn btn-sm btn-success rounded-2 px-3 d-inline-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#modalCompleteOpname">
-                <i class="bi bi-check2-circle"></i> Selesaikan Sekarang
-            </button>
         @endif
 
         <a href="{{ route('stock-opname.index') }}" class="btn btn-sm btn-outline-secondary rounded-2 px-3 d-inline-flex align-items-center gap-2">
@@ -212,41 +208,5 @@
         </div>
     </div>
 </div>
-
-<!-- Modal Selesaikan Opname Sekarang (From Show View) -->
-@if ($status === 'DRAFT')
-<div class="modal fade" id="modalCompleteOpname" tabindex="-1" aria-labelledby="modalCompleteOpnameLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content rounded-3 border-0 shadow">
-            <div class="modal-header border-bottom py-3">
-                <h6 class="modal-title fw-bold text-dark d-flex align-items-center gap-2" id="modalCompleteOpnameLabel">
-                    <i class="bi bi-check2-circle text-primary fs-5"></i> Selesaikan Transaksi Stock Opname
-                </h6>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body py-4">
-                <p class="text-secondary mb-3">
-                    Apakah Anda ingin menyelesaikan dan menerapkan hasil pemeriksaan stok ini ke <strong>master data stok</strong>?
-                </p>
-                <div class="alert alert-warning border-warning border-opacity-25 rounded-2 p-3 mb-0 small">
-                    <i class="bi bi-exclamation-triangle-fill me-1"></i>
-                    Stok produk saat ini akan otomatis digantikan oleh angka stok fisik yang tercatat.
-                </div>
-            </div>
-            <div class="modal-footer border-top py-2">
-                <button type="button" class="btn btn-outline-secondary rounded-2 px-3" data-bs-dismiss="modal">Batal</button>
-                <form action="{{ route('stock-opname.update_status', $detailedOpname->id) }}" method="POST" class="d-inline">
-                    @csrf
-                    @method('PATCH')
-                    <input type="hidden" name="status_opname" value="COMPLETED">
-                    <button type="submit" class="btn btn-primary rounded-2 px-4">
-                        <i class="bi bi-check2-all me-1"></i> Ya, Terapkan & Selesaikan
-                    </button>
-                </form>
-            </div>
-        </div>
-    </div>
-</div>
-@endif
 
 @endsection

@@ -19,15 +19,17 @@ class RestockItems extends Model
         'restock_unit_id',
         'quantity',
         'purchase_price',
+        'previous_unit_price',
         'total_price',
     ];
 
     protected function casts(): array
     {
         return [
-            'quantity'       => 'integer',
-            'purchase_price' => 'decimal:3',
-            'total_price'    => 'decimal:3',
+            'quantity'             => 'integer',
+            'purchase_price'       => 'decimal:3',
+            'total_price'          => 'decimal:3',
+            'previous_unit_price'  => 'decimal:3',  // ← tambahan cast
         ];
     }
 

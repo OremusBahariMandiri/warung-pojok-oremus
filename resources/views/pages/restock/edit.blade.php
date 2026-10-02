@@ -202,7 +202,7 @@
                             <tr>
                                 <th class="text-center" style="width: 45px;">No</th>
                                 <th class="text-center" style="min-width: 180px;">Nama Produk</th>
-                                <th class="text-center" style="width: 160px;">Satuan Beli</th>
+                                <th class="text-center d-none" style="width: 160px;">Satuan Beli</th>
                                 <th class="text-center" style="width: 100px;">Jumlah Masuk</th>
                                 <th class="text-center" style="width: 140px;">Harga Beli</th>
                                 <th class="text-center" style="width: 120px;">Subtotal</th>
@@ -265,7 +265,7 @@
                                                 <input type="hidden" name="items[{{ $idx }}][product_id]" value="{{ $prodId }}">
                                             @endif
                                         </td>
-                                        <td>
+                                        <td class="d-none">
                                             <select name="items[{{ $idx }}][restock_unit_id]"
                                                 class="form-select form-select-sm select2-restock-unit rounded-2"
                                                 onchange="onUnitSelectChange(this)"
@@ -314,7 +314,7 @@
                                 @endforeach
                             @else
                                 <tr id="emptyItemRow">
-                                    <td colspan="{{ $isConfirmed ? 6 : 7 }}" class="text-center py-4 text-muted small">
+                                    <td colspan="{{ $isConfirmed ? 5 : 6 }}" class="text-center py-4 text-muted small">
                                         Belum ada produk yang ditambahkan. Klik tombol "+ Tambah" di atas untuk menambahkan item.
                                     </td>
                                 </tr>
@@ -381,7 +381,7 @@
                                         <input type="hidden" name="items[{{ $idx }}][product_id]" value="{{ $prodId }}">
                                     @endif
                                 </div>
-                                <div class="mb-2">
+                                <div class="mb-2 d-none">
                                     <label class="form-label small fw-semibold text-dark mb-1">Satuan Beli</label>
                                     <select name="items[{{ $idx }}][restock_unit_id]"
                                         class="form-select form-select-sm select2-restock-unit rounded-2"
@@ -436,12 +436,12 @@
                 </div>
 
                 {{-- Action Buttons — bagian bawah card --}}
-                <div class="border-top pt-3 pb-3">
+                <div class="border-top pt-4 pb-3">
                     @if ($isConfirmed)
                         {{-- CONFIRMED: hanya Kembali + Rollback (jika masih dalam 3 jam) --}}
                         <div class="d-flex align-items-center justify-content-between gap-2">
                             <a href="{{ route('restock.index') }}" class="btn btn-light border rounded-2 px-4">
-                                Kembali
+                                Batal
                             </a>
                             @if ($canRollback)
                                 <button type="button" class="btn btn-danger rounded-2 px-3 d-inline-flex align-items-center gap-2"

@@ -1,6 +1,6 @@
 @extends('layouts.admin')
 
-@section('title', 'Kalkulator Gaji Ibu — Warung Pojok Oremus')
+@section('title', 'Kalkulator Gaji Pekerja — Warung Pojok Oremus')
 
 @push('styles')
 <link rel="stylesheet" href="{{ asset('css/reports.css') }}">
@@ -40,48 +40,13 @@
 <div class="d-flex align-items-start justify-content-between flex-wrap gap-2 mb-3">
     <div>
         <h4 class="fw-bold text-dark mb-1">Kalkulator Gaji</h4>
-        <span class="text-muted small">Hitung gaji berdasarkan total margin laporan penjualan</span>
     </div>
     <a href="{{ route('reports.index') }}" class="btn btn-sm btn-outline-secondary rounded-2 px-3 d-inline-flex align-items-center gap-2 flex-shrink-0">
         <i class="bi bi-arrow-left"></i> Kembali
     </a>
 </div>
 
-{{-- ════════════ KARTU 1 — PERIODE LAPORAN ════════════ --}}
-<div class="card border rounded-3 shadow-sm mb-3">
-    <div class="card-body p-3 p-md-4">
-
-        <div class="sc-card-label mb-3">
-            <i class="bi bi-calendar-range text-primary"></i>
-            <span>Periode Laporan</span>
-        </div>
-
-        <form action="{{ route('reports.salary_calculator') }}" method="GET">
-            <div class="row g-2 align-items-end">
-                <div class="col-12 col-md-4">
-                    <label for="start_date" class="form-label small fw-semibold text-dark mb-1">Dari Tanggal</label>
-                    <input type="date" id="start_date" name="start_date"
-                           class="form-control form-control-sm rounded-2"
-                           value="{{ $startDate }}">
-                </div>
-                <div class="col-12 col-md-4">
-                    <label for="end_date" class="form-label small fw-semibold text-dark mb-1">Sampai Tanggal</label>
-                    <input type="date" id="end_date" name="end_date"
-                           class="form-control form-control-sm rounded-2"
-                           value="{{ $endDate }}">
-                </div>
-                <div class="col-12 col-md-4">
-                    <button type="submit" class="btn btn-primary btn-sm rounded-2 w-100 d-inline-flex align-items-center justify-content-center gap-2">
-                        <i class="bi bi-search"></i> Tampilkan
-                    </button>
-                </div>
-            </div>
-        </form>
-
-    </div>
-</div>
-
-{{-- ════════════ KARTU 2 — RINGKASAN LAPORAN ════════════ --}}
+{{-- ════════════ KARTU 1 — RINGKASAN LAPORAN ════════════ --}}
 <div class="card border rounded-3 shadow-sm mb-3">
     <div class="card-body p-3 p-md-4">
 
@@ -99,7 +64,7 @@
         @if ($totalReports === 0)
             <div class="alert alert-warning d-flex align-items-center gap-2 rounded-3 py-2 px-3 mb-0">
                 <i class="bi bi-info-circle-fill fs-5 flex-shrink-0"></i>
-                <span class="small">Tidak ada data penjualan pada periode ini. Silakan ubah tanggal di atas.</span>
+                <span class="small">Tidak ada data penjualan pada periode ini.</span>
             </div>
         @else
             <div class="row g-2 mb-3">
@@ -150,14 +115,14 @@
     </div>
 </div>
 
-{{-- ════════════ KARTU 3 — KALKULATOR GAJI IBU ════════════ --}}
+{{-- ════════════ KARTU 2 — KALKULATOR GAJI PEKERJA ════════════ --}}
 @if ($totalReports > 0)
 <div class="card border rounded-3 shadow-sm mb-3">
     <div class="card-body p-3 p-md-4">
 
         <div class="sc-card-label mb-3">
             <i class="bi bi-calculator text-primary"></i>
-            <span>Kalkulator Gaji Ibu</span>
+            <span>Kalkulator Gaji Pekerja</span>
         </div>
 
         <div class="row g-3 mb-3">
@@ -183,7 +148,6 @@
                     <span class="input-group-text bg-light text-muted rounded-start-2" id="prefixLabel">%</span>
                     <input type="number" id="komisiNilai"
                            class="form-control rounded-end-2"
-                           placeholder="Contoh: 50"
                            min="0" step="0.01">
                 </div>
             </div>
@@ -213,10 +177,10 @@
 
         </div>
 
-        {{-- Hasil: GAJI IBU (centered box) --}}
+        {{-- Hasil: GAJI PEKERJA (centered box) --}}
         <div class="sc-result-gaji text-center rounded-3 p-4 mb-3">
             <div class="sc-result-gaji-label mb-2">
-                <i class="bi bi-person-heart"></i> GAJI IBU
+                <i class="bi bi-person-heart"></i> GAJI PEKERJA
             </div>
             <div class="sc-result-gaji-val font-monospace fw-bold mb-1" id="hasilGaji">Rp 0</div>
             <div class="sc-result-gaji-sub small" id="hasilGajiSub"></div>
