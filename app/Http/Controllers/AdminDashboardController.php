@@ -25,10 +25,10 @@ class AdminDashboardController extends Controller
 
         $lowStockProductsCount = Products::whereColumn('current_stock', '<=', 'min_stock')->count();
 
-        // Today's Sales & Margin
+        // Today's Sales & Margin (disesuaikan dengan total_gross_margin)
         $todayReport = Reports::whereDate('report_date', $todayStr)->first();
         $todaySales = (float)($todayReport->total_sales ?? 0);
-        $todayMargin = (float)($todayReport->total_margin ?? 0);
+        $todayMargin = (float)($todayReport->total_gross_margin ?? 0);
         $todayMarginPct = $todaySales > 0 ? round(($todayMargin / $todaySales) * 100, 1) : 0;
 
         // Yesterday's Sales for Growth comparison
@@ -51,7 +51,7 @@ class AdminDashboardController extends Controller
                 'date' => $dStr,
                 'label' => $d->isoFormat('dd, D MMM'),
                 'sales' => (float)($rep->total_sales ?? 0),
-                'margin' => (float)($rep->total_margin ?? 0),
+                'margin' => (float)($rep->total_gross_margin ?? 0),
                 'qty' => (int)($rep->total_quantity ?? 0),
             ]);
         }
@@ -66,7 +66,7 @@ class AdminDashboardController extends Controller
                 'date' => $dStr,
                 'label' => $d->format('d/m'),
                 'sales' => (float)($rep->total_sales ?? 0),
-                'margin' => (float)($rep->total_margin ?? 0),
+                'margin' => (float)($rep->total_gross_margin ?? 0),
                 'qty' => (int)($rep->total_quantity ?? 0),
             ]);
         }
@@ -83,8 +83,8 @@ class AdminDashboardController extends Controller
             });
         }
 
-        // FIX: Using total_price instead of subtotal (as total_price exists on report_details table)
-        $topProducts = $topProductsQuery->selectRaw('product_id, SUM(quantity) as total_qty, SUM(total_price) as total_revenue')
+        // FIX: Menggunakan subtotal_price menggantikan total_price
+        $topProducts = $topProductsQuery->selectRaw('product_id, SUM(quantity) as total_qty, SUM(subtotal_price) as total_revenue')
             ->groupBy('product_id')
             ->orderByDesc('total_qty')
             ->take(5)

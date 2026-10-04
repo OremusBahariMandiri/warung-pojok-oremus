@@ -20,10 +20,10 @@ return new class extends Migration
             $table->integer("quantity");
             $table->integer("stock_final")->default(0);
             $table->decimal("selling_price", 15, 3);
-            $table->decimal("hpp", 15, 3);
-            $table->decimal("total_price",15,3);
-            $table->decimal("total_hpp",15,3);
-            $table->decimal("margin",15,3);
+            $table->decimal("hpp_unit", 15, 3);
+            $table->decimal("subtotal_price",15,3);
+            $table->decimal("subtotal_hpp",15,3);
+            $table->decimal("subtotal_margin",15,3);
             $table->timestamps();
         });
     }

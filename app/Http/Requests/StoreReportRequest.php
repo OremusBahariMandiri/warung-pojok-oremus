@@ -14,15 +14,15 @@ class StoreReportRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'report_date'            => 'required|date',
-            'notes'                  => 'nullable|string',
-            'items'                  => 'required|array|min:1',
-            'items.*.product_id'      => 'required|integer|exists:products,id',
-            'items.*.selling_unit_id' => 'required|integer|exists:units,id',
-            'items.*.quantity'       => 'required|integer|min:1',
-            'items.*.stock_final'    => 'required|integer|min:0',
-            'items.*.selling_price'  => 'nullable|numeric|min:0',
-            'items.*.hpp'            => 'nullable|numeric|min:0',
+            'report_date'                => 'required|date',
+            'notes'                      => 'nullable|string',
+            'items'                      => 'required|array|min:1',
+            'items.*.product_id'         => 'required|integer|exists:products,id',
+            'items.*.selling_unit_id'    => 'required|integer|exists:units,id',
+            'items.*.quantity'           => 'required|integer|min:1',
+            'items.*.stock_final'        => 'required|integer|min:0',
+            'items.*.selling_price'      => 'nullable|numeric|min:0',
+            'items.*.hpp_unit'           => 'nullable|numeric|min:0',
         ];
     }
 
@@ -39,7 +39,7 @@ class StoreReportRequest extends FormRequest
             'items.*.quantity.required'        => 'Jumlah penjualan wajib diisi.',
             'items.*.quantity.min'             => 'Jumlah penjualan minimal 1.',
             'items.*.selling_price.numeric'    => 'Harga jual harus berupa angka.',
-            'items.*.hpp.numeric'              => 'Harga pokok / HPP harus berupa angka.',
+            'items.*.hpp_unit.numeric'         => 'Harga pokok / HPP harus berupa angka.',
             'items.*.stock_final.min' => 'Jumlah terjual melebihi stok yang tersedia. Stok akhir tidak boleh minus — periksa kembali jumlah yang dimasukkan.',
         ];
     }

@@ -19,11 +19,12 @@
 @section('content')
 
 @php
-    $reportObj = $detailedReport;
-    $detailsList = $reportObj->details ?? collect();
-    $totalSales = (float)($reportObj->total_sales ?? 0);
-    $totalHpp = (float)($reportObj->total_hpp ?? 0);
-    $totalMargin = (float)($reportObj->total_margin ?? ($totalSales - $totalHpp));
+    $reportObj    = $detailedReport;
+    $detailsList  = $reportObj->details ?? collect();
+    $totalSales   = (float)($reportObj->total_sales ?? 0);
+    $totalHpp     = (float)($reportObj->total_hpp ?? 0);
+    $totalMargin  = (float)($reportObj->total_margin ?? ($totalSales - $totalHpp));
+    $netMargin    = $totalMargin * 0.5;   // Margin Bersih = 50% dari margin kotor
     $formattedDate = $reportObj->report_date ? $reportObj->report_date->format('d M Y') : '-';
 @endphp
 
@@ -36,9 +37,6 @@
         <a href="{{ route('reports.index') }}" class="btn btn-sm btn-outline-secondary rounded-2 px-3 d-inline-flex align-items-center gap-2">
             <i class="bi bi-arrow-left"></i> Kembali
         </a>
-        <button type="button" class="btn btn-sm btn-danger text-white rounded-2 px-3 d-inline-flex align-items-center gap-2" onclick="openDeleteModal({{ $reportObj->id }}, '{{ $formattedDate }}', {{ (int)($reportObj->total_quantity ?? 0) }}, {{ $totalSales }})">
-            <i class="bi bi-trash-fill"></i>Hapus
-        </button>
     </div>
 </div>
 
@@ -82,12 +80,29 @@
                         Rp {{ number_format($totalHpp, 0, ',', '.') }}
                     </div>
                 </div>
+
+                {{-- Margin Kotor --}}
                 <div class="p-3 rounded-2 bg-success bg-opacity-10 border border-success border-opacity-25">
-                    <div class="text-success fw-medium small">Total Margin Keuntungan</div>
-                    <div class="fw-bold font-monospace text-success fs-4">
+                    <div class="text-success fw-medium small">Total Margin Kotor</div>
+                    <div class="fw-bold font-monospace {{ $totalMargin < 0 ? 'text-danger' : 'text-success' }} fs-4">
                         Rp {{ number_format($totalMargin, 0, ',', '.') }}
                     </div>
+                    <div class="text-muted small mt-1" style="font-size:0.72rem;">
+                        Omset &minus; Total HPP
+                    </div>
                 </div>
+
+                {{-- Margin Bersih --}}
+                <div class="p-3 rounded-2 border" style="background:var(--bs-primary-bg-subtle,#cfe2ff); border-color:var(--bs-primary,#0d6efd) !important; border-opacity:.25;">
+                    <div class="fw-medium small" style="color:var(--bs-primary,#0d6efd);">Total Margin Bersih</div>
+                    <div class="fw-bold font-monospace fs-4 {{ $netMargin < 0 ? 'text-danger' : '' }}" style="{{ $netMargin >= 0 ? 'color:var(--bs-primary,#0d6efd);' : '' }}">
+                        Rp {{ number_format($netMargin, 0, ',', '.') }}
+                    </div>
+                    <div class="text-muted small mt-1" style="font-size:0.72rem;">
+                        50% dari Margin Kotor (setelah gaji)
+                    </div>
+                </div>
+
                 <div class="pt-2 border-top">
                     <div class="text-muted small">Waktu Pencatatan</div>
                     <div class="text-dark small">{{ $reportObj->created_at ? $reportObj->created_at->format('d M Y, H:i') : '-' }}</div>
@@ -108,68 +123,52 @@
                 <table class="table table-bordered table-hover align-middle mb-0 w-100" id="reportShowTable">
                     <thead class="table-light">
                         <tr>
-                            <th style="width: 40px;" class="text-center">No</th>
-                            <th class="text-center" style="width: 110px;">Satuan Jual</th>
+                            <th style="width:40px;"  class="text-center">No</th>
+                            <th style="width:110px;" class="text-center">Satuan Jual</th>
                             <th>Produk</th>
-                            <th class="text-center" style="width: 90px;">Kuantitas</th>
-                            <th class="text-center" style="width: 90px;">Stok Akhir</th>
-                            <th class="text-end" style="width: 110px;">Harga Beli</th>
-                            <th class="text-end" style="width: 110px;">Harga Jual</th>
-                            <th class="text-end" style="width: 120px;">Total Penjualan</th>
-                            <th class="text-end" style="width: 100px;">HPP / Unit</th>
-                            <th class="text-end" style="width: 110px;">Total HPP</th>
-                            <th class="text-end" style="width: 110px;">Margin</th>
+                            <th style="width:90px;"  class="text-center">Kuantitas</th>
+                            <th style="width:90px;"  class="text-center">Stok Akhir</th>
+                            <th style="width:110px;" class="text-end">Harga Beli</th>
+                            <th style="width:110px;" class="text-end">Harga Jual</th>
+                            <th style="width:120px;" class="text-end">Total Penjualan</th>
+                            <th style="width:100px;" class="text-end">HPP / Unit</th>
+                            <th style="width:110px;" class="text-end">Total HPP</th>
+                            <th style="width:110px;" class="text-end">Margin</th>
                         </tr>
                     </thead>
                     <tbody>
                         @forelse ($detailsList as $detail)
                             @php
-                                $p = $detail->product;
+                                $p               = $detail->product;
                                 $sellingUnitName = $detail->sellingUnit ? ($detail->sellingUnit->short_name ?: $detail->sellingUnit->unit_name) : 'Pcs';
-                                $qty = (int)$detail->quantity;
-                                $stockFinal = (int)($detail->stock_final ?? 0);
-                                $latestRestock = $p ? $p->restockItems()->latest()->first() : null;
-                                $purchasePrice = $latestRestock ? (float)$latestRestock->purchase_price : (float)($p ? $p->unit_price : 0);
-                                $price = (float)$detail->selling_price;
-                                $hpp = (float)$detail->hpp;
-                                $subtotalSales = (float)$detail->total_price;
-                                $subtotalHpp = (float)$detail->total_hpp;
-                                $margin = (float)$detail->margin;
+                                $qty             = (int)$detail->quantity;
+                                $stockFinal      = (int)($detail->stock_final ?? 0);
+                                $latestRestock   = $p ? $p->restockItems()->latest()->first() : null;
+                                $purchasePrice   = $latestRestock ? (float)$latestRestock->purchase_price : (float)($p ? $p->unit_price : 0);
+                                $price           = (float)$detail->selling_price;
+                                $hpp             = (float)$detail->hpp;
+                                $subtotalSales   = (float)$detail->total_price;
+                                $subtotalHpp     = (float)$detail->total_hpp;
+                                $margin          = (float)$detail->margin;
                             @endphp
                             <tr>
                                 <td class="text-center text-muted small">{{ $loop->iteration }}</td>
-                                <td class="text-center small text-dark fw-medium">
-                                    {{ $sellingUnitName }}
-                                </td>
+                                <td class="text-center small text-dark fw-medium">{{ $sellingUnitName }}</td>
                                 <td>
                                     @if ($p)
                                         <div class="fw-semibold text-dark">{{ $p->prod_name }}</div>
-                                        <div class="text-muted small font-monospace" style="font-size: 0.72rem;">{{ $p->prod_code ?: 'PRD-' . $p->id }}</div>
+                                        <div class="text-muted small font-monospace" style="font-size:0.72rem;">{{ $p->prod_code ?: 'PRD-' . $p->id }}</div>
                                     @else
                                         <div class="text-muted fst-italic">Produk telah dihapus (ID: {{ $detail->product_id }})</div>
                                     @endif
                                 </td>
-                                <td class="text-center font-monospace fw-semibold text-dark">
-                                    {{ $qty }}
-                                </td>
-                                <td class="text-center font-monospace text-secondary small">
-                                    {{ $stockFinal }}
-                                </td>
-                                <td class="text-end font-monospace text-muted small">
-                                    Rp {{ number_format($purchasePrice, 0, ',', '.') }}
-                                </td>
-                                <td class="text-end font-monospace text-muted small">
-                                    Rp {{ number_format($price, 0, ',', '.') }}
-                                </td>
-                                <td class="text-end font-monospace fw-semibold text-dark">
-                                    Rp {{ number_format($subtotalSales, 0, ',', '.') }}
-                                </td>
-                                <td class="text-end font-monospace text-muted small">
-                                    Rp {{ number_format($hpp, 0, ',', '.') }}
-                                </td>
-                                <td class="text-end font-monospace text-muted small">
-                                    Rp {{ number_format($subtotalHpp, 0, ',', '.') }}
-                                </td>
+                                <td class="text-center font-monospace fw-semibold text-dark">{{ $qty }}</td>
+                                <td class="text-center font-monospace text-secondary small">{{ $stockFinal }}</td>
+                                <td class="text-end font-monospace text-muted small">Rp {{ number_format($purchasePrice, 0, ',', '.') }}</td>
+                                <td class="text-end font-monospace text-muted small">Rp {{ number_format($price, 0, ',', '.') }}</td>
+                                <td class="text-end font-monospace fw-semibold text-dark">Rp {{ number_format($subtotalSales, 0, ',', '.') }}</td>
+                                <td class="text-end font-monospace text-muted small">Rp {{ number_format($hpp, 0, ',', '.') }}</td>
+                                <td class="text-end font-monospace text-muted small">Rp {{ number_format($subtotalHpp, 0, ',', '.') }}</td>
                                 <td class="text-end font-monospace fw-bold {{ $margin < 0 ? 'text-danger' : 'text-success' }}">
                                     Rp {{ number_format($margin, 0, ',', '.') }}
                                 </td>
@@ -183,6 +182,7 @@
                         @endforelse
                     </tbody>
                     <tfoot class="table-light">
+                        {{-- Baris 1: Total Keseluruhan (existing) --}}
                         <tr class="fw-bold align-middle">
                             <td colspan="3" class="text-end text-dark">Total Keseluruhan:</td>
                             <td class="text-center font-monospace">{{ (int)($reportObj->total_quantity ?? 0) }} Unit</td>
@@ -193,6 +193,22 @@
                             <td class="text-end">-</td>
                             <td class="text-end font-monospace text-muted">Rp {{ number_format($totalHpp, 0, ',', '.') }}</td>
                             <td class="text-end font-monospace text-success">Rp {{ number_format($totalMargin, 0, ',', '.') }}</td>
+                        </tr>
+                        {{-- Baris 2: Margin Kotor --}}
+                        <tr class="align-middle">
+                            <td colspan="10" class="text-end fw-semibold text-dark small">Total Margin Kotor <span class="text-muted fw-normal">(Omset &minus; HPP)</span>:</td>
+                            <td class="text-end font-monospace fw-bold {{ $totalMargin < 0 ? 'text-danger' : 'text-success' }}">
+                                Rp {{ number_format($totalMargin, 0, ',', '.') }}
+                            </td>
+                        </tr>
+                        {{-- Baris 3: Margin Bersih --}}
+                        <tr class="align-middle" style="background:var(--bs-primary-bg-subtle,#cfe2ff);">
+                            <td colspan="10" class="text-end fw-semibold small" style="color:var(--bs-primary,#0d6efd);">
+                                Total Margin Bersih <span class="fw-normal text-muted">(50% dari Margin Kotor)</span>:
+                            </td>
+                            <td class="text-end font-monospace fw-bold {{ $netMargin < 0 ? 'text-danger' : '' }}" style="{{ $netMargin >= 0 ? 'color:var(--bs-primary,#0d6efd);' : '' }}">
+                                Rp {{ number_format($netMargin, 0, ',', '.') }}
+                            </td>
                         </tr>
                     </tfoot>
                 </table>

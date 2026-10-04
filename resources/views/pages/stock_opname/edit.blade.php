@@ -432,20 +432,22 @@
                             Simpan
                         </button>
                     </div>
-                    @elseif ($isCompleted)
-                    {{-- Tombol Rollback di kanan, sejajar dengan Kembali di kiri --}}
-                    <button type="button"
-                        id="btnRollbackDesktop"
-                        class="btn btn-outline-danger rounded-2 px-4 d-inline-flex align-items-center gap-2 {{ $rollbackExpired ? 'disabled' : '' }}"
-                        {{ $rollbackExpired ? 'disabled' : '' }}
-                        @if ($canRollback)
+                   @elseif ($isCompleted)
+                    @if ($canRollback)
+                        <button type="button"
+                            id="btnRollbackDesktop"
+                            class="btn btn-outline-danger rounded-2 px-4 d-inline-flex align-items-center gap-2"
                             data-bs-toggle="modal"
                             data-bs-target="#modalRollbackOpname"
-                        @endif
-                        data-deadline="{{ $rollbackDeadline ? $rollbackDeadline->timestamp * 1000 : 0 }}">
-                        <i class="bi bi-arrow-counterclockwise"></i> Rollback Opname
-                    </button>
+                            data-deadline="{{ $rollbackDeadline->timestamp * 1000 }}">
+                            <i class="bi bi-arrow-counterclockwise"></i> Rollback Opname
+                        </button>
+                    @else
+                        <span class="text-muted small fst-italic">
+                            <i class="bi bi-clock-history me-1"></i> Rollback tidak tersedia (batas 3 jam terlewat)
+                        </span>
                     @endif
+                @endif
                 </div>
 
                 {{-- MOBILE --}}
@@ -460,18 +462,20 @@
                         </button>
                     </div>
                     @elseif ($isCompleted)
-                    {{-- Tombol Rollback di mobile --}}
-                    <button type="button"
-                        id="btnRollbackMobile"
-                        class="btn btn-outline-danger rounded-2 w-100 d-inline-flex align-items-center justify-content-center gap-2 {{ $rollbackExpired ? 'disabled' : '' }}"
-                        {{ $rollbackExpired ? 'disabled' : '' }}
                         @if ($canRollback)
-                            data-bs-toggle="modal"
-                            data-bs-target="#modalRollbackOpname"
+                            <button type="button"
+                                id="btnRollbackMobile"
+                                class="btn btn-outline-danger rounded-2 w-100 d-inline-flex align-items-center justify-content-center gap-2"
+                                data-bs-toggle="modal"
+                                data-bs-target="#modalRollbackOpname"
+                                data-deadline="{{ $rollbackDeadline->timestamp * 1000 }}">
+                                <i class="bi bi-arrow-counterclockwise"></i> Rollback Opname
+                            </button>
+                        @else
+                            <span class="text-muted small fst-italic">
+                                <i class="bi bi-clock-history me-1"></i> Rollback tidak tersedia (batas 3 jam terlewat)
+                            </span>
                         @endif
-                        data-deadline="{{ $rollbackDeadline ? $rollbackDeadline->timestamp * 1000 : 0 }}">
-                        <i class="bi bi-arrow-counterclockwise"></i> Rollback Opname
-                    </button>
                     @endif
                     <a href="{{ route('stock-opname.index') }}" class="btn btn-light border rounded-2 w-100 text-center">
                         {{ $readonly ? 'Kembali' : 'Batal' }}

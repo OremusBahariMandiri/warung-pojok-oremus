@@ -17,8 +17,10 @@ return new class extends Migration
             $table->integer("total_quantity");
             $table->decimal("total_sales", 15, 3);
             $table->decimal("total_hpp", 15,3);
-            $table->decimal("total_margin", 15, 3);
-            $table->string("commission_type", 120)->nullable();
+            $table->decimal("total_gross_margin", 15, 3);
+            $table->decimal("total_net_margin", 15, 3);
+            $table->string("commission_type_presentance", 120)->nullable();
+            $table->string("commission_type_nominal", 120)->nullable();
             $table->decimal("commission_value", 12, 2)->nullable();
             $table->decimal("profit_share_amount", 12, 2)->nullable();
             $table->decimal("owner_share_amount", 12, 2)->nullable();

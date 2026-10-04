@@ -58,18 +58,6 @@
         <a href="{{ route('restock.index') }}" class="btn btn-sm btn-outline-secondary rounded-2 px-3 d-inline-flex align-items-center gap-2">
             <i class="bi bi-arrow-left"></i> Kembali
         </a>
-        @if ($restockObj->status_restock === 'DRAFT')
-            <a href="{{ route('restock.edit', $restockObj->id) }}" class="btn btn-sm btn-warning text-white rounded-2 px-3 d-inline-flex align-items-center gap-2" style="background-color: #f59e0b; border-color: #f59e0b;">
-                <i class="bi bi-pencil"></i> Edit Draft
-            </a>
-            <button type="button" class="btn btn-sm btn-danger text-white rounded-2 px-3 d-inline-flex align-items-center gap-2" onclick="openDeleteModal({{ $restockObj->id }}, '{{ addslashes($restockObj->restock_code) }}', {{ (int)($itemsList->sum('quantity')) }}, {{ (float)($restockObj->grand_total ?? 0) }})">
-                <i class="bi bi-trash"></i> Hapus Draft
-            </button>
-        @else
-            <a href="{{ route('restock.edit', $restockObj->id) }}" class="btn btn-sm btn-warning text-white rounded-2 px-3 d-inline-flex align-items-center gap-2" style="background-color: #f59e0b; border-color: #f59e0b;">
-                <i class="bi bi-pencil"></i> Edit
-            </a>
-        @endif
     </div>
 </div>
 
