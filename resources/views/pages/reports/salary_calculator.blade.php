@@ -19,21 +19,30 @@
 @section('content')
 
 @php
-    $totalMargin  = (float)($summary['total_margin'] ?? 0);
-    $totalSales   = (float)($summary['total_sales'] ?? 0);
-    $totalHpp     = (float)($summary['total_hpp'] ?? 0);
-    $totalQty     = (int)($summary['total_quantity'] ?? 0);
-    $totalReports = (int)($summary['total_reports'] ?? 0);
+    $totalGrossMargin = (float)($summary['total_gross_margin'] ?? 0);
+    $totalSales       = (float)($summary['total_sales'] ?? 0);
+    $totalHpp         = (float)($summary['total_hpp'] ?? 0);
+    $totalQty         = (int)($summary['total_quantity'] ?? 0);
+    $totalReports     = (int)($summary['total_reports'] ?? 0);
+
+    // Nilai tersimpan sebelumnya (untuk pre-fill form jika sudah pernah disimpan)
+    $savedCommissionType  = $summary['saved_commission_type']  ?? null; // 'persentase' atau 'nominal'
+    $savedCommissionValue = $summary['saved_commission_value'] ?? null;
+    $savedNotes           = $summary['saved_notes']            ?? null;
 @endphp
 
 {{-- Jembatan data PHP → JS --}}
 <div id="scData"
-     data-base-margin="{{ $totalMargin }}"
+     data-base-margin="{{ $totalGrossMargin }}"
      data-total-reports="{{ $totalReports }}"
      data-start-date="{{ $startDate }}"
      data-end-date="{{ $endDate }}"
+     data-report-id="{{ $reportId ?? '' }}"
      data-save-url="{{ route('reports.salary_calculator.store') }}"
      data-csrf="{{ csrf_token() }}"
+     data-saved-commission-type="{{ $savedCommissionType }}"
+     data-saved-commission-value="{{ $savedCommissionValue ?? '' }}"
+     data-saved-notes="{{ $savedNotes ?? '' }}"
      hidden></div>
 
 {{-- HEADER --}}
@@ -102,9 +111,9 @@
                         <i class="bi bi-graph-up-arrow"></i>
                     </div>
                     <div>
-                        <div class="sc-margin-label">TOTAL MARGIN (Basis Kalkulasi)</div>
+                        <div class="sc-margin-label">TOTAL MARGIN KOTOR (Basis Kalkulasi)</div>
                         <div class="sc-margin-value fw-bold font-monospace">
-                            Rp {{ number_format($totalMargin, 0, ',', '.') }}
+                            Rp {{ number_format($totalGrossMargin, 0, ',', '.') }}
                         </div>
                     </div>
                 </div>
@@ -123,6 +132,11 @@
         <div class="sc-card-label mb-3">
             <i class="bi bi-calculator text-primary"></i>
             <span>Kalkulator Gaji Pekerja</span>
+            @if($savedCommissionType)
+                <span class="badge bg-success-subtle text-success border border-success-subtle fw-normal ms-auto" style="font-size:.72rem;">
+                    <i class="bi bi-check-circle me-1"></i>Sudah disimpan
+                </span>
+            @endif
         </div>
 
         <div class="row g-3 mb-3">
@@ -133,8 +147,8 @@
                     Opsi Komisi <span class="text-danger">*</span>
                 </label>
                 <select id="komisiOpsi" class="form-select form-select-sm rounded-2">
-                    <option value="persentase">Persentase (%)</option>
-                    <option value="nominal">Nominal (Rp)</option>
+                    <option value="persentase" {{ $savedCommissionType === 'persentase' ? 'selected' : '' }}>Persentase (%)</option>
+                    <option value="nominal" {{ $savedCommissionType === 'nominal' ? 'selected' : '' }}>Nominal (Rp)</option>
                 </select>
             </div>
 
@@ -148,7 +162,8 @@
                     <span class="input-group-text bg-light text-muted rounded-start-2" id="prefixLabel">%</span>
                     <input type="number" id="komisiNilai"
                            class="form-control rounded-end-2"
-                           min="0" step="0.01">
+                           min="0" step="0.01"
+                           value="{{ $savedCommissionValue ?? '' }}">
                 </div>
             </div>
 
@@ -160,14 +175,14 @@
                 <textarea id="catatanKomisi"
                         class="form-control form-control-sm rounded-2"
                         rows="5"
-                        style="resize: vertical;"></textarea>
+                        style="resize: vertical;">{{ $savedNotes ?? '' }}</textarea>
             </div>
 
-            {{-- Display: Total Margin + Rumus Kalkulasi --}}
+            {{-- Display: Total Margin Kotor + Rumus Kalkulasi --}}
             <div class="col-6">
-                <label class="form-label small fw-semibold text-dark mb-1">Total Margin (Basis)</label>
+                <label class="form-label small fw-semibold text-dark mb-1">Total Margin Kotor (Basis)</label>
                 <input type="text" class="form-control form-control-sm rounded-2 bg-light text-dark font-monospace"
-                       value="Rp {{ number_format($totalMargin, 0, ',', '.') }}" readonly>
+                       value="Rp {{ number_format($totalGrossMargin, 0, ',', '.') }}" readonly>
             </div>
             <div class="col-6">
                 <label class="form-label small fw-semibold text-dark mb-1">Rumus Kalkulasi</label>
@@ -186,21 +201,18 @@
             <div class="sc-result-gaji-sub small" id="hasilGajiSub"></div>
         </div>
 
-        {{-- Bagian Pemilik --}}
+        {{-- Margin Bersih --}}
         <div class="d-flex align-items-center justify-content-between border rounded-3 p-3 bg-light mb-3">
-            <span class="small fw-semibold text-muted">Bagian Pemilik</span>
+            <span class="small fw-semibold text-muted">Margin Bersih</span>
             <span class="font-monospace fw-bold text-dark" id="hasilPemilik">Rp 0</span>
         </div>
 
         {{-- Footer tombol --}}
-        <div class="d-flex align-items-center justify-content-end gap-2 pt-3">
-            <button type="button" id="btnCetakStruk"
-                    class="btn btn-sm btn-outline-secondary rounded-2 d-inline-flex align-items-center gap-2 px-3">
-                <i class="bi bi-printer"></i> Cetak Struk
-            </button>
+        <div class="d-flex align-items-center justify-content-between gap-2 pt-3">
+            <a href="{{ route('reports.index') }}" class="btn btn-sm btn-light border rounded-2 px-3">Batal</a>
             <button type="button" id="btnSimpan"
                     class="btn btn-sm btn-success text-white fw-semibold rounded-2 d-inline-flex align-items-center gap-2 px-3">
-                <i class="bi bi-floppy"></i> Simpan
+                Simpan
             </button>
         </div>
 

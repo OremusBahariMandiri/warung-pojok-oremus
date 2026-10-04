@@ -18,7 +18,13 @@ class Reports extends Model
         'total_quantity',
         'total_sales',
         'total_hpp',
-        'total_margin',
+        'total_gross_margin',
+        'total_net_margin',
+        'comission_type_presentance',
+        'comission_type_nominal',
+        'commission_value',
+        'profit_share_amount',
+        'owner_share_amount',
         'report_date',
         'notes'
     ];
@@ -26,12 +32,18 @@ class Reports extends Model
     protected function casts(): array
     {
         return [
-            'created_by' => 'integer',
-            'total_quantity' => 'integer',
-            'total_sales' => 'decimal:3',
-            'total_hpp' => 'decimal:3',
-            'total_margin' => 'decimal:3',
-            'report_date' => 'datetime',
+            'created_by'                 => 'integer',
+            'total_quantity'             => 'integer',
+            'total_sales'                => 'decimal:3',
+            'total_hpp'                  => 'decimal:3',
+            'total_gross_margin'         => 'decimal:3',
+            'total_net_margin'           => 'decimal:3',
+            'comission_type_presentance' => 'decimal:3',
+            'comission_type_nominal'     => 'decimal:3',
+            'commission_value'           => 'decimal:3',
+            'profit_share_amount'        => 'decimal:3',
+            'owner_share_amount'         => 'decimal:3',
+            'report_date'                => 'datetime',
         ];
     }
 

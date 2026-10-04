@@ -68,23 +68,15 @@
 </div>
 @endif
 
-{{-- ═══════════════════════════════════════════════════════════════
-     DESKTOP LAYOUT (>= 768px) — DataTables Table
-     Pola sama dengan hpp, products, restock:
-     - Tidak pakai d-none / d-md-block (DataTables harus selalu ada di DOM)
-     - Mobile disembunyikan via CSS di reports.css (@media max-width 767.98px)
-     ═══════════════════════════════════════════════════════════════ --}}
+{{-- DESKTOP TABLE --}}
 <div class="card-box px-3 border rounded-3 overflow-hidden shadow-sm bg-white mb-4 reports-desktop-card">
 
     <!-- Action & Filter Header -->
     <div class="py-3 d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-3">
-        <!-- Left: Search Box -->
         <div class="position-relative reports-search-box">
             <i class="bi bi-search position-absolute top-50 start-0 translate-middle-y ms-3 text-muted"></i>
             <input type="text" id="dtSearchInput" class="form-control form-control-sm ps-5 pe-3 rounded-2" placeholder="Cari tanggal, produk terjual, dibuat oleh...">
         </div>
-
-        <!-- Right: Action & Filter Buttons -->
         <div class="d-flex align-items-center gap-2">
             <button type="button" class="btn btn-sm btn-outline-secondary rounded-2 d-inline-flex align-items-center gap-2 px-3 position-relative" data-bs-toggle="modal" data-bs-target="#modalFilterReport">
                 <i class="bi bi-funnel"></i> Filter
@@ -100,75 +92,85 @@
         </div>
     </div>
 
-    {{--
-        PENTING: Tidak pakai wrapper .table-responsive di sini.
-        DataTables Responsive menangani sendiri kolom mana yang
-        disembunyikan agar tidak perlu scroll horizontal.
-    --}}
     <table class="table table-bordered table-hover align-middle mb-0 w-100 text-nowrap" id="reportsDataTable">
         <thead>
             <tr>
-                <th style="width: 50px;" class="text-center">No</th>
-                <th class="text-center" style="width: 150px;">Tanggal</th>
-                <th class="text-center" style="width: 130px;">Jumlah Produk</th>
-                <th class="text-center" style="width: 140px;">Produk Terjual</th>
-                <th class="text-end" style="width: 160px;">Total Penjualan</th>
-                <th class="text-end" style="width: 150px;">Total HPP</th>
-                <th class="text-end" style="width: 150px;">Total Margin</th>
-                <th class="text-center" style="width: 140px;">Dibuat Oleh</th>
-                <th class="text-center no-sort" style="width: 110px;">Aksi</th>
+                <th style="width:50px;"  class="text-center">No</th>
+                <th style="width:150px;" class="text-center">Tanggal</th>
+                <th style="width:130px;" class="text-center">Jumlah Produk</th>
+                <th style="width:140px;" class="text-center">Produk Terjual</th>
+                <th style="width:160px;" class="text-end">Total Penjualan</th>
+                <th style="width:150px;" class="text-end">Total HPP</th>
+                <th style="width:110px;" class="text-center no-sort">Aksi</th>
+                <th style="width:155px;" class="text-end">Total Margin Kotor</th>
+                <th style="width:150px;" class="text-end">Margin Bersih</th>
+                <th style="width:140px;" class="text-center">Dibuat Oleh</th>
             </tr>
         </thead>
         <tbody>
             @foreach ($list as $r)
-                @php
-                    $itemCount    = $r->details ? $r->details->count() : 0;
-                    $totalSales   = (float)($r->total_sales ?? 0);
-                    $totalHpp     = (float)($r->total_hpp ?? 0);
-                    $totalMargin  = (float)($r->total_margin ?? ($totalSales - $totalHpp));
-                    $formattedDate = $r->report_date ? $r->report_date->format('d M Y') : '-';
-                    $creatorName  = $r->creator->employee_name ?? '';
-                @endphp
-                <tr data-date="{{ $r->report_date ? $r->report_date->format('Y-m-d') : '' }}">
-                    <td class="text-center text-muted fw-medium small">{{ $loop->iteration }}</td>
-                    <td class="text-center text-dark fw-semibold">{{ $formattedDate }}</td>
-                    <td class="text-center"><span class="text-dark">{{ $itemCount }} Produk</span></td>
-                    <td class="text-center font-monospace fw-semibold">{{ (int)($r->total_quantity ?? 0) }} Unit</td>
-                    <td class="text-end font-monospace text-dark fw-semibold">Rp {{ number_format($totalSales, 0, ',', '.') }}</td>
-                    <td class="text-end font-monospace text-muted">Rp {{ number_format($totalHpp, 0, ',', '.') }}</td>
-                    <td class="text-end font-monospace fw-bold text-success">Rp {{ number_format($totalMargin, 0, ',', '.') }}</td>
-                    <td class="text-center text-muted small">{{ $creatorName }}</td>
-                    <td class="text-center">
-                        <div class="d-inline-flex align-items-center gap-1">
-                            <a href="{{ route('reports.show', $r->id) }}" class="btn btn-sm btn-info text-white px-2 py-1 rounded-2 shadow-none" title="Detail" style="background-color:#0ea5e9;border-color:#0ea5e9;">
-                                <i class="bi bi-eye"></i>
-                            </a>
-                            <a href="{{ route('reports.edit', $r->id) }}" class="btn btn-sm btn-warning text-white px-2 py-1 rounded-2 shadow-none" title="Edit Laporan" style="background-color:#f59e0b;border-color:#f59e0b;">
-                                <i class="bi bi-pencil"></i>
-                            </a>
-                            <a href="{{ route('reports.salary_calculator', [
-                                'start_date' => $r->report_date->toDateString(),
-                                'end_date'   => $r->report_date->toDateString(),
-                            ]) }}" class="btn btn-sm btn-primary px-2 py-1 rounded-2 shadow-none" title="Hitung Bagi Hasil">
-                                <i class="bi bi-calculator"></i>
-                            </a>
-                        </div>
-                    </td>
-                </tr>
+            @php
+                $itemCount        = $r->details ? $r->details->count() : 0;
+                $totalSales       = (float)($r->total_sales ?? 0);
+                $totalHpp         = (float)($r->total_hpp ?? 0);
+                $totalMargin      = (float)($r->total_gross_margin ?? ($totalSales - $totalHpp));
+                $netMarginDesktop = $totalMargin * 0.5;
+                $formattedDate    = $r->report_date ? $r->report_date->format('d M Y') : '-';
+                $creatorName      = $r->creator->employee_name ?? '';
+            @endphp
+            <tr data-date="{{ $r->report_date ? $r->report_date->format('Y-m-d') : '' }}">
+                {{-- 0: No --}}
+                <td class="text-center text-muted fw-medium small">{{ $loop->iteration }}</td>
+                {{-- 1: Tanggal --}}
+                <td class="text-center text-dark fw-semibold">{{ $formattedDate }}</td>
+                {{-- 2: Jumlah Produk --}}
+                <td class="text-center"><span class="text-dark">{{ $itemCount }} Produk</span></td>
+                {{-- 3: Produk Terjual --}}
+                <td class="text-center font-monospace fw-semibold">{{ (int)($r->total_quantity ?? 0) }} Unit</td>
+                {{-- 4: Total Penjualan --}}
+                <td class="text-end font-monospace text-dark fw-semibold">Rp {{ number_format($totalSales, 0, ',', '.') }}</td>
+                {{-- 5: Total HPP --}}
+                <td class="text-end font-monospace text-muted">Rp {{ number_format($totalHpp, 0, ',', '.') }}</td>
+                {{-- 6: Aksi --}}
+                <td class="text-center">
+                    <div class="d-inline-flex align-items-center gap-1">
+                        <a href="{{ route('reports.show', $r->id) }}"
+                           class="btn btn-sm btn-info text-white px-2 py-1 rounded-2 shadow-none"
+                           title="Detail" style="background-color:#0ea5e9;border-color:#0ea5e9;">
+                            <i class="bi bi-eye"></i>
+                        </a>
+                        <a href="{{ route('reports.edit', $r->id) }}"
+                           class="btn btn-sm btn-warning text-white px-2 py-1 rounded-2 shadow-none"
+                           title="Edit Laporan" style="background-color:#f59e0b;border-color:#f59e0b;">
+                            <i class="bi bi-pencil"></i>
+                        </a>
+                        <a href="{{ route('reports.salary_calculator', [
+                               'start_date' => $r->report_date->toDateString(),
+                               'end_date'   => $r->report_date->toDateString(),
+                           ]) }}"
+                           class="btn btn-sm btn-primary px-2 py-1 rounded-2 shadow-none"
+                           title="Kalkulator Gaji">
+                            <i class="bi bi-calculator"></i>
+                        </a>
+                    </div>
+                </td>
+                {{-- 7: Total Margin Kotor → expand --}}
+                <td class="text-end font-monospace fw-bold text-success">Rp {{ number_format($totalMargin, 0, ',', '.') }}</td>
+                {{-- 8: Margin Bersih → expand --}}
+                <td class="text-end font-monospace fw-bold text-primary">Rp {{ number_format($netMarginDesktop, 0, ',', '.') }}</td>
+                {{-- 9: Dibuat Oleh → expand --}}
+                <td class="text-center text-muted small">{{ $creatorName }}</td>
+            </tr>
             @endforeach
         </tbody>
     </table>
 </div>
 
 
-{{-- ═══════════════════════════════════════════════════════════════
-     MOBILE LAYOUT (< 768px) — Card List
-     Ditampilkan/disembunyikan via CSS (bukan d-none d-md-block)
-     ═══════════════════════════════════════════════════════════════ --}}
+{{-- MOBILE CARD LIST --}}
 <div class="reports-mobile-wrapper mb-4">
     <div class="card border-0 shadow-sm rounded-3 overflow-hidden">
 
-        <!-- Header Card: Toolbar Search & Buat -->
         <div class="card-header bg-white my-4 d-flex flex-column gap-3 border-0">
             <div class="position-relative w-100">
                 <i class="bi bi-search position-absolute top-50 start-0 translate-middle-y ms-3 text-muted" style="font-size:.85rem;"></i>
@@ -189,16 +191,15 @@
             </div>
         </div>
 
-        <!-- Body Card: List Laporan Penjualan -->
         <div class="card-body p-3 pt-0" id="mobileReportCards">
             @forelse ($list as $r)
                 @php
-                    $itemCount    = $r->details ? $r->details->count() : 0;
-                    $totalSales   = (float)($r->total_sales ?? 0);
-                    $totalHpp     = (float)($r->total_hpp ?? 0);
-                    $totalMargin  = (float)($r->total_margin ?? ($totalSales - $totalHpp));
+                    $itemCount     = $r->details ? $r->details->count() : 0;
+                    $totalSales    = (float)($r->total_sales ?? 0);
+                    $totalHpp      = (float)($r->total_hpp ?? 0);
+                    $totalMargin   = (float)($r->total_gross_margin ?? ($totalSales - $totalHpp));
                     $formattedDate = $r->report_date ? $r->report_date->format('d M Y') : '-';
-                    $creatorName  = $r->creator->employee_name ?? 'Administrator';
+                    $creatorName   = $r->creator->employee_name ?? 'Administrator';
                 @endphp
 
                 <div class="mobile-report-card mb-3"
@@ -230,9 +231,15 @@
                         </div>
                     </div>
 
+                    {{-- margin kotor + bersih di mobile card --}}
                     <div class="mrc-margin-bar {{ $totalMargin < 0 ? 'negative' : '' }}">
-                        <span class="mrc-margin-label">Total Margin</span>
+                        <span class="mrc-margin-label">Margin Kotor</span>
                         <span class="mrc-margin-value font-monospace fw-bold">Rp {{ number_format($totalMargin, 0, ',', '.') }}</span>
+                    </div>
+                    @php $netMobile = $totalMargin * 0.5; @endphp
+                    <div class="mrc-margin-bar" style="background:var(--bs-primary-bg-subtle,#cfe2ff); color:var(--bs-primary,#0d6efd);">
+                        <span class="mrc-margin-label">Margin Bersih</span>
+                        <span class="mrc-margin-value font-monospace fw-bold">Rp {{ number_format($netMobile, 0, ',', '.') }}</span>
                     </div>
 
                     <div class="mrc-actions">
@@ -242,7 +249,12 @@
                         <a href="{{ route('reports.edit', $r->id) }}" class="btn btn-sm btn-warning text-white rounded-2 px-3">
                             <i class="bi bi-pencil"></i>
                         </a>
-                        <a href="{{ route('reports.salary_calculator') }}" class="btn btn-sm btn-outline-primary rounded-2 px-3" title="Hitung Bagi Hasil">
+                        <a href="{{ route('reports.salary_calculator', [
+                               'start_date' => $r->report_date->toDateString(),
+                               'end_date'   => $r->report_date->toDateString(),
+                           ]) }}"
+                           class="btn btn-sm btn-outline-primary rounded-2 px-3"
+                           title="Kalkulator Gaji">
                             <i class="bi bi-calculator"></i>
                         </a>
                     </div>

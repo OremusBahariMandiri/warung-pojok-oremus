@@ -848,6 +848,10 @@ function recalculateReportTotals() {
     });
 
     const grandMargin = grandSales - grandHpp;
+    // Preview margin bersih: patokan gaji 50% dari margin kotor (sama dengan excel tgl 3 & 4)
+    const gajiPreview = grandMargin * 0.5;
+    const netMargin = grandMargin - gajiPreview;
+
     const el = (id) => document.getElementById(id);
 
     if (el("displayTotalItems"))
@@ -867,6 +871,28 @@ function recalculateReportTotals() {
         el("displayTotalMargin").classList.toggle(
             "text-success",
             grandMargin >= 0,
+        );
+    }
+    if (el("displayTotalGrossMargin")) {
+        el("displayTotalGrossMargin").textContent = formatRupiah(grandMargin);
+        el("displayTotalGrossMargin").classList.toggle(
+            "text-danger",
+            grandMargin < 0,
+        );
+        el("displayTotalGrossMargin").classList.toggle(
+            "text-success",
+            grandMargin >= 0,
+        );
+    }
+    if (el("displayTotalNetMargin")) {
+        el("displayTotalNetMargin").textContent = formatRupiah(netMargin);
+        el("displayTotalNetMargin").classList.toggle(
+            "text-danger",
+            netMargin < 0,
+        );
+        el("displayTotalNetMargin").classList.toggle(
+            "text-primary",
+            netMargin >= 0,
         );
     }
 }
@@ -1273,15 +1299,16 @@ if (typeof jQuery !== "undefined") {
 
             columnDefs: [
                 { targets: "no-sort", orderable: false },
-                { targets: 0, responsivePriority: 1 },
-                { targets: 1, responsivePriority: 2 },
-                { targets: 2, responsivePriority: 6 },
-                { targets: 3, responsivePriority: 7 },
-                { targets: 4, responsivePriority: 3 },
-                { targets: 5, responsivePriority: 4 },
-                { targets: 6, responsivePriority: 11 },
-                { targets: 7, responsivePriority: 12 },
-                { targets: 8, responsivePriority: 1 },
+                { targets: 0, responsivePriority: 1 }, // No
+                { targets: 1, responsivePriority: 2 }, // Tanggal
+                { targets: 2, responsivePriority: 6 }, // Jumlah Produk
+                { targets: 3, responsivePriority: 5 }, // Produk Terjual
+                { targets: 4, responsivePriority: 3 }, // Total Penjualan
+                { targets: 5, responsivePriority: 7 }, // Total HPP
+                { targets: 6, responsivePriority: 1 }, // Aksi
+                { targets: 7, responsivePriority: 10 }, // Total Margin Kotor → expand
+                { targets: 8, responsivePriority: 9 }, // Margin Bersih      → expand
+                { targets: 9, responsivePriority: 8 }, // Dibuat Oleh        → expand
             ],
 
             scrollX: false,
@@ -1330,6 +1357,11 @@ function showTodayReportAlert() {
     const csrfToken = scDataEl.dataset.csrf;
     const startDate = scDataEl.dataset.startDate;
     const endDate = scDataEl.dataset.endDate;
+    const reportId = scDataEl.dataset.reportId || "";
+
+    // Nilai tersimpan sebelumnya (pre-fill)
+    const savedCommissionType = scDataEl.dataset.savedCommissionType || "";
+    const savedCommissionValue = scDataEl.dataset.savedCommissionValue || "";
 
     /* ── Elemen DOM ── */
     const komisiOpsi = document.getElementById("komisiOpsi");
@@ -1355,12 +1387,13 @@ function showTodayReportAlert() {
     }
 
     /* ── Update prefix % / Rp saat opsi komisi berubah ── */
-    function updatePrefix() {
+    function updatePrefix(resetValue) {
         const isNominal = komisiOpsi.value === "nominal";
         prefixLabel.textContent = isNominal ? "Rp" : "%";
         labelSatuan.textContent = isNominal ? "(Rp)" : "(%)";
-        // Reset input saat opsi berubah supaya tidak salah hitung
-        komisiNilai.value = "";
+        if (resetValue) {
+            komisiNilai.value = "";
+        }
         calculate();
     }
 
@@ -1382,13 +1415,11 @@ function showTodayReportAlert() {
         let rumus = "";
 
         if (opsi === "persentase") {
-            // Gaji = baseMargin × (nilai / 100)
             gajiPekerja = baseMargin * (nilaiRaw / 100);
             rumus =
                 fRp(baseMargin) + " × " + nilaiRaw + "% = " + fRp(gajiPekerja);
             hasilGajiSub.textContent = nilaiRaw + "% dari total margin";
         } else {
-            // Nominal langsung
             gajiPekerja = nilaiRaw;
             rumus = "Nominal tetap = " + fRp(gajiPekerja);
             hasilGajiSub.textContent = "Nominal tetap";
@@ -1400,17 +1431,25 @@ function showTodayReportAlert() {
         hasilGaji.textContent = fRp(gajiPekerja);
         hasilPemilik.textContent = fRp(bagianPemilik);
 
-        // Warna merah jika pemilik minus
         hasilPemilik.classList.toggle("text-danger", bagianPemilik < 0);
         hasilPemilik.classList.toggle("text-dark", bagianPemilik >= 0);
     }
 
     /* ── Event listeners ── */
-    komisiOpsi.addEventListener("change", updatePrefix);
+    // Saat opsi berubah oleh user → reset nilai
+    komisiOpsi.addEventListener("change", function () {
+        updatePrefix(true);
+    });
     komisiNilai.addEventListener("input", calculate);
 
-    // Inisialisasi prefix saat halaman load
-    updatePrefix();
+    /* ── Inisialisasi: set prefix sesuai opsi, lalu hitung jika ada nilai tersimpan ── */
+    // updatePrefix(false) → tidak reset nilai (karena Blade sudah pre-fill)
+    updatePrefix(false);
+
+    // Jika ada nilai tersimpan, langsung kalkulasi
+    if (savedCommissionValue !== "" && parseFloat(savedCommissionValue) >= 0) {
+        calculate();
+    }
 
     /* ── Tombol Simpan → buka modal konfirmasi ── */
     if (btnSimpan) {
@@ -1435,7 +1474,7 @@ function showTodayReportAlert() {
                         <span class="fw-semibold">${startDate === endDate ? startDate : startDate + " – " + endDate}</span>
                     </div>
                     <div class="d-flex justify-content-between py-1 border-bottom small">
-                        <span class="text-muted">Total Margin</span>
+                        <span class="text-muted">Total Margin Kotor</span>
                         <span class="fw-semibold font-monospace">${fRp(baseMargin)}</span>
                     </div>
                     <div class="d-flex justify-content-between py-1 border-bottom small">
@@ -1447,7 +1486,7 @@ function showTodayReportAlert() {
                         <span class="fw-bold text-primary font-monospace">${fRp(gajiPekerja)}</span>
                     </div>
                     <div class="d-flex justify-content-between py-1 small">
-                        <span class="text-muted">Bagian Pemilik</span>
+                        <span class="text-muted">Margin Bersih</span>
                         <span class="fw-bold font-monospace ${bagianPemilik < 0 ? "text-danger" : "text-dark"}">${fRp(bagianPemilik)}</span>
                     </div>`;
             }
@@ -1475,21 +1514,28 @@ function showTodayReportAlert() {
             btnKonfirm.innerHTML =
                 '<span class="spinner-border spinner-border-sm me-1"></span> Menyimpan...';
 
+            const payload = {
+                start_date: startDate,
+                end_date: endDate,
+                commission_type: opsi,
+                commission_value: nilaiRaw,
+                profit_share_amount: gajiPekerja,
+                owner_share_amount: bagianPemilik,
+                notes: catatan,
+            };
+
+            // Sertakan report_id jika ada (supaya simpan hanya ke report spesifik)
+            if (reportId !== "") {
+                payload.report_id = reportId;
+            }
+
             fetch(saveUrl, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
                     "X-CSRF-TOKEN": csrfToken,
                 },
-                body: JSON.stringify({
-                    start_date: startDate,
-                    end_date: endDate,
-                    commission_type: opsi,
-                    commission_value: nilaiRaw,
-                    profit_share_amount: gajiPekerja,
-                    owner_share_amount: bagianPemilik,
-                    notes: catatan,
-                }),
+                body: JSON.stringify(payload),
             })
                 .then(function (res) {
                     return res.json();

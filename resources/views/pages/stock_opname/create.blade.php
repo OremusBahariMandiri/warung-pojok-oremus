@@ -277,7 +277,7 @@
         <td>
             <input type="number" name="items[__INDEX__][physical_stock]"
                 class="form-control form-control-sm text-center fw-bold physical-stock-input"
-                value="0" min="0" required>
+                min="0" required>
         </td>
         <td class="text-center diff-cell text-secondary">-</td>
         <td class="text-center">

@@ -160,10 +160,10 @@
                                     <a href="{{ route('restock.edit', $item->id) }}" class="btn btn-sm btn-warning text-white px-2 py-1 rounded-2 shadow-none" title="Edit Draft" style="background-color: #f59e0b; border-color: #f59e0b;">
                                         <i class="bi bi-pencil"></i>
                                     </a>
-                                    <button type="button" class="btn btn-sm btn-danger text-white px-2 py-1 rounded-2 shadow-none" title="Hapus Draft"
+                                    {{-- <button type="button" class="btn btn-sm btn-danger text-white px-2 py-1 rounded-2 shadow-none" title="Hapus Draft"
                                         onclick="openDeleteModal({{ $item->id }}, '{{ addslashes($item->restock_code) }}', {{ $totalQty }}, {{ $totalPrice }})">
                                         <i class="bi bi-trash"></i>
-                                    </button>
+                                    </button> --}}
                                 @else
                                     <a href="{{ route('restock.edit', $item->id) }}" class="btn btn-sm btn-warning text-white px-2 py-1 rounded-2 shadow-none" title="Edit Transaksi" style="background-color: #f59e0b; border-color: #f59e0b;">
                                         <i class="bi bi-pencil"></i>
@@ -239,11 +239,11 @@
                         <a href="{{ route('restock.edit', $item->id) }}" class="btn btn-sm btn-warning text-white rounded-2 px-3 d-inline-flex align-items-center gap-1" style="background-color: #f59e0b; border-color: #f59e0b;">
                             <i class="bi bi-pencil"></i> Edit
                         </a>
-                        <button type="button" class="rlc-btn-delete"
+                        {{-- <button type="button" class="rlc-btn-delete"
                             onclick="openDeleteModal({{ $item->id }}, '{{ addslashes($item->restock_code) }}', {{ $totalQty }}, {{ $totalPrice }})"
                             title="Hapus Draft">
                             <i class="bi bi-trash"></i>
-                        </button>
+                        </button> --}}
                     @else
                         <a href="{{ route('restock.edit', $item->id) }}" class="btn btn-sm btn-warning text-white rounded-2 px-3 d-inline-flex align-items-center gap-1" style="background-color: #f59e0b; border-color: #f59e0b;">
                             <i class="bi bi-pencil"></i> Edit

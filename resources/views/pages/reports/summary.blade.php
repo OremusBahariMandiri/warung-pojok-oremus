@@ -24,17 +24,22 @@
 @php
     $recapData = $recap ?? [];
     $dailyList = $recapData['daily_recap'] ?? [];
-    $overall = $recapData['overall'] ?? [];
-    $period = $recapData['period'] ?? [];
+    $overall   = $recapData['overall'] ?? [];
+    $period    = $recapData['period'] ?? [];
 
-    $overallQty = (int)($overall['total_quantity'] ?? 0);
-    $overallSales = (float)($overall['total_sales'] ?? 0);
-    $overallHpp = (float)($overall['total_hpp'] ?? 0);
-    $overallMargin = (float)($overall['total_margin'] ?? ($overallSales - $overallHpp));
-    $marginPercentage = $overallSales > 0 ? ($overallMargin / $overallSales) * 100 : 0;
+    $overallQty         = (int)($overall['total_quantity'] ?? 0);
+    $overallSales       = (float)($overall['total_sales'] ?? 0);
+    $overallHpp         = (float)($overall['total_hpp'] ?? 0);
+    $overallGrossMargin = (float)($overall['total_gross_margin'] ?? ($overallSales - $overallHpp));
+
+    // Gaji karyawan preview: 50% dari margin kotor (patokan excel)
+    $overallGaji        = $overallGrossMargin * 0.5;
+    $overallNetMargin   = $overallGrossMargin - $overallGaji;
+
+    $marginPercentage   = $overallSales > 0 ? ($overallGrossMargin / $overallSales) * 100 : 0;
 
     $startDateVal = request('start_date', now()->startOfMonth()->toDateString());
-    $endDateVal = request('end_date', now()->toDateString());
+    $endDateVal   = request('end_date', now()->toDateString());
 @endphp
 
 <!-- Header Title -->
@@ -118,7 +123,7 @@
         </div>
     </div>
 
-    <!-- Card 3: Total Margin -->
+    <!-- Card 3: Margin Kotor -->
     <div class="col-xl-3 col-md-6">
         <div class="summary-stat-card">
             <div class="d-flex align-items-start justify-content-between mb-3">
@@ -126,14 +131,14 @@
                     <i class="bi bi-wallet2"></i>
                 </div>
                 <span class="badge bg-success bg-opacity-10 text-success py-1 px-2 rounded-2 small fw-medium">
-                    Laba Bersih
+                    Margin Kotor
                 </span>
             </div>
-            <div class="summary-stat-label">Margin Keuntungan</div>
+            <div class="summary-stat-label">Margin Kotor</div>
             <div class="summary-stat-value text-success">
-                Rp {{ number_format($overallMargin, 0, ',', '.') }}
+                Rp {{ number_format($overallGrossMargin, 0, ',', '.') }}
             </div>
-            <p class="summary-stat-desc">Laba kotor bersih (Penjualan - HPP)</p>
+            <p class="summary-stat-desc">Penjualan − HPP ({{ number_format($marginPercentage, 1, ',', '.') }}% dari omset)</p>
         </div>
     </div>
 
@@ -152,7 +157,60 @@
             <div class="summary-stat-value text-primary">
                 {{ number_format($marginPercentage, 1, ',', '.') }}%
             </div>
-            <p class="summary-stat-desc">Rasio margin laba kotor terhadap omset</p>
+            <p class="summary-stat-desc">Rasio margin kotor terhadap omset</p>
+        </div>
+    </div>
+</div>
+
+{{-- ════════════ KARTU BREAKDOWN GAJI & MARGIN BERSIH ════════════ --}}
+<div class="card border rounded-3 shadow-sm mb-4">
+    <div class="card-body p-3 p-md-4">
+        <div class="row g-3">
+            <!-- Margin Kotor -->
+            <div class="col-md-4">
+                <div class="border rounded-3 p-3 h-100 bg-light">
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                        <div class="rounded-circle d-flex align-items-center justify-content-center bg-success bg-opacity-10" style="width:32px;height:32px;flex-shrink:0;">
+                            <i class="bi bi-graph-up text-success" style="font-size:.85rem;"></i>
+                        </div>
+                        <span class="small fw-semibold text-muted">Margin Kotor</span>
+                    </div>
+                    <div class="fw-bold font-monospace fs-5 text-success">
+                        Rp {{ number_format($overallGrossMargin, 0, ',', '.') }}
+                    </div>
+                    <div class="text-muted mt-1" style="font-size:.72rem;">Total Penjualan − Total HPP</div>
+                </div>
+            </div>
+            <!-- Gaji Karyawan -->
+            <div class="col-md-4">
+                <div class="border rounded-3 p-3 h-100 bg-light">
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                        <div class="rounded-circle d-flex align-items-center justify-content-center bg-warning bg-opacity-10" style="width:32px;height:32px;flex-shrink:0;">
+                            <i class="bi bi-person-heart text-warning" style="font-size:.85rem;"></i>
+                        </div>
+                        <span class="small fw-semibold text-muted">Estimasi Gaji Karyawan</span>
+                    </div>
+                    <div class="fw-bold font-monospace fs-5 text-warning">
+                        Rp {{ number_format($overallGaji, 0, ',', '.') }}
+                    </div>
+                    <div class="text-muted mt-1" style="font-size:.72rem;">Margin Kotor × 50% (patokan)</div>
+                </div>
+            </div>
+            <!-- Margin Bersih -->
+            <div class="col-md-4">
+                <div class="border rounded-3 p-3 h-100 {{ $overallNetMargin < 0 ? 'bg-danger bg-opacity-10' : 'bg-light' }}">
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                        <div class="rounded-circle d-flex align-items-center justify-content-center {{ $overallNetMargin < 0 ? 'bg-danger bg-opacity-10' : 'bg-primary bg-opacity-10' }}" style="width:32px;height:32px;flex-shrink:0;">
+                            <i class="bi bi-wallet {{ $overallNetMargin < 0 ? 'text-danger' : 'text-primary' }}" style="font-size:.85rem;"></i>
+                        </div>
+                        <span class="small fw-semibold text-muted">Margin Bersih</span>
+                    </div>
+                    <div class="fw-bold font-monospace fs-5 {{ $overallNetMargin < 0 ? 'text-danger' : 'text-primary' }}">
+                        Rp {{ number_format($overallNetMargin, 0, ',', '.') }}
+                    </div>
+                    <div class="text-muted mt-1" style="font-size:.72rem;">Margin Kotor − Gaji Karyawan</div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -208,40 +266,38 @@
                 <tr>
                     <th style="width: 50px;" class="text-center">No</th>
                     <th class="text-center" style="width: 150px;">Tanggal</th>
-                    <th class="text-center" style="width: 140px;">Total Terjual</th>
-                    <th class="text-end" style="width: 170px;">Total Penjualan</th>
-                    <th class="text-end" style="width: 160px;">Total Modal HPP</th>
-                    <th class="text-end" style="width: 160px;">Total Margin</th>
-                    <th class="text-center" style="width: 120px;">% Margin</th>
+                    <th class="text-center" style="width: 120px;">Total Terjual</th>
+                    <th class="text-end" style="width: 160px;">Total Penjualan</th>
+                    <th class="text-end" style="width: 150px;">Total HPP</th>
+                    <th class="text-end" style="width: 150px;">Margin Kotor</th>
+                    <th class="text-end" style="width: 145px;">Est. Gaji Karyawan</th>
+                    <th class="text-end" style="width: 145px;">Margin Bersih</th>
+                    <th class="text-center" style="width: 100px;">% Margin</th>
                 </tr>
             </thead>
             <tbody>
                 @foreach ($dailyList as $item)
                     @php
-                        $daySales = (float)($item['total_sales'] ?? 0);
-                        $dayHpp = (float)($item['total_hpp'] ?? 0);
-                        $dayMargin = (float)($item['total_margin'] ?? ($daySales - $dayHpp));
-                        $dayMarginPct = $daySales > 0 ? ($dayMargin / $daySales) * 100 : 0;
+                        $daySales      = (float)($item['total_sales'] ?? 0);
+                        $dayHpp        = (float)($item['total_hpp'] ?? 0);
+                        $dayGross      = (float)($item['total_gross_margin'] ?? ($daySales - $dayHpp));
+                        $dayGaji       = $dayGross * 0.5;
+                        $dayNet        = $dayGross - $dayGaji;
+                        $dayMarginPct  = $daySales > 0 ? ($dayGross / $daySales) * 100 : 0;
                         $formattedDate = \Carbon\Carbon::parse($item['date'])->format('d M Y');
                     @endphp
                     <tr>
-                        <td class="text-center text-muted fw-medium small" data-label="No">{{ $loop->iteration }}</td>
-                        <td class="text-center text-dark fw-semibold" data-label="Tanggal">
-                            {{ $formattedDate }}
+                        <td class="text-center text-muted fw-medium small">{{ $loop->iteration }}</td>
+                        <td class="text-center text-dark fw-semibold">{{ $formattedDate }}</td>
+                        <td class="text-center font-monospace fw-semibold">{{ (int)($item['total_quantity'] ?? 0) }} Unit</td>
+                        <td class="text-end font-monospace text-dark fw-semibold">Rp {{ number_format($daySales, 0, ',', '.') }}</td>
+                        <td class="text-end font-monospace text-muted">Rp {{ number_format($dayHpp, 0, ',', '.') }}</td>
+                        <td class="text-end font-monospace fw-bold text-success">Rp {{ number_format($dayGross, 0, ',', '.') }}</td>
+                        <td class="text-end font-monospace text-warning fw-semibold">Rp {{ number_format($dayGaji, 0, ',', '.') }}</td>
+                        <td class="text-end font-monospace fw-bold {{ $dayNet < 0 ? 'text-danger' : 'text-primary' }}">
+                            Rp {{ number_format($dayNet, 0, ',', '.') }}
                         </td>
-                        <td class="text-center font-monospace fw-semibold" data-label="Total Terjual">
-                            {{ (int)($item['total_quantity'] ?? 0) }} Unit
-                        </td>
-                        <td class="text-end font-monospace text-dark fw-semibold" data-label="Total Penjualan">
-                            Rp {{ number_format($daySales, 0, ',', '.') }}
-                        </td>
-                        <td class="text-end font-monospace text-muted" data-label="Total Modal HPP">
-                            Rp {{ number_format($dayHpp, 0, ',', '.') }}
-                        </td>
-                        <td class="text-end font-monospace fw-bold text-success" data-label="Total Margin">
-                            Rp {{ number_format($dayMargin, 0, ',', '.') }}
-                        </td>
-                        <td class="text-center font-monospace" data-label="% Margin">
+                        <td class="text-center font-monospace">
                             <span class="badge bg-success bg-opacity-10 text-success py-1 px-2 rounded-2">
                                 {{ number_format($dayMarginPct, 1, ',', '.') }}%
                             </span>
@@ -255,7 +311,9 @@
                     <td class="text-center font-monospace">{{ $overallQty }} Unit</td>
                     <td class="text-end font-monospace text-dark">Rp {{ number_format($overallSales, 0, ',', '.') }}</td>
                     <td class="text-end font-monospace text-muted">Rp {{ number_format($overallHpp, 0, ',', '.') }}</td>
-                    <td class="text-end font-monospace text-success">Rp {{ number_format($overallMargin, 0, ',', '.') }}</td>
+                    <td class="text-end font-monospace text-success">Rp {{ number_format($overallGrossMargin, 0, ',', '.') }}</td>
+                    <td class="text-end font-monospace text-warning">Rp {{ number_format($overallGaji, 0, ',', '.') }}</td>
+                    <td class="text-end font-monospace {{ $overallNetMargin < 0 ? 'text-danger' : 'text-primary' }}">Rp {{ number_format($overallNetMargin, 0, ',', '.') }}</td>
                     <td class="text-center font-monospace text-primary">{{ number_format($marginPercentage, 1, ',', '.') }}%</td>
                 </tr>
             </tfoot>

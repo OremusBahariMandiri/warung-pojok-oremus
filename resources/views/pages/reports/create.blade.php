@@ -339,8 +339,12 @@
                             <div class="fw-bold font-monospace text-muted fs-6" id="displayTotalHpp">Rp 0</div>
                         </div>
                         <div>
-                            <div class="text-muted small" style="font-size: 0.72rem;">Total Margin</div>
+                            <div class="text-muted small" style="font-size: 0.72rem;">Total Margin Kotor</div>
                             <div class="fw-bold font-monospace text-success fs-6" id="displayTotalMargin">Rp 0</div>
+                        </div>
+                        <div>
+                            <div class="text-muted small" style="font-size: 0.72rem;">Total Margin Bersih</div>
+                            <div class="fw-bold font-monospace text-primary fs-6" id="displayTotalNetMargin">Rp 0</div>
                         </div>
                     </div>
                     <div class="d-flex align-items-center gap-2">
