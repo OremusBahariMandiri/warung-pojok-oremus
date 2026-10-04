@@ -148,7 +148,7 @@
                     </div>
                     <div class="col-md-4">
                         <label for="current_stock" class="form-label small fw-semibold text-dark">Stok Saat Ini</label>
-                        <input type="number" class="form-control rounded-3" id="current_stock" name="current_stock" value="{{ old('current_stock', $productObj->current_stock) }}" min="0">
+                        <input type="number" class="form-control rounded-3 bg-light" id="current_stock" name="current_stock" value="{{ old('current_stock', $productObj->current_stock) }}" min="0" readonly>
                     </div>
                     <div class="col-md-4">
                         <label for="min_stock" class="form-label small fw-semibold text-dark">Minimum Stok <span class="text-danger">*</span></label>
@@ -180,10 +180,10 @@
                 </div>
 
                 <!-- Submit Action -->
-                <div class="d-flex align-items-center justify-content-between mt-4 pt-3 border-top">
+                <div class="d-flex align-items-center justify-content-between mt-4 pt-3">
                     <a href="{{ route('products.index') }}" class="btn btn-light border rounded-3 px-4">Batal</a>
                     <button type="submit" class="btn btn-success text-white fw-bold px-5 rounded-3 d-inline-flex align-items-center gap-2">
-                        Perbarui Produk
+                        Perbarui
                     </button>
                 </div>
             </div>

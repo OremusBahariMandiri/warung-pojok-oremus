@@ -21,7 +21,7 @@ class UpdateReportRequest extends FormRequest
             'items.*.quantity'             => 'required|integer|min:1',
             'items.*.stock_final'          => 'nullable|integer|min:0',
             'items.*.selling_price'        => 'nullable|numeric|min:0',
-            'items.*.hpp'                  => 'nullable|numeric|min:0',
+            'items.*.hpp_unit'             => 'nullable|numeric|min:0',
         ];
     }
 
@@ -37,7 +37,7 @@ class UpdateReportRequest extends FormRequest
             'items.*.quantity.required'             => 'Jumlah penjualan wajib diisi.',
             'items.*.quantity.min'                  => 'Jumlah penjualan minimal 1.',
             'items.*.selling_price.numeric'         => 'Harga jual harus berupa angka.',
-            'items.*.hpp.numeric'                   => 'Harga pokok / HPP harus berupa angka.',
+            'items.*.hpp_unit.numeric'              => 'Harga pokok / HPP harus berupa angka.',
             'items.*.stock_final.min'               => 'Jumlah terjual melebihi stok yang tersedia. Stok akhir tidak boleh minus — periksa kembali jumlah yang dimasukkan.',
         ];
     }

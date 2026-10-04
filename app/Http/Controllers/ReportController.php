@@ -219,23 +219,47 @@ class ReportController extends Controller
     /**
      * Display the salary calculator page based on report margin.
      */
-    public function salaryCalculator(Request $request)
+     public function salaryCalculator(Request $request)
     {
         // Jika ada tanggal dari query param (dari tombol kalkulator di index),
         // simpan ke session lalu redirect ke URL bersih tanpa params
         if ($request->has('start_date') || $request->has('end_date')) {
             $request->session()->put('salary_calc_start', $request->input('start_date', today()->toDateString()));
             $request->session()->put('salary_calc_end',   $request->input('end_date',   today()->toDateString()));
+            if ($request->has('report_id')) {
+                $request->session()->put('salary_calc_report_id', $request->input('report_id'));
+            } else {
+                $request->session()->forget('salary_calc_report_id');
+            }
             return redirect()->route('reports.salary_calculator');
         }
  
-        // Ambil tanggal dari session, default hari ini jika belum ada
-        $startDate = $request->session()->get('salary_calc_start', today()->toDateString());
-        $endDate   = $request->session()->get('salary_calc_end',   today()->toDateString());
+        // Ambil report_id dari query param atau session
+        $reportId = $request->input('report_id') ?? $request->session()->get('salary_calc_report_id');
+        $reportId = $reportId ? (int) $reportId : null;
  
-        $summary = $this->reportService->getSummaryForCalculator($startDate, $endDate);
+        // Jika ada report_id, validasi dan ambil tanggal dari report tersebut
+        if ($reportId) {
+            $reportModel = Reports::find($reportId);
+            if ($reportModel) {
+                $startDate = \Carbon\Carbon::parse($reportModel->report_date)->toDateString();
+                $endDate   = $startDate;
+            } else {
+                // report_id tidak valid — clear dari session dan fallback ke tanggal session
+                $request->session()->forget('salary_calc_report_id');
+                $reportId  = null;
+                $startDate = $request->session()->get('salary_calc_start', today()->toDateString());
+                $endDate   = $request->session()->get('salary_calc_end',   today()->toDateString());
+            }
+        } else {
+            $startDate = $request->session()->get('salary_calc_start', today()->toDateString());
+            $endDate   = $request->session()->get('salary_calc_end',   today()->toDateString());
+        }
  
-        return view('pages.reports.salary_calculator', compact('summary', 'startDate', 'endDate'));
+        $summary  = $this->reportService->getSummaryForCalculator($startDate, $endDate, $reportId);
+        $reportId = $reportId ?? '';   // pastikan tidak null saat di-pass ke Blade/JS
+ 
+        return view('pages.reports.salary_calculator', compact('summary', 'startDate', 'endDate', 'reportId'));
     }
 
     /**
@@ -247,14 +271,19 @@ class ReportController extends Controller
             'start_date'          => 'required|date',
             'end_date'            => 'required|date|after_or_equal:start_date',
             'commission_type'     => 'required|in:persentase,nominal',
-            'commission_value'    => 'required|numeric|min:0',
-            'profit_share_amount' => 'required|numeric|min:0',
-            'owner_share_amount'  => 'required|numeric|min:0',
+            'commission_value'    => 'required|numeric',
+            'profit_share_amount' => 'required|numeric',
+            'owner_share_amount'  => 'required|numeric',
             'notes'               => 'nullable|string|max:500',
+            'report_id'           => 'nullable|integer|exists:reports,id',
         ]);
-
+ 
+        // Pastikan key selalu ada (nullable field tidak selalu di-include Laravel validator)
+        $validated['report_id'] = $validated['report_id'] ?? null;
+        $validated['notes']     = $validated['notes'] ?? null;
+ 
         $updated = $this->reportService->storeSalaryCalculation($validated);
-
+ 
         return response()->json([
             'status'  => 'success',
             'message' => 'Data komisi berhasil disimpan.',

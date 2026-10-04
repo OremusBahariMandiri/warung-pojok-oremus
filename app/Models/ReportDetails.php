@@ -20,10 +20,10 @@ class ReportDetails extends Model
         'quantity',
         'stock_final',
         'selling_price',
-        'hpp',
-        'total_price',
-        'total_hpp',
-        'margin',
+        'hpp_unit',
+        'subtotal_price',
+        'subtotal_hpp',
+        'subtotal_margin',
     ];
 
     protected function casts(): array
@@ -35,10 +35,10 @@ class ReportDetails extends Model
             'quantity'        => 'integer',
             'stock_final'     => 'integer',
             'selling_price'   => 'decimal:3',
-            'hpp'             => 'decimal:3',
-            'total_price'     => 'decimal:3',
-            'total_hpp'       => 'decimal:3',
-            'margin'          => 'decimal:3',
+            'hpp_unit'        => 'decimal:3',
+            'subtotal_price'  => 'decimal:3',
+            'subtotal_hpp'    => 'decimal:3',
+            'subtotal_margin' => 'decimal:3',
         ];
     }
 
