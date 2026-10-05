@@ -22,17 +22,48 @@ $(function () {
 var opnameDT = null;
 
 function initOpnameDataTable() {
+    const screenW = window.innerWidth;
+    const isMobile = screenW < 768;
+    const isDesktop = screenW >= 992;
+    const currentZone = isMobile ? "mobile" : isDesktop ? "desktop" : "tablet";
+
     opnameDT = $("#opnameDataTable").DataTable({
-        // dom: l = length dropdown | t = table | i = info | p = pagination
         dom:
             "<'row align-items-center mb-2'<'col-sm-4'l>>" +
             "t" +
             "<'row mt-2'<'col-sm-5'i><'col-sm-7 d-flex justify-content-end'p>>",
         pageLength: 25,
         lengthMenu: [10, 25, 50, 100],
-        responsive: false,
+        responsive: isMobile
+            ? false
+            : isDesktop
+              ? {
+                    details: {
+                        type: "column",
+                        target: 0,
+                    },
+                }
+              : {
+                    // tablet (768–991px): expand row aktif
+                    details: {
+                        type: "inline",
+                        target: "tr",
+                        renderer:
+                            $.fn.dataTable.Responsive.renderer.listHiddenNodes(),
+                    },
+                },
         autoWidth: false,
-        order: [[2, "desc"]], // default sort: Tanggal Pemeriksaan desc
+        order: [[2, "desc"]],
+        columnDefs: [
+            { targets: [0, 6], orderable: false },
+            { targets: 0, responsivePriority: 1 }, // No
+            { targets: 1, responsivePriority: 2 }, // Kode Opname
+            { targets: 2, responsivePriority: 3 }, // Tanggal
+            { targets: 3, responsivePriority: 5 }, // Petugas
+            { targets: 4, responsivePriority: 4 }, // Total Produk
+            { targets: 5, responsivePriority: 6 }, // Status
+            { targets: 6, responsivePriority: 1 }, // Aksi
+        ],
         language: {
             lengthMenu: "Tampilkan _MENU_ entri",
             info: "Showing _START_ to _END_ of _TOTAL_ entries",
@@ -50,20 +81,30 @@ function initOpnameDataTable() {
             </div>`,
             paginate: { first: "«", last: "»", next: "›", previous: "‹" },
         },
-        // Kolom No & Aksi tidak bisa di-sort
-        columnDefs: [{ targets: [0, 6], orderable: false }],
     });
 
-    // Hubungkan custom search input ke DataTables
+    // Reinit hanya jika zona berubah
+    let resizeTimer;
+    $(window).on("resize.opnameDT", function () {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(function () {
+            const w = window.innerWidth;
+            const newZone =
+                w < 768 ? "mobile" : w >= 992 ? "desktop" : "tablet";
+            if (newZone !== currentZone) {
+                $(window).off("resize.opnameDT");
+                opnameDT.destroy();
+                initOpnameDataTable();
+            }
+        }, 300);
+    });
+
+    // Custom search
     $("#opnameSearchInput").on("keyup input", function () {
         opnameDT.search($(this).val()).draw();
     });
-
-    // Reset search ketika input dikosongkan
     $("#opnameSearchInput").on("search", function () {
-        if ($(this).val() === "") {
-            opnameDT.search("").draw();
-        }
+        if ($(this).val() === "") opnameDT.search("").draw();
     });
 }
 
