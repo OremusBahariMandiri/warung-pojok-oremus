@@ -399,6 +399,15 @@ table.dataTable tbody tr:not(.parent) td.dtr-control:hover::before {
     .hpp-search-box {
         max-width: 100%;
     }
+
+    table.dataTable tbody td.dtr-control {
+        cursor: pointer !important;
+        pointer-events: auto !important;
+    }
+
+    table.dataTable tbody td.dtr-control::before {
+        display: inline-block !important;
+    }
 }
 
 /* ── Searchable Select Component (Select2-Style) ─────────────── */
@@ -539,4 +548,15 @@ table.dataTable tbody tr:not(.parent) td.dtr-control:hover::before {
     font-size: 0.8125rem;
     color: #6c757d;
     text-align: center;
+}
+
+/* Sembunyikan arrow expand di desktop (≥ 992px) — tidak perlu expand */
+@media (min-width: 992px) {
+    table.dataTable tbody td.dtr-control {
+        cursor: default !important;
+        pointer-events: none !important;
+    }
+    table.dataTable tbody td.dtr-control::before {
+        display: none !important;
+    }
 }

@@ -1,43 +1,100 @@
-/**
+﻿/**
  * WARJOK — Master Satuan DataTables & CRUD JS
  * Warung Pojok Oremus | PT Oremus Bahari Mandiri
  */
+
 $(document).ready(function () {
-    // Initialize DataTables
-    // Wraps ONLY the <table> in .table-responsive so horizontal scroll affects table only, not pagination or toolbar
+    initUnitsDataTable(jQuery);
+
+    setTimeout(function () {
+        $(".alert-dismissible").fadeOut("slow");
+    }, 5000);
+});
+
+function initUnitsDataTable($) {
+    /*
+     * Tiga zona layar:
+     *   mobile  < 768px  : card layout CSS, responsive DT dimatikan
+     *   tablet  768–991px: tabel dengan expand row aktif
+     *   desktop ≥ 992px  : semua kolom tampil, arrow disembunyikan via CSS
+     */
+    const screenW = window.innerWidth;
+    const isMobile = screenW < 768;
+    const isDesktop = screenW >= 992;
+    const currentZone = isMobile ? "mobile" : isDesktop ? "desktop" : "tablet";
+
     const dataTable = $("#unitsDataTable").DataTable({
-        responsive: false,
-        columnDefs: [{ targets: "no-sort", orderable: false }],
+        responsive: isMobile
+            ? false
+            : isDesktop
+              ? {
+                    details: {
+                        type: "column",
+                        target: 0,
+                    },
+                }
+              : {
+                    // tablet (768–991px): expand row aktif
+                    details: {
+                        type: "inline",
+                        target: "tr",
+                        renderer:
+                            $.fn.dataTable.Responsive.renderer.listHiddenNodes(),
+                    },
+                },
+
+        columnDefs: [
+            { targets: "no-sort", orderable: false },
+            { targets: 0, responsivePriority: 1 }, // No — selalu tampil
+            { targets: 1, responsivePriority: 2 }, // Nama Satuan — selalu tampil
+            { targets: 2, responsivePriority: 6 }, // Singkatan — sembunyikan duluan
+            { targets: 3, responsivePriority: 3 }, // Produk Terkait
+            { targets: 4, responsivePriority: 7 }, // Tanggal Dibuat — sembunyikan duluan
+            { targets: 5, responsivePriority: 1 }, // Aksi — selalu tampil
+        ],
+
+        scrollX: false,
+        autoWidth: false,
+
         language: {
             emptyTable:
                 "Belum ada master satuan di database. Klik tombol 'Tambah Satuan' untuk membuat baru.",
             zeroRecords: "Tidak ada master satuan yang cocok dengan pencarian",
-            info: "Showing _START_ to _END_ of _TOTAL_ entries",
-            infoEmpty: "Showing 0 to 0 of 0 entries",
-            infoFiltered: "(filtered from _MAX_ total entries)",
-            paginate: {
-                first: "«",
-                previous: "‹",
-                next: "›",
-                last: "»",
-            },
+            info: "Menampilkan _START_–_END_ dari _TOTAL_ data",
+            infoEmpty: "Tidak ada data",
+            infoFiltered: "(difilter dari _MAX_ total data)",
+            paginate: { first: "«", previous: "‹", next: "›", last: "»" },
         },
         pagingType: "full_numbers",
-        dom: '<"table-responsive"t><"d-flex flex-column flex-sm-row align-items-center justify-content-between p-3 gap-2 bg-white"ip>',
+        dom: '<"table-responsive-wrapper"t><"d-flex flex-column flex-sm-row align-items-center justify-content-between p-3 gap-2 bg-white"ip>',
         pageLength: 10,
     });
 
-    // Custom Search Input binding
+    // Reinit hanya jika zona berubah
+    let resizeTimer;
+    $(window).on("resize", function () {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(function () {
+            const w = window.innerWidth;
+            const newZone =
+                w < 768 ? "mobile" : w >= 992 ? "desktop" : "tablet";
+            if (newZone !== currentZone) {
+                dataTable.destroy();
+                initUnitsDataTable($);
+            }
+        }, 300);
+    });
+
+    // Custom search
     $("#dtSearchInput").on("keyup input", function () {
         dataTable.search(this.value).draw();
     });
 
-    // Modal Filter Action: Apply
+    // Modal Filter
     $("#btnApplyFilter").on("click", function () {
         applyFilters();
     });
 
-    // Modal Filter Action: Reset
     $("#btnResetFilter").on("click", function () {
         $("#modalFilterUsage").val("");
         applyFilters();
@@ -46,7 +103,6 @@ $(document).ready(function () {
     function applyFilters() {
         const usage = $("#modalFilterUsage").val();
 
-        // Usage Filter (col index 3: Produk Terkait)
         if (usage === "used") {
             dataTable.column(3).search("[1-9][0-9]* Produk", true, false);
         } else if (usage === "unused") {
@@ -57,19 +113,13 @@ $(document).ready(function () {
 
         dataTable.draw();
 
-        // Active filter badge indicator
         if (usage) {
             $("#activeFilterBadge").removeClass("d-none");
         } else {
             $("#activeFilterBadge").addClass("d-none");
         }
     }
-
-    // Auto dismiss alert after 5s
-    setTimeout(function () {
-        $(".alert-dismissible").fadeOut("slow");
-    }, 5000);
-});
+}
 
 function openDeleteModal(id, name, productCount) {
     document.getElementById("deleteUnitName").textContent = name;

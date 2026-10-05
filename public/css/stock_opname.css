@@ -347,3 +347,106 @@
         justify-content: center;
     }
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   TABLET EXPAND ROW (768–991px)
+   ═══════════════════════════════════════════════════════════════ */
+@media (min-width: 768px) and (max-width: 991.98px) {
+    /* Arrow ▶ / ▼ */
+    table.dataTable tbody td.dtr-control {
+        cursor: pointer !important;
+        pointer-events: auto !important;
+        text-align: center;
+        vertical-align: middle;
+        padding-left: 0.65rem !important;
+        padding-right: 0.5rem !important;
+        width: 28px !important;
+        min-width: 28px !important;
+    }
+
+    table.dataTable tbody td.dtr-control::before {
+        display: inline-block !important;
+        width: 0 !important;
+        height: 0 !important;
+        border-radius: 0 !important;
+        background-color: transparent !important;
+        background-image: none !important;
+        border-top: 5px solid transparent !important;
+        border-bottom: 5px solid transparent !important;
+        border-left: 8px solid #94a3b8 !important;
+        border-right: none !important;
+        box-shadow: none !important;
+        content: "" !important;
+        vertical-align: middle !important;
+        transition:
+            transform 0.18s ease,
+            border-left-color 0.18s ease !important;
+        transform: rotate(0deg) !important;
+        transform-origin: 35% 50% !important;
+    }
+
+    table.dataTable tbody tr.parent td.dtr-control::before {
+        border-left-color: #0ea5e9 !important; /* warna biru sesuai tema opname */
+        transform: rotate(90deg) !important;
+    }
+
+    table.dataTable tbody tr:not(.parent) td.dtr-control:hover::before {
+        border-left-color: #475569 !important;
+    }
+
+    /* Child row container */
+    #opnameDataTable tbody td.child {
+        background-color: #f8fafc !important;
+        padding: 0.55rem 1.1rem !important;
+        border-top: none !important;
+    }
+
+    #opnameDataTable tbody td.child ul.dtr-details {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0 1.5rem;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+
+    #opnameDataTable tbody td.child ul.dtr-details li {
+        display: flex;
+        align-items: center;
+        gap: 0.3rem;
+        padding: 0.15rem 0;
+        border: none;
+    }
+
+    #opnameDataTable tbody td.child ul.dtr-details li span.dtr-title {
+        font-size: 0.68rem;
+        font-weight: 700;
+        color: #94a3b8;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        white-space: nowrap;
+    }
+    #opnameDataTable tbody td.child ul.dtr-details li span.dtr-title::after {
+        content: ":";
+    }
+
+    #opnameDataTable tbody td.child ul.dtr-details li span.dtr-data {
+        font-size: 0.8rem;
+        color: #334155;
+        font-weight: 500;
+    }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   DESKTOP (≥ 992px) — sembunyikan arrow
+   ═══════════════════════════════════════════════════════════════ */
+@media (min-width: 992px) {
+    table.dataTable tbody td.dtr-control {
+        cursor: default !important;
+        pointer-events: none !important;
+    }
+    table.dataTable tbody td.dtr-control::before {
+        display: none !important;
+    }
+}

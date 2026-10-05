@@ -152,37 +152,40 @@ if (window.jQuery) {
 }
 
 function initHppDataTable($) {
-    /*
-     * Deteksi apakah layar saat ini adalah mobile (< 768px).
-     * Responsive child row HANYA aktif di desktop/tablet (>= 768px).
-     * Di mobile, card layout CSS yang bekerja — DataTables tidak perlu
-     * menyembunyikan kolom maupun membuat child row.
-     */
-    const isMobile = window.innerWidth < 768;
+    const screenW = window.innerWidth;
+    const isMobile = screenW < 768;
+    const isDesktop = screenW >= 992;
+    const currentZone = isMobile ? "mobile" : isDesktop ? "desktop" : "tablet";
 
     const dataTable = $("#hppDataTable").DataTable({
         responsive: isMobile
-            ? false // ← mobile: matikan responsive DataTables sepenuhnya
-            : {
-                  details: {
-                      type: "inline", // child row di bawah baris, bukan modal
-                      target: "tr", // klik seluruh baris untuk expand
-                      renderer:
-                          $.fn.dataTable.Responsive.renderer.listHiddenNodes(),
-                  },
-              },
+            ? false
+            : isDesktop
+              ? {
+                    details: {
+                        type: "column",
+                        target: 0,
+                    },
+                }
+              : {
+                    // tablet: expand row aktif
+                    details: {
+                        type: "inline",
+                        target: "tr",
+                        renderer:
+                            $.fn.dataTable.Responsive.renderer.listHiddenNodes(),
+                    },
+                },
 
         columnDefs: [
             { targets: "no-sort", orderable: false },
-            // Prioritas kolom (makin kecil = makin dipertahankan saat layar sempit)
-            // Hanya berlaku di desktop karena mobile responsive: false
             { targets: 0, responsivePriority: 1 }, // No
             { targets: 1, responsivePriority: 2 }, // Nama
-            { targets: 2, responsivePriority: 4 }, // Satuan
+            { targets: 2, responsivePriority: 6 }, // Satuan
             { targets: 3, responsivePriority: 3 }, // Unit Cost
-            { targets: 4, responsivePriority: 5 }, // Produk
-            { targets: 5, responsivePriority: 10 }, // Dibuat — disembunyikan duluan
-            { targets: 6, responsivePriority: 1 }, // Aksi — selalu tampil
+            { targets: 4, responsivePriority: 4 }, // Produk Terkait
+            { targets: 5, responsivePriority: 7 }, // Dibuat
+            { targets: 6, responsivePriority: 1 }, // Aksi
         ],
 
         scrollX: false,
@@ -195,43 +198,34 @@ function initHppDataTable($) {
             info: "Menampilkan _START_–_END_ dari _TOTAL_ data",
             infoEmpty: "Tidak ada data",
             infoFiltered: "(difilter dari _MAX_ total data)",
-            paginate: {
-                first: "«",
-                previous: "‹",
-                next: "›",
-                last: "»",
-            },
+            paginate: { first: "«", previous: "‹", next: "›", last: "»" },
         },
         pagingType: "full_numbers",
         dom: '<"table-responsive-wrapper"t><"d-flex flex-column flex-sm-row align-items-center justify-content-between p-3 gap-2 bg-white"ip>',
         pageLength: 10,
     });
 
-    // Jika ukuran window berubah (rotate device, resize browser),
-    // reinit agar mode responsive menyesuaikan
     let resizeTimer;
     $(window).on("resize", function () {
         clearTimeout(resizeTimer);
         resizeTimer = setTimeout(function () {
-            const nowMobile = window.innerWidth < 768;
-            // Hanya reinit jika mode berubah (mobile <-> desktop)
-            if (nowMobile !== isMobile) {
+            const w = window.innerWidth;
+            const newZone =
+                w < 768 ? "mobile" : w >= 992 ? "desktop" : "tablet";
+            if (newZone !== currentZone) {
                 dataTable.destroy();
                 initHppDataTable($);
             }
         }, 300);
     });
 
-    // Custom search
     $("#dtSearchInput").on("keyup input", function () {
         dataTable.search(this.value).draw();
     });
 
-    // Modal Filter
     $("#btnApplyFilter").on("click", function () {
         applyFilters();
     });
-
     $("#btnResetFilter").on("click", function () {
         $("#modalFilterUnit").val("");
         $("#modalFilterUsage").val("");
