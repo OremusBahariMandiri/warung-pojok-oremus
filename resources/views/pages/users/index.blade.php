@@ -75,9 +75,11 @@
                     <span class="visually-hidden">Filter Aktif</span>
                 </span>
             </button>
+            @if (auth()->user()->hasAccess('users', 'create'))
             <a href="{{ route('users.create') }}" class="btn btn-sm btn-success rounded-2 text-white fw-semibold d-inline-flex align-items-center gap-2 px-3">
                 <i class="bi bi-plus-lg"></i> Tambah
             </a>
+            @endif
         </div>
     </div>
 
@@ -200,9 +202,11 @@
                         <span class="visually-hidden">Filter Aktif</span>
                     </span>
                 </button>
+                @if (auth()->user()->hasAccess('users', 'create'))
                 <a href="{{ route('users.create') }}" class="btn btn-sm btn-success rounded-2 text-white fw-semibold d-inline-flex align-items-center justify-content-center gap-1 px-3 grow">
                     <i class="bi bi-plus-lg"></i> Tambah
                 </a>
+                @endif
             </div>
         </div>
 

@@ -61,8 +61,13 @@
 
                 <!-- ── 2. MASTER DATA ── -->
                 @php
+                    $canProduk     = $currentUser->hasAccess('products', 'index');
+                    $canSatuan     = $currentUser->hasAccess('units', 'index');
+                    $canHpp        = $currentUser->hasAccess('hpp', 'index');
+                    $showMasterData = $canProduk || $canSatuan || $canHpp;
                     $isMasterDataActive = request()->routeIs('products.*') || request()->routeIs('units.*') || request()->routeIs('hpp.*');
                 @endphp
+                @if ($showMasterData)
                 <li class="nav-item nav-category">
                     <span class="nav-text">Master Data</span>
                 </li>
@@ -79,33 +84,44 @@
                     </a>
                     <div class="collapse {{ $isMasterDataActive ? 'show' : '' }}" id="menuMasterData">
                         <ul class="submenu-list">
+                            @if ($canProduk)
                             <li class="submenu-item">
                                 <a href="{{ Route::has('products.index') ? route('products.index') : '#' }}" class="submenu-link {{ request()->routeIs('products.*') ? 'active' : '' }}">
                                     <span class="submenu-dot"></span>
                                     <span>Produk</span>
                                 </a>
                             </li>
+                            @endif
+                            @if ($canSatuan)
                             <li class="submenu-item">
                                 <a href="{{ Route::has('units.index') ? route('units.index') : '#' }}" class="submenu-link {{ request()->routeIs('units.*') ? 'active' : '' }}">
                                     <span class="submenu-dot"></span>
                                     <span>Satuan</span>
                                 </a>
                             </li>
+                            @endif
+                            @if ($canHpp)
                             <li class="submenu-item">
                                 <a href="{{ Route::has('hpp.index') ? route('hpp.index') : '#' }}" class="submenu-link {{ request()->routeIs('hpp.*') ? 'active' : '' }}">
                                     <span class="submenu-dot"></span>
                                     <span>HPP</span>
                                 </a>
                             </li>
+                            @endif
                         </ul>
                     </div>
                 </li>
+                @endif
 
                 <!-- ── 3. TRANSAKSI ── -->
                 @php
+                    $canRestock  = $currentUser->hasAccess('restock', 'index');
+                    $canReports  = $currentUser->hasAccess('reports', 'index');
+                    $showTransaksi = $canRestock || $canReports;
                     // Transaksi aktif jika membuka restock atau reports (penjualan)
                     $isInventoryActive = request()->routeIs('restock.*') || (request()->routeIs('reports.*') && !request()->routeIs('reports.summary'));
                 @endphp
+                @if ($showTransaksi)
                 <li class="nav-item nav-category">
                     <span class="nav-text">Transaksi</span>
                 </li>
@@ -122,27 +138,36 @@
                     </a>
                     <div class="collapse {{ $isInventoryActive ? 'show' : '' }}" id="menuInventory">
                         <ul class="submenu-list">
+                            @if ($canRestock)
                             <li class="submenu-item">
                                 <a href="{{ Route::has('restock.index') ? route('restock.index') : '#' }}" class="submenu-link {{ request()->routeIs('restock.*') ? 'active' : '' }}">
                                     <span class="submenu-dot"></span>
                                     <span>Pembelian</span>
                                 </a>
                             </li>
+                            @endif
+                            @if ($canReports)
                             <li class="submenu-item">
                                 <a href="{{ Route::has('reports.index') ? route('reports.index') : '#' }}" class="submenu-link {{ (request()->routeIs('reports.index') || (request()->routeIs('reports.*') && !request()->routeIs('reports.summary'))) ? 'active' : '' }}">
                                     <span class="submenu-dot"></span>
                                     <span>Penjualan</span>
                                 </a>
                             </li>
+                            @endif
                         </ul>
                     </div>
                 </li>
+                @endif
 
                 <!-- ── 4. LAPORAN ── -->
                 @php
+                    $canSummary    = $currentUser->hasAccess('reports_summary', 'index');
+                    $canStokOpname = $currentUser->hasAccess('stock_opname', 'index');
+                    $showLaporan   = $canSummary || $canStokOpname;
                     // Laporan aktif jika membuka reports.summary atau stock-opname
                     $isReportsActive = request()->routeIs('reports.summary') || request()->routeIs('stock-opname.*') || request()->routeIs('stock_opname.*');
                 @endphp
+                @if ($showLaporan)
                 <li class="nav-item nav-category">
                     <span class="nav-text">Laporan</span>
                 </li>
@@ -159,24 +184,32 @@
                     </a>
                     <div class="collapse {{ $isReportsActive ? 'show' : '' }}" id="menuReports">
                         <ul class="submenu-list">
+                            @if ($canSummary)
                             <li class="submenu-item">
                                 <a href="{{ Route::has('reports.summary') ? route('reports.summary') : '#' }}" class="submenu-link {{ request()->routeIs('reports.summary') ? 'active' : '' }}">
                                     <span class="submenu-dot"></span>
                                     <span>Ringkasan Penjualan</span>
                                 </a>
                             </li>
+                            @endif
+                            @if ($canStokOpname)
                             <li class="submenu-item">
                                 <a href="{{ Route::has('stock-opname.index') ? route('stock-opname.index') : '#' }}" class="submenu-link {{ (request()->routeIs('stock-opname.*') || request()->routeIs('stock_opname.*')) ? 'active' : '' }}">
                                     <span class="submenu-dot"></span>
                                     <span>Stok Opname</span>
                                 </a>
                             </li>
+                            @endif
                         </ul>
                     </div>
                 </li>
+                @endif
 
                 <!-- ── 5. PENGATURAN ── -->
                 @php
+                    $canProfile      = $currentUser->hasAccess('profile', 'index');
+                    $canUsers        = $currentUser->hasAccess('users', 'index');
+                    $canActivityLogs = $currentUser->hasAccess('activity_logs', 'index');
                     $isSettingsActive = request()->routeIs('users.*') || request()->routeIs('activity_logs.*');
                 @endphp
                 <li class="nav-item nav-category">
@@ -195,6 +228,7 @@
                     </a>
                     <div class="collapse {{ $isSettingsActive ? 'show' : '' }}" id="menuSettings">
                         <ul class="submenu-list">
+                            @if ($canProfile)
                             <li class="submenu-item">
                                 <a href="{{ Route::has('users.show') ? route('users.show', auth()->id()) : '#' }}" 
                                 class="submenu-link {{ request()->routeIs('users.show') && request()->route('user')?->id == auth()->id() ? 'active' : '' }}">
@@ -202,6 +236,8 @@
                                     <span>Profil</span>
                                 </a>
                             </li>
+                            @endif
+                            @if ($canUsers)
                             <li class="submenu-item">
                                 <a href="{{ Route::has('users.index') ? route('users.index') : '#' }}" 
                                 class="submenu-link {{ request()->routeIs('users.index', 'users.create', 'users.edit', 'users.access.show') || (request()->routeIs('users.show') && request()->route('user')?->id != auth()->id()) ? 'active' : '' }}">
@@ -209,12 +245,15 @@
                                     <span>Kelola Pengguna</span>
                                 </a>
                             </li>
+                            @endif
+                            @if ($canActivityLogs)
                             <li class="submenu-item">
                                 <a href="{{ Route::has('activity_logs.index') ? route('activity_logs.index') : '#' }}" class="submenu-link {{ request()->routeIs('activity_logs.*') ? 'active' : '' }}">
                                     <span class="submenu-dot"></span>
                                     <span>Log Aktivitas</span>
                                 </a>
                             </li>
+                            @endif
                         </ul>
                     </div>
                 </li>
