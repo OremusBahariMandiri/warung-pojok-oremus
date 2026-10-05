@@ -130,6 +130,8 @@ $(document).ready(function () {
             calculateRowDiffReadonly($(this));
         });
 
+        refreshProductOptions();
+
         // Sync mobile cards dalam mode readonly
         if (window.innerWidth < 768) {
             syncMobileCardsReadonly();
@@ -409,6 +411,7 @@ $(document).ready(function () {
         $desktopSelect.val(newVal).trigger("change.select2");
         calculateRowDiff($("#opnameItemsTable tbody tr.opname-row").eq(rowIdx));
         calculateSummary();
+        refeshProductOptions();
         updateMobileCard(rowIdx);
     });
 
@@ -418,6 +421,7 @@ $(document).ready(function () {
         var rowIdx = $row.index();
         calculateRowDiff($row);
         calculateSummary();
+        refreshProductOptions();
         if (window.innerWidth < 768) {
             updateMobileCard(rowIdx);
             var selectedOption = $(this).find("option:selected");
@@ -474,6 +478,7 @@ $(document).ready(function () {
         updateRowNumbers();
         calculateRowDiff($newRow);
         calculateSummary();
+        refreshProductOptions();
 
         if (window.innerWidth < 768) {
             syncMobileCards();
@@ -491,6 +496,7 @@ $(document).ready(function () {
         $row.remove();
         updateRowNumbers();
         calculateSummary();
+        refreshProductOptions();
         if (window.innerWidth < 768) syncMobileCards();
     });
 
@@ -508,6 +514,7 @@ $(document).ready(function () {
         $tableRow.remove();
         updateRowNumbers();
         calculateSummary();
+        refreshProductOptions();
         syncMobileCards();
     });
 
@@ -783,3 +790,35 @@ function syncMobileCardsReadonly() {
     tick();
     var timer = setInterval(tick, 1000);
 })();
+
+// Disable opsi produk yang sudah dipilih di baris lain ──
+function refreshProductOptions() {
+    var usedProductIds = [];
+
+    // Kumpulkan semua product_id yang sudah dipilih
+    $("#opnameItemsTable tbody tr.opname-row").each(function () {
+        var val = $(this).find(".product-select").val();
+        if (val) usedProductIds.push(val);
+    });
+
+    // Loop tiap baris: disable opsi yang dipakai baris LAIN
+    $("#opnameItemsTable tbody tr.opname-row").each(function () {
+        var $row = $(this);
+        var thisVal = $row.find(".product-select").val();
+
+        $row.find(".product-select option").each(function () {
+            var optVal = $(this).val();
+            if (!optVal) return; // skip placeholder
+            var isUsedByOther =
+                usedProductIds.includes(optVal) && optVal !== thisVal;
+            $(this).prop("disabled", isUsedByOther);
+        });
+
+        // Refresh tampilan Select2 agar perubahan disabled teraplikasi
+        if (
+            $row.find(".product-select").hasClass("select2-hidden-accessible")
+        ) {
+            $row.find(".product-select").trigger("change.select2");
+        }
+    });
+}

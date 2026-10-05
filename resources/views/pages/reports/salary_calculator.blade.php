@@ -247,7 +247,7 @@
 <div id="printArea" class="sc-print-area"></div>
 
 {{-- Toast notifikasi simpan --}}
-<div class="position-fixed bottom-0 end-0 p-3" style="z-index:9999;">
+<div style="position:fixed; top:60px; right:12px; z-index:99999;">
     <div id="scToast" class="toast align-items-center border-0" role="alert" aria-live="assertive" aria-atomic="true">
         <div class="d-flex">
             <div class="toast-body fw-semibold" id="scToastMsg"></div>

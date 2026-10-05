@@ -28,7 +28,7 @@
             <div class="brand-content-center">
                 <h1 class="brand-heading">
                     <span class="brand-heading-main">Sistem Informasi Manajemen</span>
-                    <span class="brand-heading-accent">Warung Pojok Oremus</span>
+                    <span class="brand-heading-accent">Warung Pojok 16</span>
                 </h1>
                 <p class="brand-subtitle">
                     Kelola inventori stok, kalkulasi HPP, pencatatan restock, dan pantau laporan laba margin operasional warung secara digital, cepat, dan transparan.
@@ -42,7 +42,6 @@
                 <!-- Form Heading -->
                 <div class="mb-4">
                     <h2 class="h4 fw-bold text-dark mb-1">Selamat Datang!</h2>
-                    <p class="text-muted small mb-0">Gunakan Nomor Registrasi Karyawan (NRK) dan password Anda untuk masuk.</p>
                 </div>
 
                 <!-- Session / Validation Alerts -->
