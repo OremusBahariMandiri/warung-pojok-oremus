@@ -39,8 +39,11 @@
         ],
         'LAPORAN & ANALITIK' => [
             'reports' => ['label' => 'Laporan – Laporan Penjualan & Margin', 'icon' => 'bi-bar-chart-line'],
+            'reports_summary' => ['label' => 'Laporan – Ringkasan Penjualan', 'icon' => 'bi-graph-up'],
+            'stock_opname' => ['label' => 'Laporan – Stok Opname', 'icon' => 'bi-clipboard-check'],
         ],
         'PENGATURAN SISTEM' => [
+            'profile' => ['label' => 'Pengaturan – Profil Pengguna', 'icon' => 'bi-person-circle'],
             'users' => ['label' => 'Manajemen – Kelola Pengguna & Akses', 'icon' => 'bi-people'],
             'activity_logs' => ['label' => 'Manajemen – Log Aktivitas Sistem', 'icon' => 'bi-clock-history'],
         ],
