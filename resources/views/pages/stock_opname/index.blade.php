@@ -89,7 +89,6 @@
                     </span>
                 @endif
             </button>
-            <!-- Catat Stock Opname -->
             <a href="{{ route('stock-opname.create') }}" class="btn btn-sm btn-success rounded-2 px-3 d-inline-flex align-items-center gap-1">
                 <i class="bi bi-plus-lg"></i> Catat Stock Opname
             </a>

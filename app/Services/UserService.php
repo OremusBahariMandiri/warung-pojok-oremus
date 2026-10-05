@@ -19,6 +19,9 @@ class UserService
         'hpp',
         'restock',
         'reports',
+        'reports_summary',
+        'stock_opname',
+        'profile',
         'users',
         'activity_logs',
     ];
