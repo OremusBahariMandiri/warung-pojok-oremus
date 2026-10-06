@@ -150,6 +150,25 @@
                     </button>
                 </div>
 
+                <!-- Toggle Produk Fleksibel -->
+                <div class="alert alert-warning rounded-3 py-2 px-3 mb-3 d-flex align-items-start gap-2" id="flexibleProductAlert" style="display:none!important">
+                    <i class="bi bi-exclamation-triangle-fill text-warning mt-1"></i>
+                    <div class="small">
+                        <strong>Mode Fleksibel Aktif.</strong> Harga jual, HPP/unit, dan harga beli di bawah hanya sebagai referensi. Total HPP dan Total Penjualan akan diisi manual saat pencatatan penjualan.
+                    </div>
+                </div>
+
+                <div class="form-check form-switch mb-3">
+                    <input class="form-check-input" type="checkbox" role="switch" 
+                        id="is_flexible_product" name="is_flexible_product" value="1"
+                        onchange="onFlexibleProductToggle(this)"
+                        {{ old('is_flexible_product') ? 'checked' : '' }}>
+                    <label class="form-check-label small fw-semibold text-dark" for="is_flexible_product">
+                        Produk Fleksibel 
+                        <span class="text-muted fw-normal">(harga & modal berubah tiap hari — HPP/harga jual diisi manual saat penjualan)</span>
+                    </label>
+                </div>
+
                 <!-- Container Card Repeater Satuan Jual -->
                 <div id="sellingConfigsContainer" class="d-flex flex-column gap-3 mb-4">
                     <!-- Cards will be populated by JS or old input loop -->

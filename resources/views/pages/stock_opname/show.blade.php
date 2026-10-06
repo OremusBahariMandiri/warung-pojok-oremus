@@ -148,7 +148,7 @@
                             <th class="text-center" style="width: 5%;">No</th>
                             <th style="width: 15%;">Kode Produk</th>
                             <th style="width: 30%;">Nama Produk</th>
-                            <th class="text-center" style="width: 10%;">Satuan</th>
+                            {{-- <th class="text-center" style="width: 10%;">Satuan</th> --}}
                             <th class="text-center" style="width: 12%;">Stok Sistem</th>
                             <th class="text-center" style="width: 12%;">Stok Fisik</th>
                             <th class="text-center" style="width: 16%;">Selisih</th>
@@ -168,11 +168,11 @@
                                 <td>
                                     <strong class="text-dark">{{ $prod->prod_name ?? 'Produk Dihapus' }}</strong>
                                 </td>
-                                <td class="text-center">
+                                {{-- <td class="text-center">
                                     <span class="badge bg-light text-secondary border">
                                         {{ $prod->unit->unit_name ?? '-' }}
                                     </span>
-                                </td>
+                                </td> --}}
                                 <td class="text-center fw-bold text-navy">
                                     {{ $item->system_stock }}
                                 </td>

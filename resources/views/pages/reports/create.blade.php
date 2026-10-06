@@ -88,7 +88,8 @@
                 </div>
 
                 {{-- ══════════════════════════════════════════════════════════════
-                     DESKTOP TABLE — 6-col + expand row (≥768px)
+                     DESKTOP TABLE — 5-col + expand row (≥768px)
+                     Total HPP dipindah ke expand row
                      ══════════════════════════════════════════════════════════════ --}}
                 <div class="reports-create-table-desktop-wrap">
                     <table class="table table-bordered table-hover align-middle mb-0 w-100" id="reportItemsTableCreate">
@@ -140,7 +141,7 @@
                                         <td class="col-qty">
                                             <input type="number" name="items[{{ $idx }}][quantity]" class="form-control form-control-sm font-monospace text-center rounded-2 item-qty" value="{{ $qtyVal }}" min="1" placeholder="" oninput="onItemQtyOrStockFinalChange(this)" required>
                                         </td>
-                                        <td class="col-total-sales text-end font-monospace fw-semibold text-dark">
+                                        <td class="col-total-sales text-end font-monospace fw-semibold text-dark item-total-sales-cell">
                                             <span class="item-readonly-badge item-total-sales-display">Rp 0</span>
                                         </td>
                                         <td class="col-margin text-end font-monospace fw-bold">
@@ -161,6 +162,8 @@
                                             <span class="item-hpp-display">Rp 0</span>
                                             <input type="hidden" name="items[{{ $idx }}][hpp]" class="item-hpp-price" value="{{ $hppVal }}">
                                             <span class="item-total-hpp-display">Rp 0</span>
+                                            <input type="hidden" name="items[{{ $idx }}][total_sales_manual]" class="item-total-sales-manual" value="{{ $item['total_sales_manual'] ?? 0 }}">
+                                            <input type="hidden" name="items[{{ $idx }}][total_hpp_manual]" class="item-total-hpp-manual" value="{{ $item['total_hpp_manual'] ?? 0 }}">
                                             <input type="number" name="items[{{ $idx }}][stock_final]" class="item-stock-final" value="{{ $stockFinalVal }}" readonly tabindex="-1" required>
                                         </td>
                                     </tr>
@@ -193,7 +196,7 @@
                                                         <div class="expand-label">HPP / Unit</div>
                                                         <div class="expand-value expand-hpp">Rp 0</div>
                                                     </div>
-                                                    <div class="col-6 expand-cell expand-cell-bottom expand-cell-noborder">
+                                                    <div class="col-6 expand-cell expand-cell-bottom expand-cell-noborder expand-total-hpp-wrap">
                                                         <div class="expand-label">Total HPP</div>
                                                         <div class="expand-value expand-total-hpp">Rp 0</div>
                                                     </div>
@@ -214,7 +217,8 @@
                 </div>
 
                 {{-- ══════════════════════════════════════════════════════════════
-                     MOBILE TABLE — 13-col horizontal scroll (≤767px)
+                     MOBILE TABLE — 12-col horizontal scroll (≤767px)
+                     Kolom Total HPP dihapus dari mobile table header
                      Input tanpa attribute name — form submit tetap dari desktop table
                      ══════════════════════════════════════════════════════════════ --}}
                 <div class="reports-create-table-mobile-wrap">

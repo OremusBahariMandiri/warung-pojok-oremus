@@ -176,6 +176,7 @@ class ProductService
                     'selling_price'   => $sellingPrice,
                     'hpp_method'      => $hppMethod,
                     'current_hpp'     => $currentHpp,
+                    'is_flexible_product'  => (bool) ($data['is_flexible_product'] ?? false),
                 ]);
 
                 // Save Components to ProductHppDetail
@@ -313,6 +314,7 @@ class ProductService
                         'selling_price'   => $sellingPrice,
                         'hpp_method'      => $hppMethod,
                         'current_hpp'     => $currentHpp,
+                        'is_flexible_product'  => (bool) ($data['is_flexible_product'] ?? false),
                     ]);
 
                     if ($hppMethod === 'CALCULATED' && is_array($components)) {

@@ -65,9 +65,14 @@ class ReportController extends Controller
                 $q->orderBy('created_at', 'desc')->orderBy('id', 'desc');
             }
         ])
-        ->select([
-            'id', 'unit_id', 'prod_code', 'prod_name', 'current_stock', 'unit_price'
-        ])->orderBy('prod_name', 'asc')->get();
+            ->select([
+                'id',
+                'unit_id',
+                'prod_code',
+                'prod_name',
+                'current_stock',
+                'unit_price',
+            ])->orderBy('prod_name', 'asc')->get();
 
         $products->each(function ($p) {
             $latestRestock = $p->restockItems->first();
@@ -80,6 +85,9 @@ class ReportController extends Controller
                 }
             }
             $p->purchase_prices_by_unit = $pricesByUnit;
+            $p->is_flexible_product = $p->productHpps->contains(
+                fn($h) => (bool)($h->is_flexible_product ?? false)
+            );
         });
 
         $units = \App\Models\Unit::orderBy('unit_name', 'asc')->get();
@@ -137,12 +145,17 @@ class ReportController extends Controller
                 $q->orderBy('created_at', 'desc')->orderBy('id', 'desc');
             }
         ])
-        ->select([
-            'id', 'unit_id', 'prod_code', 'prod_name', 'current_stock', 'unit_price'
-        ])->orderBy('prod_name', 'asc')->get();
+            ->select([
+                'id',
+                'unit_id',
+                'prod_code',
+                'prod_name',
+                'current_stock',
+                'unit_price'
+            ])->orderBy('prod_name', 'asc')->get();
 
         $originalQtyMap = $report->details->pluck('quantity', 'product_id')->toArray();
-        $products->each(function ($p) {
+        $products->each(function ($p) use ($originalQtyMap) {
             $p->original_qty = $originalQtyMap[$p->id] ?? 0;
             $latestRestock = $p->restockItems->first();
             $p->latest_purchase_price = $latestRestock ? (float) $latestRestock->purchase_price : (float) $p->unit_price;
@@ -154,6 +167,9 @@ class ReportController extends Controller
                 }
             }
             $p->purchase_prices_by_unit = $pricesByUnit;
+            $p->is_flexible_product = $p->productHpps->contains(
+                fn($h) => (bool)($h->is_flexible_product ?? false)
+            );
         });
 
         $units = \App\Models\Unit::orderBy('unit_name', 'asc')->get();
@@ -219,7 +235,7 @@ class ReportController extends Controller
     /**
      * Display the salary calculator page based on report margin.
      */
-     public function salaryCalculator(Request $request)
+    public function salaryCalculator(Request $request)
     {
         // Jika ada tanggal dari query param (dari tombol kalkulator di index),
         // simpan ke session lalu redirect ke URL bersih tanpa params
@@ -233,11 +249,11 @@ class ReportController extends Controller
             }
             return redirect()->route('reports.salary_calculator');
         }
- 
+
         // Ambil report_id dari query param atau session
         $reportId = $request->input('report_id') ?? $request->session()->get('salary_calc_report_id');
         $reportId = $reportId ? (int) $reportId : null;
- 
+
         // Jika ada report_id, validasi dan ambil tanggal dari report tersebut
         if ($reportId) {
             $reportModel = Reports::find($reportId);
@@ -255,10 +271,10 @@ class ReportController extends Controller
             $startDate = $request->session()->get('salary_calc_start', today()->toDateString());
             $endDate   = $request->session()->get('salary_calc_end',   today()->toDateString());
         }
- 
+
         $summary  = $this->reportService->getSummaryForCalculator($startDate, $endDate, $reportId);
         $reportId = $reportId ?? '';   // pastikan tidak null saat di-pass ke Blade/JS
- 
+
         return view('pages.reports.salary_calculator', compact('summary', 'startDate', 'endDate', 'reportId'));
     }
 
@@ -277,13 +293,13 @@ class ReportController extends Controller
             'notes'               => 'nullable|string|max:500',
             'report_id'           => 'nullable|integer|exists:reports,id',
         ]);
- 
+
         // Pastikan key selalu ada (nullable field tidak selalu di-include Laravel validator)
         $validated['report_id'] = $validated['report_id'] ?? null;
         $validated['notes']     = $validated['notes'] ?? null;
- 
+
         $updated = $this->reportService->storeSalaryCalculation($validated);
- 
+
         return response()->json([
             'status'  => 'success',
             'message' => 'Data komisi berhasil disimpan.',

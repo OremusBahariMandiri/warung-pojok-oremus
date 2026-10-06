@@ -19,6 +19,7 @@ class ProductHpp extends Model
         'selling_price',
         'hpp_method',
         'current_hpp',
+        'is_flexible_product',
     ];
 
     protected function casts(): array

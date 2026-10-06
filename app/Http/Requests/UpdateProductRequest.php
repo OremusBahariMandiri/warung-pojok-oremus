@@ -29,6 +29,7 @@ class UpdateProductRequest extends FormRequest
             'min_stock'                                  => 'required|integer|min:0',
             'description'                                => 'nullable|string',
             'thumbnail'                                  => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
+            'is_flexible_product' => 'nullable|boolean',
 
             'selling_configs'                            => 'nullable|array',
             'selling_configs.*.selling_unit_id'          => 'nullable|integer|exists:units,id',
