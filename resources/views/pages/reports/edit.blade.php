@@ -1,4 +1,4 @@
-@extends('layouts.admin')
+﻿@extends('layouts.admin')
 
 @section('title', 'Edit Laporan Penjualan – Warung Pojok Oremus')
 
@@ -91,7 +91,8 @@
                 </div>
 
                 {{-- ══════════════════════════════════════════════════════════════
-                     DESKTOP TABLE — 6-col + expand row (≥768px)
+                     DESKTOP TABLE — 5-col + expand row (≥768px)
+                     Total HPP dipindah ke expand row
                      ══════════════════════════════════════════════════════════════ --}}
                 <div class="reports-create-table-desktop-wrap">
                     <table class="table table-bordered table-hover align-middle mb-0 w-100" id="reportItemsTableCreate">
@@ -196,7 +197,7 @@
                                                         <div class="expand-label">HPP / Unit</div>
                                                         <div class="expand-value expand-hpp">Rp 0</div>
                                                     </div>
-                                                    <div class="col-6 expand-cell expand-cell-bottom expand-cell-noborder">
+                                                    <div class="col-6 expand-cell expand-cell-bottom expand-cell-noborder expand-total-hpp-wrap">
                                                         <div class="expand-label">Total HPP</div>
                                                         <div class="expand-value expand-total-hpp">Rp 0</div>
                                                     </div>
@@ -234,8 +235,8 @@
                                         <td class="col-qty">
                                             <input type="number" name="items[{{ $idx }}][quantity]" class="form-control form-control-sm font-monospace text-center rounded-2 item-qty" value="{{ $detail->quantity }}" min="1" oninput="onItemQtyOrStockFinalChange(this)" required>
                                         </td>
-                                        <td class="col-total-sales text-end font-monospace fw-semibold text-dark">
-                                            <span class="item-readonly-badge item-total-sales-display">Rp {{ number_format($detail->total_price, 0, ',', '.') }}</span>
+                                        <td class="col-total-sales text-end font-monospace fw-semibold text-dark item-total-sales-cell">
+                                            <span class="item-readonly-badge item-total-sales-display">Rp {{ number_format($detail->subtotal_price, 0, ',', '.') }}</span>
                                         </td>
                                         <td class="col-margin text-end font-monospace fw-bold">
                                             <span class="item-readonly-badge item-margin-display {{ $detail->margin >= 0 ? 'text-success' : 'text-danger' }}">Rp {{ number_format($detail->margin, 0, ',', '.') }}</span>
@@ -254,7 +255,9 @@
                                             <input type="hidden" name="items[{{ $idx }}][selling_price]" class="item-selling-price" value="{{ $detail->selling_price }}">
                                             <span class="item-hpp-display">Rp {{ number_format($detail->hpp, 0, ',', '.') }}</span>
                                             <input type="hidden" name="items[{{ $idx }}][hpp]" class="item-hpp-price" value="{{ $detail->hpp }}">
-                                            <span class="item-total-hpp-display">Rp {{ number_format($detail->total_hpp, 0, ',', '.') }}</span>
+                                            <span class="item-total-hpp-display">Rp {{ number_format($detail->subtotal_hpp, 0, ',', '.') }}</span>
+                                            <input type="hidden" name="items[{{ $idx }}][total_sales_manual]" class="item-total-sales-manual" value="{{ $detail->subtotal_price }}">
+                                            <input type="hidden" name="items[{{ $idx }}][total_hpp_manual]" class="item-total-hpp-manual" value="{{ $detail->subtotal_hpp }}">
                                             <input type="number" name="items[{{ $idx }}][stock_final]" class="item-stock-final" value="{{ $detail->stock_final }}" readonly tabindex="-1" required>
                                         </td>
                                     </tr>
@@ -287,9 +290,9 @@
                                                         <div class="expand-label">HPP / Unit</div>
                                                         <div class="expand-value expand-hpp">Rp 0</div>
                                                     </div>
-                                                    <div class="col-6 expand-cell expand-cell-bottom expand-cell-noborder">
+                                                    <div class="col-6 expand-cell expand-cell-bottom expand-cell-noborder expand-total-hpp-wrap">
                                                         <div class="expand-label">Total HPP</div>
-                                                        <div class="expand-value expand-total-hpp">Rp 0</div>
+                                                        <div class="expand-value expand-total-hpp">Rp {{ number_format($detail->total_hpp, 0, ',', '.') }}</div>
                                                     </div>
                                                 </div>
                                             </div>

@@ -662,3 +662,51 @@ function initProductsDataTable() {
         dataTable.search(this.value).draw();
     });
 }
+
+/**
+ * Handle toggle Produk Fleksibel
+ * Jika aktif: seluruh selling config card diberi visual "referensi saja"
+ * Jika nonaktif: kembali normal
+ */
+function onFlexibleProductToggle(checkbox) {
+    const isFlexible = checkbox.checked;
+    const alert = document.getElementById("flexibleProductAlert");
+
+    // Tampilkan/sembunyikan alert info
+    if (alert) {
+        alert.style.setProperty(
+            "display",
+            isFlexible ? "flex" : "none",
+            "important",
+        );
+    }
+
+    // Beri visual feedback ke semua selling config card
+    const cards = document.querySelectorAll(".selling-config-card");
+    cards.forEach((card) => {
+        if (isFlexible) {
+            card.classList.add("border-warning");
+            // Tambah badge "Referensi Saja" jika belum ada
+            if (!card.querySelector(".flexible-badge")) {
+                const badge = document.createElement("div");
+                badge.className =
+                    "flexible-badge alert alert-warning py-1 px-2 mb-2 small rounded-2";
+                badge.innerHTML =
+                    '<i class="bi bi-info-circle me-1"></i> Data di bawah hanya referensi — tidak mempengaruhi kalkulasi penjualan.';
+                card.insertBefore(badge, card.firstChild);
+            }
+        } else {
+            card.classList.remove("border-warning");
+            const badge = card.querySelector(".flexible-badge");
+            if (badge) badge.remove();
+        }
+    });
+}
+
+// Jalankan saat halaman load untuk handle kondisi edit (jika sudah checked dari DB)
+$(function () {
+    const flexCheckbox = document.getElementById("is_flexible_product");
+    if (flexCheckbox && flexCheckbox.checked) {
+        onFlexibleProductToggle(flexCheckbox);
+    }
+});

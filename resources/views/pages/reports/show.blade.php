@@ -146,10 +146,10 @@
                                 $latestRestock   = $p ? $p->restockItems()->latest()->first() : null;
                                 $purchasePrice   = $latestRestock ? (float)$latestRestock->purchase_price : (float)($p ? $p->unit_price : 0);
                                 $price           = (float)$detail->selling_price;
-                                $hpp             = (float)$detail->hpp;
-                                $subtotalSales   = (float)$detail->total_price;
-                                $subtotalHpp     = (float)$detail->total_hpp;
-                                $margin          = (float)$detail->margin;
+                                $hpp             = (float)$detail->hpp_unit;
+                                $subtotalSales   = (float)$detail->subtotal_price;
+                                $subtotalHpp     = (float)$detail->subtotal_hpp;
+                                $margin          = (float)$detail->subtotal_margin;
                             @endphp
                             <tr>
                                 <td class="text-center text-muted small">{{ $loop->iteration }}</td>
