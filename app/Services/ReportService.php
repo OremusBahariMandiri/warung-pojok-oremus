@@ -153,23 +153,40 @@ class ReportService
                     ->where('selling_unit_id', $sellingUnitId)
                     ->first();
 
-                $sellingPrice = isset($itemData['selling_price']) && $itemData['selling_price'] !== '' && (float)$itemData['selling_price'] > 0
-                    ? (float) $itemData['selling_price']
-                    : ($config ? (float) $config->selling_price : 0.0);
+                $isFlexible = (bool) ($config ? ($config->is_flexible_product ?? false) : false);
 
-                $hppUnit = isset($itemData['hpp_unit']) && $itemData['hpp_unit'] !== '' && (float)$itemData['hpp_unit'] > 0
-                    ? (float) $itemData['hpp_unit']
-                    : ($config ? (float) $config->current_hpp : 0.0);
+                if ($isFlexible) {
+                    $subtotalPrice  = isset($itemData['total_sales_manual']) ? (float) $itemData['total_sales_manual'] : 0.0;
+                    $subtotalHpp    = isset($itemData['total_hpp_manual'])   ? (float) $itemData['total_hpp_manual']   : 0.0;
+                    $subtotalMargin = $subtotalPrice - $subtotalHpp;
+                    $sellingPrice = isset($itemData['selling_price']) && $itemData['selling_price'] !== '' && (float)$itemData['selling_price'] > 0
+                        ? (float) $itemData['selling_price']
+                        : ($config ? (float) $config->selling_price : 0.0);
 
-                $subtotalPrice  = $quantity * $sellingPrice;
-                $subtotalHpp    = $quantity * $hppUnit;
-                $subtotalMargin = $subtotalPrice - $subtotalHpp;
+                    $hppUnit = isset($itemData['hpp_unit']) && $itemData['hpp_unit'] !== '' && (float)$itemData['hpp_unit'] > 0
+                        ? (float) $itemData['hpp_unit']
+                        : ($config ? (float) $config->current_hpp : 0.0);
+                    $stockFinal     = $oldStock - $quantity;
 
-                // Update product stock to stockFinal
-                $product->current_stock = $stockFinal;
-                $product->save();
+                    $product->current_stock = $stockFinal;
+                    $product->save();
+                } else {
+                    $sellingPrice = isset($itemData['selling_price']) && $itemData['selling_price'] !== '' && (float)$itemData['selling_price'] > 0
+                        ? (float) $itemData['selling_price']
+                        : ($config ? (float) $config->selling_price : 0.0);
 
-                // Save report detail with snapshot values
+                    $hppUnit = isset($itemData['hpp_unit']) && $itemData['hpp_unit'] !== '' && (float)$itemData['hpp_unit'] > 0
+                        ? (float) $itemData['hpp_unit']
+                        : ($config ? (float) $config->current_hpp : 0.0);
+
+                    $subtotalPrice  = $quantity * $sellingPrice;
+                    $subtotalHpp    = $quantity * $hppUnit;
+                    $subtotalMargin = $subtotalPrice - $subtotalHpp;
+
+                    $product->current_stock = $stockFinal;
+                    $product->save();
+                }
+
                 ReportDetails::create([
                     'report_id'       => $report->id,
                     'product_id'      => $productId,
@@ -213,17 +230,17 @@ class ReportService
             ]);
 
             ActivityLogService::log(
-                action:      'CREATE',
-                module:      'REPORT',
-                entityType:  Reports::class,
-                entityId:    $report->id,
+                action: 'CREATE',
+                module: 'REPORT',
+                entityType: Reports::class,
+                entityId: $report->id,
                 description: "Created sales report for " . $reportDate->format('Y-m-d') . " (Sales: Rp " . number_format($headerSales, 0, ',', '.') . ", Margin: Rp " . number_format($headerMargin, 0, ',', '.') . ")",
-                oldValues:   null,
-                newValues:   [
+                oldValues: null,
+                newValues: [
                     'report' => $report->fresh()->toArray(),
                     'items'  => $detailsSummary,
                 ],
-                userId:      $creatorId
+                userId: $creatorId
             );
 
             return $report->fresh()->load(['details.product', 'details.sellingUnit']);
@@ -243,7 +260,9 @@ class ReportService
             foreach ($report->details as $oldDetail) {
                 $product = Products::lockForUpdate()->find($oldDetail->product_id);
                 if ($product) {
-                    // Kembalikan stok: tambah kembali quantity yang dulu terjual
+                    $detailConfig = \App\Models\ProductHpp::where('product_id', $oldDetail->product_id)
+                        ->where('selling_unit_id', $oldDetail->selling_unit_id)
+                        ->first();
                     $product->current_stock = $product->current_stock + $oldDetail->quantity;
                     $product->save();
                 }
@@ -275,21 +294,39 @@ class ReportService
                     ->where('selling_unit_id', $sellingUnitId)
                     ->first();
 
-                $sellingPrice = isset($itemData['selling_price']) && $itemData['selling_price'] !== '' && (float)$itemData['selling_price'] > 0
-                    ? (float) $itemData['selling_price']
-                    : ($config ? (float) $config->selling_price : 0.0);
+                $isFlexible = (bool) ($config ? ($config->is_flexible_product ?? false) : false);
 
-                $hppUnit = isset($itemData['hpp_unit']) && $itemData['hpp_unit'] !== '' && (float)$itemData['hpp_unit'] > 0
-                    ? (float) $itemData['hpp_unit']
-                    : ($config ? (float) $config->current_hpp : 0.0);
+                if ($isFlexible) {
+                    $subtotalPrice  = isset($itemData['total_sales_manual']) ? (float) $itemData['total_sales_manual'] : 0.0;
+                    $subtotalHpp    = isset($itemData['total_hpp_manual'])   ? (float) $itemData['total_hpp_manual']   : 0.0;
+                    $subtotalMargin = $subtotalPrice - $subtotalHpp;
+                    $sellingPrice = isset($itemData['selling_price']) && $itemData['selling_price'] !== '' && (float)$itemData['selling_price'] > 0
+                        ? (float) $itemData['selling_price']
+                        : ($config ? (float) $config->selling_price : 0.0);
 
-                $subtotalPrice  = $quantity * $sellingPrice;
-                $subtotalHpp    = $quantity * $hppUnit;
-                $subtotalMargin = $subtotalPrice - $subtotalHpp;
+                    $hppUnit = isset($itemData['hpp_unit']) && $itemData['hpp_unit'] !== '' && (float)$itemData['hpp_unit'] > 0
+                        ? (float) $itemData['hpp_unit']
+                        : ($config ? (float) $config->current_hpp : 0.0);
+                    $stockFinal     = $oldStock - $quantity;
 
-                // Kurangi stok produk sesuai item baru
-                $product->current_stock = $stockFinal;
-                $product->save();
+                    $product->current_stock = $stockFinal;
+                    $product->save();
+                } else {
+                    $sellingPrice = isset($itemData['selling_price']) && $itemData['selling_price'] !== '' && (float)$itemData['selling_price'] > 0
+                        ? (float) $itemData['selling_price']
+                        : ($config ? (float) $config->selling_price : 0.0);
+
+                    $hppUnit = isset($itemData['hpp_unit']) && $itemData['hpp_unit'] !== '' && (float)$itemData['hpp_unit'] > 0
+                        ? (float) $itemData['hpp_unit']
+                        : ($config ? (float) $config->current_hpp : 0.0);
+
+                    $subtotalPrice  = $quantity * $sellingPrice;
+                    $subtotalHpp    = $quantity * $hppUnit;
+                    $subtotalMargin = $subtotalPrice - $subtotalHpp;
+
+                    $product->current_stock = $stockFinal;
+                    $product->save();
+                }
 
                 ReportDetails::create([
                     'report_id'       => $report->id,
@@ -335,13 +372,13 @@ class ReportService
             ]);
 
             ActivityLogService::log(
-                action:      'UPDATE',
-                module:      'REPORT',
-                entityType:  Reports::class,
-                entityId:    $report->id,
+                action: 'UPDATE',
+                module: 'REPORT',
+                entityType: Reports::class,
+                entityId: $report->id,
                 description: "Updated sales report ID {$report->id} (Sales: Rp " . number_format($headerSales, 0, ',', '.') . ", Margin: Rp " . number_format($headerMargin, 0, ',', '.') . ")",
-                oldValues:   null,
-                newValues:   [
+                oldValues: null,
+                newValues: [
                     'report' => $report->fresh()->toArray(),
                     'items'  => $detailsSummary,
                 ],
@@ -386,16 +423,16 @@ class ReportService
             $deleted = $report->delete();
 
             ActivityLogService::log(
-                action:      'DELETE',
-                module:      'REPORT',
-                entityType:  Reports::class,
-                entityId:    $id,
+                action: 'DELETE',
+                module: 'REPORT',
+                entityType: Reports::class,
+                entityId: $id,
                 description: "Deleted & rolled back sales report ID {$id} (" . Carbon::parse($reportDate)->format('Y-m-d') . ")",
-                oldValues:   [
+                oldValues: [
                     'report'         => $oldValues,
                     'stock_rollback' => $rollbackSummary,
                 ],
-                newValues:   null
+                newValues: null
             );
 
             return $deleted;
@@ -409,13 +446,13 @@ class ReportService
     {
         $start = Carbon::parse($data['start_date'])->startOfDay();
         $end   = Carbon::parse($data['end_date'])->endOfDay();
- 
+
         $isPersentase = $data['commission_type'] === 'persentase';
- 
+
         // Cek kolom mana yang tersedia di tabel reports
         $columns = DB::select("SHOW COLUMNS FROM `reports`");
         $columnNames = array_map(fn($c) => $c->Field, $columns);
- 
+
         $updateData = [
             'commission_value'    => (float) $data['commission_value'],
             'profit_share_amount' => (float) $data['profit_share_amount'],
@@ -426,7 +463,7 @@ class ReportService
         if (in_array('total_net_margin', $columnNames)) {
             $updateData['total_net_margin'] = (float) $data['owner_share_amount'];
         }
- 
+
         // Tentukan kolom tipe komisi berdasarkan schema yang ada
         if (in_array('comission_type_presentance', $columnNames)) {
             // Schema baru: dua kolom numeric
@@ -440,13 +477,13 @@ class ReportService
             // Schema lama: satu kolom string
             $updateData['commission_type'] = $data['commission_type'];
         }
- 
+
         $query = DB::table('reports')->whereBetween('report_date', [$start, $end]);
- 
+
         if (!empty($data['report_id'])) {
             $query->where('id', (int) $data['report_id']);
         }
- 
+
         return $query->update($updateData);
     }
 
@@ -457,15 +494,15 @@ class ReportService
     {
         $start = Carbon::parse($startDate)->startOfDay();
         $end   = Carbon::parse($endDate)->endOfDay();
- 
+
         $reports = Reports::whereBetween('report_date', [$start, $end])->get();
- 
+
         $totalReports  = $reports->count();
         $totalQuantity = (int) $reports->sum('total_quantity');
         $totalSales    = (float) $reports->sum('total_sales');
         $totalHpp      = (float) $reports->sum('total_hpp');
         $totalMargin   = (float) $reports->sum('total_gross_margin');
- 
+
         // Ambil nilai komisi tersimpan
         $savedReport = null;
         if ($reportId) {
@@ -479,23 +516,23 @@ class ReportService
                 }
             }
         }
- 
+
         $savedCommissionType  = null;
         $savedCommissionValue = null;
         $savedNotes           = null;
- 
+
         if ($savedReport && $savedReport->commission_value !== null) {
             // Deteksi nama kolom tipe komisi yang benar via SHOW COLUMNS
             // karena nama kolom bisa berbeda antar environment
             $columns     = DB::select("SHOW COLUMNS FROM `reports`");
             $columnNames = array_map(fn($c) => $c->Field, $columns);
- 
+
             // Baca row mentah via DB::table supaya tidak bergantung pada $fillable / $casts model
             $rawRow = DB::table('reports')->where('id', $savedReport->id)->first();
- 
+
             if ($rawRow) {
                 $commissionValue = (float) ($rawRow->commission_value ?? 0);
- 
+
                 if ($commissionValue > 0) {
                     // Cek kolom presentance (persentase)
                     $presentanceCol = null;
@@ -504,7 +541,7 @@ class ReportService
                     } elseif (in_array('commission_type_presentance', $columnNames)) {
                         $presentanceCol = 'commission_type_presentance';
                     }
- 
+
                     // Cek kolom nominal
                     $nominalCol = null;
                     if (in_array('comission_type_nominal', $columnNames)) {
@@ -512,13 +549,13 @@ class ReportService
                     } elseif (in_array('commission_type_nominal', $columnNames)) {
                         $nominalCol = 'commission_type_nominal';
                     }
- 
+
                     // Cek kolom tipe string lama
                     $typeStringCol = null;
                     if (in_array('commission_type', $columnNames)) {
                         $typeStringCol = 'commission_type';
                     }
- 
+
                     if ($presentanceCol && !is_null($rawRow->$presentanceCol) && (float)$rawRow->$presentanceCol > 0) {
                         $savedCommissionType  = 'persentase';
                         $savedCommissionValue = (float) $rawRow->$presentanceCol;
@@ -530,12 +567,12 @@ class ReportService
                         $savedCommissionType  = $rawRow->$typeStringCol; // 'persentase' atau 'nominal'
                         $savedCommissionValue = $commissionValue;
                     }
- 
+
                     $savedNotes = $rawRow->notes ?? null;
                 }
             }
         }
- 
+
         return [
             'total_reports'          => $totalReports,
             'total_quantity'         => $totalQuantity,

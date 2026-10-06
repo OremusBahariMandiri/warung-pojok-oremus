@@ -32,7 +32,11 @@ function _isGorenganProduct(productId) {
         (p) => parseInt(p.id, 10) === parseInt(productId, 10),
     );
     if (!product) return false;
-    return (product.prod_name || "").toLowerCase().includes("gorengan");
+
+    return (
+        product.is_flexible_product === true ||
+        product.is_flexible_product === 1
+    );
 }
 
 /* ════════════════════════════════════════════════════════════
@@ -136,6 +140,9 @@ function _syncPairContainer(desktopRow) {
 
 /* ════════════════════════════════════════════════════════════
    EXPAND ROW — Desktop (>=768px)
+   Total HPP ditampilkan di expand row:
+   - Produk biasa   : teks read-only (.expand-total-hpp)
+   - Produk gorengan: input number manual (.expand-total-hpp-input)
    ════════════════════════════════════════════════════════════ */
 function _syncExpandRow(container) {
     if (!container || container.tagName !== "TR") return;
@@ -159,8 +166,8 @@ function _syncExpandRow(container) {
     setVal(".expand-purchase-price", getVal(".item-purchase-price-display"));
     setVal(".expand-selling-price", getVal(".item-selling-price-display"));
     setVal(".expand-hpp", getVal(".item-hpp-display"));
-    setVal(".expand-total-hpp", getVal(".item-total-hpp-display"));
 
+    // Sisa stok
     const stockFinalInput = container.querySelector(".item-stock-final");
     const stockFinalEl = expandRow.querySelector(".expand-stock-final");
     if (stockFinalEl && stockFinalInput) {
@@ -170,7 +177,99 @@ function _syncExpandRow(container) {
         stockFinalEl.classList.toggle("text-danger", val !== "" && num < 0);
         stockFinalEl.classList.toggle("fw-bold", val !== "" && num < 0);
     }
+
+    // Total HPP di expand row
+    // Cek apakah produk gorengan
+    const prodSel = container.querySelector(".product-select");
+    const isGorengan = _isGorenganProduct(prodSel ? prodSel.value : null);
+    const totalHppWrap = expandRow.querySelector(".expand-total-hpp-wrap");
+
+    if (totalHppWrap) {
+        if (isGorengan) {
+            // Render sebagai input manual jika belum ada
+            if (!totalHppWrap.querySelector(".expand-total-hpp-input")) {
+                // Ambil nilai tersimpan dari hidden input
+                const existingTotal = container.querySelector(
+                    ".item-total-hpp-display",
+                );
+                const savedTotalHpp = existingTotal
+                    ? parseFloat(
+                          existingTotal.textContent
+                              .replace(/[^0-9,-]/g, "")
+                              .replace(",", "."),
+                      ) || 0
+                    : 0;
+
+                totalHppWrap.innerHTML = `
+                    <div class="expand-label">Total HPP</div>
+                    <div class="expand-value">
+                        <input type="number"
+                               class="form-control form-control-sm font-monospace rounded-2 expand-total-hpp-input"
+                               min="0"
+                               value="${savedTotalHpp > 0 ? savedTotalHpp : ""}"
+                               oninput="_onExpandTotalHppInput(this)"
+                               style="width:130px;">
+                    </div>`;
+            }
+        } else {
+            // Produk biasa: pastikan tampilan teks (bukan input)
+            if (totalHppWrap.querySelector(".expand-total-hpp-input")) {
+                totalHppWrap.innerHTML = `
+                    <div class="expand-label">Total HPP</div>
+                    <div class="expand-value expand-total-hpp">Rp 0</div>`;
+            }
+            // Update nilai teks
+            const totalHppDisplay = container.querySelector(
+                ".item-total-hpp-display",
+            );
+            const expandTotalHpp =
+                totalHppWrap.querySelector(".expand-total-hpp");
+            if (expandTotalHpp && totalHppDisplay) {
+                expandTotalHpp.textContent = totalHppDisplay.textContent;
+            }
+        }
+    }
 }
+
+/* ════════════════════════════════════════════════════════════
+   HANDLER: Input Total HPP manual di expand row (gorengan)
+   ════════════════════════════════════════════════════════════ */
+function _onExpandTotalHppInput(inputEl) {
+    const expandRow = inputEl.closest("tr.report-item-expand-row");
+    if (!expandRow) return;
+
+    const mainRow = expandRow.previousElementSibling;
+    if (!mainRow || !mainRow.classList.contains("report-item-row")) return;
+
+    const totalHppVal = parseFloat(inputEl.value) || 0;
+
+    // Simpan ke hidden display span supaya recalculate bisa baca
+    const totalHppDisplay = mainRow.querySelector(".item-total-hpp-display");
+    if (totalHppDisplay)
+        totalHppDisplay.textContent = formatRupiah(totalHppVal);
+
+    // Simpan ke hidden hpp manual (untuk submit & recalculate)
+    const hiddenHppManual = mainRow.querySelector(".item-total-hpp-manual");
+    if (hiddenHppManual) hiddenHppManual.value = totalHppVal;
+
+    // Baca totalSales dari hidden input
+    const hiddenSalesManual = mainRow.querySelector(".item-total-sales-manual");
+    const totalSales = hiddenSalesManual
+        ? parseFloat(hiddenSalesManual.value) || 0
+        : 0;
+
+    const margin = totalSales - totalHppVal;
+    const marginEl = mainRow.querySelector(".item-margin-display");
+    if (marginEl) {
+        marginEl.textContent = formatRupiah(margin);
+        marginEl.classList.toggle("text-danger", margin < 0);
+        marginEl.classList.toggle("text-success", margin >= 0);
+    }
+
+    _syncPairContainer(mainRow);
+    recalculateReportTotals();
+}
+window._onExpandTotalHppInput = _onExpandTotalHppInput;
 
 function _toggleExpandRow(toggleEl) {
     // Guard: expand row hanya untuk desktop
@@ -290,32 +389,16 @@ function _updateItemCalculations(container) {
     const hppInput = container.querySelector(".item-hpp-price");
     if (hppInput) hppInput.value = currentHpp;
 
-    // GORENGAN: set qty readonly dan isi otomatis dari current_stock
+    // GORENGAN: kalkulasi dari input manual di expand row
     const isGorengan = _isGorenganProduct(productId);
-    if (isGorengan) {
-        const qtyGorengan = container.querySelector(".item-qty");
-        if (qtyGorengan) {
-            qtyGorengan.setAttribute("readonly", "readonly");
-            qtyGorengan.value = currentStock;
-        }
-    } else {
-        const qtyEl = container.querySelector(".item-qty");
-        if (qtyEl) {
-            qtyEl.removeAttribute("readonly");
-        }
-    }
-
     const qtyInput = container.querySelector(".item-qty");
-    const qtyRaw = qtyInput ? qtyInput.value.trim() : "";
-    const qty = qtyRaw !== "" ? parseInt(qtyRaw, 10) || 0 : 0;
 
-    // FIX: gunakan effectiveStock (currentStock + originalQty) untuk hitung sisa stok
-    // GORENGAN: stock_final = currentStock (stok tidak berkurang)
-    const stockFinalInput = container.querySelector(".item-stock-final");
-    if (stockFinalInput) {
-        if (isGorengan) {
-            stockFinalInput.value = currentStock;
-        } else {
+    if (isGorengan) {
+        // Set sisa stok = current stock (tidak berubah karena flexible)
+        const stockFinalInput = container.querySelector(".item-stock-final");
+        if (stockFinalInput) {
+            const qtyRaw = qtyInput ? qtyInput.value.trim() : "";
+            const qty = qtyRaw !== "" ? parseInt(qtyRaw, 10) || 0 : 0;
             const originalQty = parseInt(
                 container.dataset.originalQty || 0,
                 10,
@@ -323,42 +406,110 @@ function _updateItemCalculations(container) {
             const effectiveStock = currentStock + originalQty;
             stockFinalInput.value = effectiveStock - qty;
         }
-    }
 
-    const totalSales = qty * sellingPrice;
-    const totalHpp = qty * currentHpp;
-    const margin = totalSales - totalHpp;
+        // Total penjualan dari hidden manual sales
+        const manualSalesInput = container.querySelector(
+            ".item-total-sales-manual",
+        );
+        const manualSales = manualSalesInput
+            ? parseFloat(manualSalesInput.value) || 0
+            : 0;
 
-    const salesEl = container.querySelector(".item-total-sales-display");
-    if (salesEl) salesEl.textContent = formatRupiah(totalSales);
-
-    const totalHppEl = container.querySelector(".item-total-hpp-display");
-    if (totalHppEl) totalHppEl.textContent = formatRupiah(totalHpp);
-
-    const marginEl = container.querySelector(".item-margin-display");
-    if (marginEl) {
-        marginEl.textContent = formatRupiah(margin);
-        marginEl.classList.toggle("text-danger", margin < 0);
-        marginEl.classList.toggle("text-success", margin >= 0);
-    }
-
-    _validateItemQty(container);
-    _syncExpandRow(container);
-
-    // GORENGAN: override expand row sisa stok → "Unlimited"
-    if (isGorengan) {
+        // Total HPP dari expand row input (jika sudah ada) atau dari hidden manual hpp
         const expandRow = container.nextElementSibling;
+        let manualTotalHpp = 0;
         if (
             expandRow &&
             expandRow.classList.contains("report-item-expand-row")
         ) {
-            const sfEl = expandRow.querySelector(".expand-stock-final");
-            if (sfEl) {
-                sfEl.textContent = "Unlimited";
-                sfEl.classList.remove("text-danger", "fw-bold");
+            const expandHppInput = expandRow.querySelector(
+                ".expand-total-hpp-input",
+            );
+            if (expandHppInput) {
+                manualTotalHpp = parseFloat(expandHppInput.value) || 0;
             }
         }
+        // Fallback ke hidden manual hpp jika expand belum dirender
+        if (manualTotalHpp === 0) {
+            const manualHppInput = container.querySelector(
+                ".item-total-hpp-manual",
+            );
+            manualTotalHpp = manualHppInput
+                ? parseFloat(manualHppInput.value) || 0
+                : 0;
+        }
+
+        // Simpan ke hidden total hpp manual supaya recalculate bisa baca
+        const hiddenHppManual = container.querySelector(
+            ".item-total-hpp-manual",
+        );
+        if (hiddenHppManual) hiddenHppManual.value = manualTotalHpp;
+
+        // Update total hpp display (hidden td) supaya sync mobile
+        const totalHppDisplay = container.querySelector(
+            ".item-total-hpp-display",
+        );
+        if (totalHppDisplay)
+            totalHppDisplay.textContent = formatRupiah(manualTotalHpp);
+
+        const margin = manualSales - manualTotalHpp;
+
+        const salesEl = container.querySelector(".item-total-sales-display");
+        if (salesEl) salesEl.textContent = formatRupiah(manualSales);
+
+        const marginEl = container.querySelector(".item-margin-display");
+        if (marginEl) {
+            marginEl.textContent = formatRupiah(margin);
+            marginEl.classList.toggle("text-danger", margin < 0);
+            marginEl.classList.toggle("text-success", margin >= 0);
+        }
+
+        // Simpan ke hidden inputs untuk submit
+        const hiddenSales = container.querySelector(".item-selling-price");
+        if (hiddenSales) hiddenSales.value = 0;
+        const hiddenHpp = container.querySelector(".item-hpp-price");
+        if (hiddenHpp) hiddenHpp.value = 0;
+    } else {
+        // Produk biasa
+        if (qtyInput) qtyInput.removeAttribute("readonly");
+
+        const qtyRaw = qtyInput ? qtyInput.value.trim() : "";
+        const qty = qtyRaw !== "" ? parseInt(qtyRaw, 10) || 0 : 0;
+
+        const stockFinalInput = container.querySelector(".item-stock-final");
+        if (stockFinalInput) {
+            const originalQty = parseInt(
+                container.dataset.originalQty || 0,
+                10,
+            );
+            const effectiveStock = currentStock + originalQty;
+            stockFinalInput.value = effectiveStock - qty;
+        }
+
+        const totalSales = qty * sellingPrice;
+        const totalHpp = qty * currentHpp;
+        const margin = totalSales - totalHpp;
+
+        const salesEl = container.querySelector(".item-total-sales-display");
+        if (salesEl) salesEl.textContent = formatRupiah(totalSales);
+
+        // Update total hpp di hidden display (untuk sync mobile)
+        const totalHppDisplay = container.querySelector(
+            ".item-total-hpp-display",
+        );
+        if (totalHppDisplay)
+            totalHppDisplay.textContent = formatRupiah(totalHpp);
+
+        const marginEl = container.querySelector(".item-margin-display");
+        if (marginEl) {
+            marginEl.textContent = formatRupiah(margin);
+            marginEl.classList.toggle("text-danger", margin < 0);
+            marginEl.classList.toggle("text-success", margin >= 0);
+        }
     }
+
+    _validateItemQty(container);
+    _syncExpandRow(container);
 
     _syncPairContainer(container);
     recalculateReportTotals();
@@ -369,6 +520,15 @@ function onProductSelectChange(selectEl) {
     const container =
         selectEl.closest("tr") || selectEl.closest(".report-item-card");
     if (!container) return;
+
+    const selectedProduct = window.reportProductsList.find(
+        (p) => parseInt(p.id, 10) === parseInt(productId, 10),
+    );
+
+    const isFlexible = selectedProduct
+        ? selectedProduct.is_flexible_product === true ||
+          selectedProduct.is_flexible_product === 1
+        : false;
 
     const unitSelect = container.querySelector(".selling-unit-select");
     if (unitSelect && productId) {
@@ -421,6 +581,7 @@ function onProductSelectChange(selectEl) {
     }
 
     _updateItemCalculations(container);
+    _applyFlexibleUiToRow(container, isFlexible);
     refreshReportProductOptions();
 }
 
@@ -461,8 +622,8 @@ function _resetContainerData(container) {
     const salesEl = container.querySelector(".item-total-sales-display");
     if (salesEl) salesEl.textContent = "Rp 0";
 
-    const totalHppEl = container.querySelector(".item-total-hpp-display");
-    if (totalHppEl) totalHppEl.textContent = "Rp 0";
+    const totalHppDisplay = container.querySelector(".item-total-hpp-display");
+    if (totalHppDisplay) totalHppDisplay.textContent = "Rp 0";
 
     const marginEl = container.querySelector(".item-margin-display");
     if (marginEl) {
@@ -472,12 +633,229 @@ function _resetContainerData(container) {
     }
 
     _clearQtyValidation(container);
+
+    // Reset expand row Total HPP ke teks biasa
+    const expandRow = container.nextElementSibling;
+    if (expandRow && expandRow.classList.contains("report-item-expand-row")) {
+        const totalHppWrap = expandRow.querySelector(".expand-total-hpp-wrap");
+        if (totalHppWrap) {
+            totalHppWrap.innerHTML = `
+                <div class="expand-label">Total HPP</div>
+                <div class="expand-value expand-total-hpp">Rp 0</div>`;
+        }
+    }
+
     _syncExpandRow(container);
 
     // GORENGAN: kembalikan qty ke editable saat produk di-reset
     const qtyInputReset = container.querySelector(".item-qty");
     if (qtyInputReset) qtyInputReset.removeAttribute("readonly");
 }
+
+/* ════════════════════════════════════════════════════════════
+   _applyFlexibleUiToRow
+   FIX: Hapus hidden input lama dari report-item-hidden-data td
+        sebelum membuat hidden input baru di salesCell,
+        agar tidak ada duplikasi name attribute saat form submit.
+   ════════════════════════════════════════════════════════════ */
+function _applyFlexibleUiToRow(container, isFlexible) {
+    const qtyCell = container.querySelector(".item-qty-cell");
+    const salesCell = container.querySelector(".item-total-sales-cell");
+
+    if (isFlexible) {
+        if (qtyCell) {
+            const badge = qtyCell.querySelector(".flexible-qty-badge");
+            if (badge) badge.remove();
+            const qtyInput = qtyCell.querySelector(".item-qty");
+            if (qtyInput) {
+                qtyInput.removeAttribute("readonly");
+                qtyInput.style.display = "";
+            }
+        }
+
+        // Total penjualan: input manual di kolom tabel
+        if (
+            salesCell &&
+            !salesCell.querySelector(".item-total-sales-manual-input")
+        ) {
+            // Ambil hidden input lama dari report-item-hidden-data td
+            const existingHiddenSales = container.querySelector(
+                ".item-total-sales-manual",
+            );
+            const salesName = existingHiddenSales
+                ? existingHiddenSales.name
+                : "";
+            const salesValue = existingHiddenSales
+                ? parseFloat(existingHiddenSales.value) || 0
+                : 0;
+
+            // ✅ FIX: Hapus hidden input lama dari hidden td agar tidak duplikat saat submit
+            // Jika hidden input lama berada di luar salesCell (di hidden td), hapus
+            if (
+                existingHiddenSales &&
+                !salesCell.contains(existingHiddenSales)
+            ) {
+                existingHiddenSales.remove();
+            }
+
+            salesCell.innerHTML = `
+        <div class="d-flex flex-column gap-1">
+            <input type="number"
+                   class="form-control form-control-sm font-monospace text-end rounded-2 item-total-sales-manual-input"
+                   min="0"
+                   value="${salesValue > 0 ? salesValue : ""}"
+                   oninput="_onFlexibleSalesInput(this)"
+                   style="width:130px;">
+            <input type="hidden" name="${salesName}" class="item-total-sales-manual" value="${salesValue}">
+        </div>`;
+        } else if (
+            salesCell &&
+            salesCell.querySelector(".item-total-sales-manual-input")
+        ) {
+            // Jika sudah ada visible input, pastikan hidden input di luar salesCell sudah tidak ada
+            // (cegah duplikasi jika _applyFlexibleUiToRow dipanggil 2x)
+            const hiddenTd = container.querySelector(
+                ".report-item-hidden-data",
+            );
+            if (hiddenTd) {
+                const oldHidden = hiddenTd.querySelector(
+                    ".item-total-sales-manual",
+                );
+                if (oldHidden) oldHidden.remove();
+            }
+        }
+
+        // Total HPP gorengan: dirender di expand row oleh _syncExpandRow
+        // Pastikan expand row sudah diinisialisasi ulang ke state gorengan
+        const expandRow = container.nextElementSibling;
+        if (
+            expandRow &&
+            expandRow.classList.contains("report-item-expand-row")
+        ) {
+            const totalHppWrap = expandRow.querySelector(
+                ".expand-total-hpp-wrap",
+            );
+            if (
+                totalHppWrap &&
+                !totalHppWrap.querySelector(".expand-total-hpp-input")
+            ) {
+                totalHppWrap.innerHTML = `
+                    <div class="expand-label">Total HPP</div>
+                    <div class="expand-value">
+                        <input type="number"
+                               class="form-control form-control-sm font-monospace rounded-2 expand-total-hpp-input"
+                               min="0"
+                               value=""
+                               placeholder="0"
+                               oninput="_onExpandTotalHppInput(this)"
+                               style="width:130px;">
+                    </div>`;
+            }
+        }
+    } else {
+        // Produk biasa: kembalikan tampilan normal
+        if (qtyCell) {
+            const badge = qtyCell.querySelector(".flexible-qty-badge");
+            if (badge) badge.remove();
+            const qtyInput = qtyCell.querySelector(".item-qty");
+            if (qtyInput) {
+                qtyInput.removeAttribute("readonly");
+                qtyInput.style.display = "";
+            }
+        }
+        if (salesCell) {
+            const flexInputs = salesCell.querySelector(
+                ".item-total-sales-manual-input",
+            );
+            if (flexInputs) {
+                // ✅ FIX: Saat revert ke produk biasa, pastikan hidden input
+                // dikembalikan ke hidden td supaya form submit tetap benar
+                const hiddenTd = container.querySelector(
+                    ".report-item-hidden-data",
+                );
+                const hiddenSalesInCell = salesCell.querySelector(
+                    ".item-total-sales-manual",
+                );
+                if (hiddenTd && hiddenSalesInCell) {
+                    // Jika tidak ada hidden input di hidden td, pindahkan kembali
+                    const alreadyInHiddenTd = hiddenTd.querySelector(
+                        ".item-total-sales-manual",
+                    );
+                    if (!alreadyInHiddenTd) {
+                        hiddenSalesInCell.value = "0";
+                        hiddenTd.appendChild(hiddenSalesInCell);
+                    }
+                }
+                salesCell.innerHTML = `<span class="item-readonly-badge item-total-sales-display">Rp 0</span>`;
+            }
+        }
+
+        // Reset expand row Total HPP ke teks biasa
+        const expandRow = container.nextElementSibling;
+        if (
+            expandRow &&
+            expandRow.classList.contains("report-item-expand-row")
+        ) {
+            const totalHppWrap = expandRow.querySelector(
+                ".expand-total-hpp-wrap",
+            );
+            if (
+                totalHppWrap &&
+                totalHppWrap.querySelector(".expand-total-hpp-input")
+            ) {
+                totalHppWrap.innerHTML = `
+                    <div class="expand-label">Total HPP</div>
+                    <div class="expand-value expand-total-hpp">Rp 0</div>`;
+            }
+        }
+    }
+}
+
+function _onFlexibleSalesInput(inputEl) {
+    const container = inputEl.closest("tr");
+    if (!container) return;
+
+    // ✅ FIX: Cari hidden input di dalam salesCell (bukan di seluruh container,
+    // karena hidden input lama di hidden td sudah dihapus)
+    const salesCell = container.querySelector(".item-total-sales-cell");
+    const hiddenInput = salesCell
+        ? salesCell.querySelector(".item-total-sales-manual")
+        : container.querySelector(".item-total-sales-manual");
+    if (hiddenInput) hiddenInput.value = inputEl.value || 0;
+
+    const salesDisplay = container.querySelector(".item-total-sales-display");
+    if (salesDisplay) {
+        salesDisplay.textContent = formatRupiah(parseFloat(inputEl.value) || 0);
+    }
+
+    const hiddenHppManual = container.querySelector(".item-total-hpp-manual");
+    const currentHpp = hiddenHppManual
+        ? parseFloat(hiddenHppManual.value) || 0
+        : 0;
+    const currentSales = parseFloat(inputEl.value) || 0;
+    const margin = currentSales - currentHpp;
+    const marginEl = container.querySelector(".item-margin-display");
+    if (marginEl) {
+        marginEl.textContent = formatRupiah(margin);
+        marginEl.classList.toggle("text-danger", margin < 0);
+        marginEl.classList.toggle("text-success", margin >= 0);
+    }
+
+    _updateItemCalculations(container);
+    recalculateReportTotals();
+}
+
+function _onFlexibleHppInput(inputEl) {
+    const container = inputEl.closest("tr");
+    if (!container) return;
+    const hiddenInput = container.querySelector(".item-total-hpp-manual");
+    if (hiddenInput) hiddenInput.value = inputEl.value || 0;
+    _updateItemCalculations(container);
+    recalculateReportTotals();
+}
+
+window._onFlexibleSalesInput = _onFlexibleSalesInput;
+window._onFlexibleHppInput = _onFlexibleHppInput;
 
 /* ════════════════════════════════════════════════════════════
    MOBILE TABLE INTERACTION HANDLERS
@@ -492,7 +870,6 @@ function onMobileProductChange(selectEl) {
     );
     if (!desktopSel) return;
     desktopSel.value = selectEl.value;
-    // Rebuild unit + recalculate + sync balik ke mobile
     onProductSelectChange(desktopSel);
 }
 
@@ -628,7 +1005,7 @@ function _validateItemQty(container) {
     const qtyInput = container.querySelector(".item-qty");
     if (!qtyInput) return true;
 
-    // GORENGAN: skip validasi stok, langsung clear dan return true
+    // GORENGAN: skip validasi stok
     const _gProdSel = container.querySelector(".product-select");
     if (_isGorenganProduct(_gProdSel ? _gProdSel.value : null)) {
         _clearQtyValidation(container);
@@ -647,9 +1024,6 @@ function _validateItemQty(container) {
         return true;
     }
 
-    // FIX: hitung effectiveStock dengan originalQty dari data-original-qty
-    // Di form create: originalQty = 0, effectiveStock = currentStock (tidak berubah)
-    // Di form edit: originalQty = qty tersimpan, effectiveStock = currentStock + originalQty
     const originalQty = parseInt(container.dataset.originalQty || 0, 10);
     const effectiveStock = currentStock + originalQty;
 
@@ -707,7 +1081,6 @@ function _validateItemQty(container) {
     return true;
 }
 
-// FIX: tambahkan selector #formEditReport dan gunakan effectiveStock yang benar
 function _checkFormSubmitState() {
     const submitBtn = document.querySelector(
         "#formCreateReport [type='submit'], #formEditReport [type='submit']",
@@ -717,7 +1090,6 @@ function _checkFormSubmitState() {
     const rows = document.querySelectorAll("#reportItemRows .report-item-row");
     let hasError = false;
     rows.forEach(function (row) {
-        // GORENGAN: skip validasi stok untuk produk gorengan
         const _gSel = row.querySelector(".product-select");
         if (_isGorenganProduct(_gSel ? _gSel.value : null)) return;
 
@@ -739,12 +1111,10 @@ function _checkFormSubmitState() {
 }
 
 function refreshReportProductOptions() {
-    // Kumpulkan pasangan product_id + unit_id yang sudah dipilih per baris desktop
     const desktopRows = Array.from(
         document.querySelectorAll("#reportItemRows .report-item-row"),
     );
 
-    // Untuk setiap baris, disable satuan yang sudah dipakai oleh baris LAIN dengan produk yang sama
     desktopRows.forEach((row) => {
         const prodSel = row.querySelector(".product-select");
         const unitSel = row.querySelector(".selling-unit-select");
@@ -753,7 +1123,6 @@ function refreshReportProductOptions() {
         const thisProdId = prodSel.value;
         if (!thisProdId) return;
 
-        // Kumpulkan unit_id yang sudah dipakai oleh baris LAIN dengan produk yang sama
         const usedUnitIds = desktopRows
             .filter((r) => r !== row)
             .map((r) => {
@@ -764,7 +1133,6 @@ function refreshReportProductOptions() {
             })
             .filter(Boolean);
 
-        // Enable/disable opsi satuan
         Array.from(unitSel.options).forEach((opt) => {
             if (!opt.value) return;
             opt.disabled =
@@ -772,7 +1140,6 @@ function refreshReportProductOptions() {
         });
     });
 
-    // Mirror ke mobile table
     const mobileRows = Array.from(
         document.querySelectorAll(
             "#reportItemRowsMobile .report-item-row-mobile",
@@ -780,7 +1147,6 @@ function refreshReportProductOptions() {
     );
 
     mobileRows.forEach((mRow) => {
-        const idx = mRow.dataset.mobileIdx;
         const mProdSel = mRow.querySelector(".product-select-mobile");
         const mUnitSel = mRow.querySelector(".selling-unit-select-mobile");
         if (!mProdSel || !mUnitSel) return;
@@ -839,16 +1205,52 @@ function recalculateReportTotals() {
             const qtyInput = row.querySelector(".item-qty");
             const qtyRaw = qtyInput ? qtyInput.value.trim() : "";
             const qty = qtyRaw !== "" ? parseInt(qtyRaw, 10) || 0 : 0;
-            const sellingPrice = parseFloat(row.dataset.sellingPrice || 0);
-            const hpp = parseFloat(row.dataset.hpp || 0);
             totalQty += qty;
-            grandSales += qty * sellingPrice;
-            grandHpp += qty * hpp;
+
+            if (_isGorenganProduct(prodSelect.value)) {
+                // Produk fleksibel: ambil dari hidden manual
+                // ✅ FIX: Cari di seluruh row (termasuk salesCell) karena
+                // hidden input sudah dipindahkan ke salesCell
+                const manualSalesInput = row.querySelector(
+                    ".item-total-sales-manual",
+                );
+                grandSales += manualSalesInput
+                    ? parseFloat(manualSalesInput.value) || 0
+                    : 0;
+
+                // Total HPP: dari expand row input jika terbuka, atau dari hidden manual
+                const expandRow = row.nextElementSibling;
+                let manualTotalHpp = 0;
+                if (
+                    expandRow &&
+                    expandRow.classList.contains("report-item-expand-row")
+                ) {
+                    const expandHppInput = expandRow.querySelector(
+                        ".expand-total-hpp-input",
+                    );
+                    if (expandHppInput) {
+                        manualTotalHpp = parseFloat(expandHppInput.value) || 0;
+                    }
+                }
+                if (manualTotalHpp === 0) {
+                    const manualHppInput = row.querySelector(
+                        ".item-total-hpp-manual",
+                    );
+                    manualTotalHpp = manualHppInput
+                        ? parseFloat(manualHppInput.value) || 0
+                        : 0;
+                }
+                grandHpp += manualTotalHpp;
+            } else {
+                const sellingPrice = parseFloat(row.dataset.sellingPrice || 0);
+                const hpp = parseFloat(row.dataset.hpp || 0);
+                grandSales += qty * sellingPrice;
+                grandHpp += qty * hpp;
+            }
         }
     });
 
     const grandMargin = grandSales - grandHpp;
-    // Preview margin bersih: patokan gaji 50% dari margin kotor (sama dengan excel tgl 3 & 4)
     const gajiPreview = grandMargin * 0.5;
     const netMargin = grandMargin - gajiPreview;
 
@@ -898,21 +1300,18 @@ function recalculateReportTotals() {
 }
 
 function updateRowNumbers() {
-    // Desktop rows
     document
         .querySelectorAll("#reportItemRows .report-item-row")
         .forEach((row, i) => {
             const c = row.querySelector(".row-no-num");
             if (c) c.textContent = i + 1;
         });
-    // Mobile table rows
     document
         .querySelectorAll("#reportItemRowsMobile .report-item-row-mobile")
         .forEach((row, i) => {
             const c = row.querySelector(".row-no-num");
             if (c) c.textContent = i + 1;
         });
-    // Old mobile cards (backward compat)
     document.querySelectorAll(".report-item-card").forEach((card, i) => {
         const b = card.querySelector(".ric-row-number-mobile");
         if (b) b.textContent = i + 1;
@@ -920,13 +1319,14 @@ function updateRowNumbers() {
 }
 
 /* ════════════════════════════════════════════════════════════
-   ADD ROW — Desktop (6-col + expand) + Mobile mirror (13-col)
+   ADD ROW — Desktop (5-col + expand) + Mobile mirror (13-col)
+   Kolom Total HPP dihapus dari desktop, dipindah ke expand row
    ════════════════════════════════════════════════════════════ */
 function addReportItemRow() {
     const idx = reportItemIndex++;
     const prodOpts = _buildProductOptions();
 
-    /* -- 1. Desktop: 6-col row + expand row -- */
+    /* -- 1. Desktop: 5-col row + expand row -- */
     const tbody = document.getElementById("reportItemRows");
     if (tbody) {
         document.getElementById("emptyItemRow")?.remove();
@@ -946,10 +1346,10 @@ function addReportItemRow() {
                     <option value="" disabled selected>Pilih Satuan...</option>
                 </select>
             </td>
-            <td class="col-qty">
-                <input type="number" name="items[${idx}][quantity]" class="form-control form-control-sm font-monospace text-center rounded-2 item-qty" value="" min="1" placeholder="" oninput="onItemQtyOrStockFinalChange(this)" required>
+            <td class="col-qty item-qty-cell">
+                <input type="number" name="items[${idx}][quantity]" class="form-control form-control-sm font-monospace text-center rounded-2 item-qty" value="" min="1" oninput="onItemQtyOrStockFinalChange(this)" required>
             </td>
-            <td class="col-total-sales text-end font-monospace fw-semibold text-dark">
+            <td class="col-total-sales text-end font-monospace fw-semibold text-dark item-total-sales-cell">
                 <span class="item-readonly-badge item-total-sales-display">Rp 0</span>
             </td>
             <td class="col-margin text-end font-monospace fw-bold">
@@ -969,11 +1369,13 @@ function addReportItemRow() {
                 <span class="item-hpp-display">Rp 0</span>
                 <input type="hidden" name="items[${idx}][hpp]" class="item-hpp-price" value="0">
                 <span class="item-total-hpp-display">Rp 0</span>
+                <input type="hidden" name="items[${idx}][total_sales_manual]" class="item-total-sales-manual" value="0">
+                <input type="hidden" name="items[${idx}][total_hpp_manual]" class="item-total-hpp-manual" value="0">
                 <input type="number" name="items[${idx}][stock_final]" class="item-stock-final" value="" readonly tabindex="-1" required>
             </td>`;
         tbody.appendChild(tr);
 
-        // Expand row
+        // Expand row — Total HPP ada di sini sebagai .expand-total-hpp-wrap
         const expandTr = document.createElement("tr");
         expandTr.className = "report-item-expand-row d-none";
         expandTr.dataset.expandFor = idx;
@@ -1005,7 +1407,7 @@ function addReportItemRow() {
                             <div class="expand-label">HPP / Unit</div>
                             <div class="expand-value expand-hpp">Rp 0</div>
                         </div>
-                        <div class="col-6 expand-cell expand-cell-bottom expand-cell-noborder">
+                        <div class="col-6 expand-cell expand-cell-bottom expand-cell-noborder expand-total-hpp-wrap">
                             <div class="expand-label">Total HPP</div>
                             <div class="expand-value expand-total-hpp">Rp 0</div>
                         </div>
@@ -1085,13 +1487,11 @@ function removeReportItemRow(btn) {
     const row = btn.closest("tr");
     if (!row) return;
 
-    // Hapus expand row jika ada
     const nextRow = row.nextElementSibling;
     if (nextRow && nextRow.classList.contains("report-item-expand-row")) {
         nextRow.remove();
     }
 
-    // Hapus mobile mirror row
     const sel = row.querySelector(".product-select");
     if (sel) {
         const m = sel.getAttribute("name")?.match(/items\[(\d+)\]/);
@@ -1120,7 +1520,6 @@ function removeReportItemMobileRow(btn) {
     if (!mobileRow) return;
     const idx = mobileRow.dataset.mobileIdx;
 
-    // Hapus desktop row + expand row
     const desktopSel = document.querySelector(
         `.product-select[name="items[${idx}][product_id]"]`,
     );
@@ -1178,12 +1577,10 @@ function removeReportItemCard(btn) {
 }
 
 function _checkReportEmptyStates() {
-    // Desktop table
     const tbody = document.getElementById("reportItemRows");
     if (tbody && tbody.querySelectorAll(".report-item-row").length === 0) {
         tbody.innerHTML = `<tr id="emptyItemRow"><td colspan="6" class="text-center py-4 text-muted small">Belum ada produk yang ditambahkan. Klik tombol "+ Tambah" di atas untuk menambahkan item penjualan.</td></tr>`;
     }
-    // Mobile table
     const mobileTbody = document.getElementById("reportItemRowsMobile");
     if (
         mobileTbody &&
@@ -1191,7 +1588,6 @@ function _checkReportEmptyStates() {
     ) {
         mobileTbody.innerHTML = `<tr id="emptyItemRowMobile"><td colspan="13" class="text-center py-4 text-muted small">Belum ada produk. Klik "+ Tambah" di atas.</td></tr>`;
     }
-    // Old mobile cards container (backward compat)
     const mob = document.getElementById("reportCardsMobile");
     if (mob && mob.querySelectorAll(".report-item-card").length === 0) {
         if (!document.getElementById("reportMobileEmptyState")) {
@@ -1259,6 +1655,81 @@ document.addEventListener("DOMContentLoaded", function () {
                         uSel.value = currentUnitVal;
                         onSellingUnitChange(uSel);
                     }
+
+                    const isFlexible = _isGorenganProduct(pSel.value);
+                    if (isFlexible) {
+                        // ✅ FIX: Baca nilai tersimpan dari hidden input SEBELUM
+                        // _applyFlexibleUiToRow dipanggil (karena setelah dipanggil,
+                        // hidden input di hidden td akan dihapus)
+                        const hiddenTd = r.querySelector(
+                            ".report-item-hidden-data",
+                        );
+                        const hiddenSalesBefore = hiddenTd
+                            ? hiddenTd.querySelector(".item-total-sales-manual")
+                            : null;
+                        const hiddenHpp = r.querySelector(
+                            ".item-total-hpp-manual",
+                        );
+
+                        const savedSalesValue = hiddenSalesBefore
+                            ? parseFloat(hiddenSalesBefore.value) || 0
+                            : 0;
+                        const savedHppValue = hiddenHpp
+                            ? parseFloat(hiddenHpp.value) || 0
+                            : 0;
+
+                        _applyFlexibleUiToRow(r, true);
+
+                        // Setelah _applyFlexibleUiToRow, hidden input sales ada di salesCell
+                        const salesCell = r.querySelector(
+                            ".item-total-sales-cell",
+                        );
+
+                        // Isi visible sales input dan hidden input di salesCell
+                        if (salesCell) {
+                            const visibleSalesInput = salesCell.querySelector(
+                                ".item-total-sales-manual-input",
+                            );
+                            const hiddenSalesInCell = salesCell.querySelector(
+                                ".item-total-sales-manual",
+                            );
+
+                            if (visibleSalesInput && savedSalesValue > 0) {
+                                visibleSalesInput.value = savedSalesValue;
+                            }
+                            // ✅ FIX: Pastikan hidden input di salesCell juga punya nilai yang benar
+                            if (hiddenSalesInCell && savedSalesValue > 0) {
+                                hiddenSalesInCell.value = savedSalesValue;
+                            }
+                        }
+
+                        // Isi visible hpp input di expand row
+                        const expandRow = r.nextElementSibling;
+                        if (
+                            expandRow &&
+                            expandRow.classList.contains(
+                                "report-item-expand-row",
+                            )
+                        ) {
+                            const expandHppInput = expandRow.querySelector(
+                                ".expand-total-hpp-input",
+                            );
+                            if (expandHppInput && savedHppValue > 0) {
+                                expandHppInput.value = savedHppValue;
+                            }
+                        }
+
+                        // Pastikan hidden hpp manual juga ter-update
+                        const hiddenHppManual = r.querySelector(
+                            ".item-total-hpp-manual",
+                        );
+                        if (hiddenHppManual && savedHppValue > 0) {
+                            hiddenHppManual.value = savedHppValue;
+                        }
+
+                        // Recalculate setelah value diisi
+                        _updateItemCalculations(r);
+                    }
                 }
             });
             _suppressInitToast = false;
@@ -1299,16 +1770,16 @@ if (typeof jQuery !== "undefined") {
 
             columnDefs: [
                 { targets: "no-sort", orderable: false },
-                { targets: 0, responsivePriority: 1 }, // No
-                { targets: 1, responsivePriority: 2 }, // Tanggal
-                { targets: 2, responsivePriority: 6 }, // Jumlah Produk
-                { targets: 3, responsivePriority: 5 }, // Produk Terjual
-                { targets: 4, responsivePriority: 3 }, // Total Penjualan
-                { targets: 5, responsivePriority: 7 }, // Total HPP
-                { targets: 6, responsivePriority: 1 }, // Aksi
-                { targets: 7, responsivePriority: 10 }, // Total Margin Kotor → expand
-                { targets: 8, responsivePriority: 9 }, // Margin Bersih      → expand
-                { targets: 9, responsivePriority: 8 }, // Dibuat Oleh        → expand
+                { targets: 0, responsivePriority: 1 },
+                { targets: 1, responsivePriority: 2 },
+                { targets: 2, responsivePriority: 6 },
+                { targets: 3, responsivePriority: 5 },
+                { targets: 4, responsivePriority: 3 },
+                { targets: 5, responsivePriority: 7 },
+                { targets: 6, responsivePriority: 1 },
+                { targets: 7, responsivePriority: 10 },
+                { targets: 8, responsivePriority: 9 },
+                { targets: 9, responsivePriority: 8 },
             ],
 
             scrollX: false,
@@ -1335,7 +1806,6 @@ if (typeof jQuery !== "undefined") {
     });
 }
 
-// Alert Laporan hari ini
 function showTodayReportAlert() {
     const modalEl = document.getElementById("modalTodayReportAlert");
     if (modalEl && typeof bootstrap !== "undefined") {
@@ -1349,9 +1819,8 @@ function showTodayReportAlert() {
    ════════════════════════════════════════════════════════════ */
 (function initSalaryCalculator() {
     const scDataEl = document.getElementById("scData");
-    if (!scDataEl) return; // bukan halaman salary calculator
+    if (!scDataEl) return;
 
-    /* ── Ambil data dari PHP via data-attribute ── */
     const baseMargin = parseFloat(scDataEl.dataset.baseMargin) || 0;
     const saveUrl = scDataEl.dataset.saveUrl;
     const csrfToken = scDataEl.dataset.csrf;
@@ -1359,11 +1828,9 @@ function showTodayReportAlert() {
     const endDate = scDataEl.dataset.endDate;
     const reportId = scDataEl.dataset.reportId || "";
 
-    // Nilai tersimpan sebelumnya (pre-fill)
     const savedCommissionType = scDataEl.dataset.savedCommissionType || "";
     const savedCommissionValue = scDataEl.dataset.savedCommissionValue || "";
 
-    /* ── Elemen DOM ── */
     const komisiOpsi = document.getElementById("komisiOpsi");
     const komisiNilai = document.getElementById("komisiNilai");
     const prefixLabel = document.getElementById("prefixLabel");
@@ -1380,13 +1847,11 @@ function showTodayReportAlert() {
 
     if (!komisiOpsi || !komisiNilai) return;
 
-    /* ── Format angka Rupiah ── */
     function fRp(val) {
         const num = Math.round(parseFloat(val) || 0);
         return "Rp " + num.toLocaleString("id-ID");
     }
 
-    /* ── Update prefix % / Rp saat opsi komisi berubah ── */
     function updatePrefix(resetValue) {
         const isNominal = komisiOpsi.value === "nominal";
         prefixLabel.textContent = isNominal ? "Rp" : "%";
@@ -1397,12 +1862,10 @@ function showTodayReportAlert() {
         calculate();
     }
 
-    /* ── Kalkulasi utama ── */
     function calculate() {
         const nilaiRaw = parseFloat(komisiNilai.value);
         const opsi = komisiOpsi.value;
 
-        // Belum ada input atau tidak valid
         if (!komisiNilai.value || isNaN(nilaiRaw) || nilaiRaw < 0) {
             rumusDisplay.textContent = "—";
             hasilGaji.textContent = "Rp 0";
@@ -1435,23 +1898,17 @@ function showTodayReportAlert() {
         hasilPemilik.classList.toggle("text-dark", bagianPemilik >= 0);
     }
 
-    /* ── Event listeners ── */
-    // Saat opsi berubah oleh user → reset nilai
     komisiOpsi.addEventListener("change", function () {
         updatePrefix(true);
     });
     komisiNilai.addEventListener("input", calculate);
 
-    /* ── Inisialisasi: set prefix sesuai opsi, lalu hitung jika ada nilai tersimpan ── */
-    // updatePrefix(false) → tidak reset nilai (karena Blade sudah pre-fill)
     updatePrefix(false);
 
-    // Jika ada nilai tersimpan, langsung kalkulasi
     if (savedCommissionValue !== "" && parseFloat(savedCommissionValue) >= 0) {
         calculate();
     }
 
-    /* ── Tombol Simpan → buka modal konfirmasi ── */
     if (btnSimpan) {
         btnSimpan.addEventListener("click", function () {
             const nilaiRaw = parseFloat(komisiNilai.value);
@@ -1498,7 +1955,6 @@ function showTodayReportAlert() {
         });
     }
 
-    /* ── Tombol Konfirmasi Simpan → POST ke server ── */
     if (btnKonfirm) {
         btnKonfirm.addEventListener("click", function () {
             const nilaiRaw = parseFloat(komisiNilai.value) || 0;
@@ -1524,7 +1980,6 @@ function showTodayReportAlert() {
                 notes: catatan,
             };
 
-            // Sertakan report_id jika ada (supaya simpan hanya ke report spesifik)
             if (reportId !== "") {
                 payload.report_id = reportId;
             }
@@ -1570,7 +2025,6 @@ function showTodayReportAlert() {
         });
     }
 
-    /* ── Tombol Cetak Struk ── */
     if (btnCetak) {
         btnCetak.addEventListener("click", function () {
             const nilaiRaw = parseFloat(komisiNilai.value) || 0;
@@ -1605,3 +2059,13 @@ function showTodayReportAlert() {
         });
     }
 })();
+
+function onFlexibleManualInput(inputEl) {
+    if (!inputEl) return;
+    const container =
+        inputEl.closest("tr") || inputEl.closest(".report-item-card");
+    if (!container) return;
+    _updateItemCalculations(container);
+    recalculateReportTotals();
+}
+window.onFlexibleManualInput = onFlexibleManualInput;

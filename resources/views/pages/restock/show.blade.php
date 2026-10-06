@@ -139,7 +139,7 @@
                         <tr>
                             <th style="width: 50px;" class="text-center">No</th>
                             <th>Nama Produk</th>
-                            <th class="text-center" style="width: 110px;">Satuan</th>
+                            {{-- <th class="text-center" style="width: 110px;">Satuan</th> --}}
                             <th class="text-center" style="width: 120px;">Metode HPP</th>
                             <th class="text-center" style="width: 120px;">Jumlah Masuk</th>
                             <th class="text-end" style="width: 160px;">Harga Beli</th>
@@ -162,7 +162,7 @@
                                 <td>
                                     <div class="fw-semibold text-dark">{{ $product->prod_name ?? 'Produk Dihapus' }}</div>
                                 </td>
-                                <td class="text-center">{{ strtoupper($unitName) }}</td>
+                                {{-- <td class="text-center">{{ strtoupper($unitName) }}</td> --}}
                                 <td class="text-center">
                                     {{ $isAuto ? 'Otomatis' : 'Manual' }}
                                 </td>
@@ -180,7 +180,7 @@
                     </tbody>
                     <tfoot class="table-light fw-bold">
                         <tr>
-                            <td colspan="4" class="text-end">Total Keseluruhan:</td>
+                            <td colspan="3" class="text-end">Total Keseluruhan:</td>
                             <td class="text-center font-monospace">{{ (int)($itemsList->sum('quantity')) }} Unit</td>
                             <td></td>
                             <td class="text-end font-monospace text-dark">
@@ -220,8 +220,8 @@
                         {{-- Info row: satuan + hpp --}}
                         <div class="rdm-info-row">
                             <div class="rdm-info-item">
-                                <span class="rdm-info-label">Satuan</span>
-                                <span class="rdm-info-val">{{ strtoupper($unitName) }}</span>
+                                {{-- <span class="rdm-info-label">Satuan</span>
+                                <span class="rdm-info-val">{{ strtoupper($unitName) }}</span> --}}
                             </div>
                             <div class="rdm-info-divider"></div>
                             <div class="rdm-info-item">

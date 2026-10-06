@@ -42,6 +42,9 @@
     })->toArray();
     $oldConfigs = old('selling_configs', $existingHppConfigs);
     $unitPriceVal = old('unit_price', (int)($productObj->unit_price ?? 0));
+    $isFlexible = old('is_flexible_product') !== null
+    ? (bool) old('is_flexible_product')
+    : (bool) ($productObj->productHpps->first()->is_flexible_product ?? false);
 @endphp
 
 <!-- Header Back Bar -->
@@ -172,6 +175,24 @@
                     <button type="button" class="btn btn-sm btn-outline-success rounded-2 px-3 d-inline-flex align-items-center gap-1" id="btnAddSellingConfig" onclick="addSellingConfigCard()">
                         <i class="bi bi-plus-lg"></i> Tambah Satuan Jual
                     </button>
+                </div>
+
+                <!-- Toggle Produk Fleksibel -->
+                <div class="alert alert-warning rounded-3 py-2 px-3 mb-3 d-flex align-items-start gap-2" id="flexibleProductAlert" style="display:none!important">
+                    <i class="bi bi-exclamation-triangle-fill text-warning mt-1"></i>
+                    <div class="small">
+                        <strong>Mode Fleksibel Aktif.</strong> Harga jual, HPP/unit, dan harga beli di bawah hanya sebagai referensi. Total HPP dan Total Penjualan akan diisi manual saat pencatatan penjualan.
+                    </div>
+                </div>
+
+                <div class="form-check form-switch mb-3">
+                        <input class="form-check-input" type="checkbox" role="switch" id="is_flexible_product" name="is_flexible_product" value="1"
+                        onchange="onFlexibleProductToggle(this)"
+                        {{ $isFlexible ? 'checked' : '' }}>
+                    <label class="form-check-label small fw-semibold text-dark" for="is_flexible_product">
+                        Produk Fleksibel
+                        <span class="text-muted fw-normal">(harga & modal berubah tiap hari — HPP/harga jual diisi manual saat penjualan)</span>
+                    </label>
                 </div>
 
                 <!-- Container Card Repeater Satuan Jual -->
