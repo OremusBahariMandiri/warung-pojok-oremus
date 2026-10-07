@@ -57,17 +57,6 @@
 </div>
 @endif
 
-@if (session('today_report_exists'))
-<div class="alert alert-warning alert-dismissible fade show d-flex align-items-center gap-2 py-2 px-3 mb-3 rounded-3 border-0 shadow-sm" role="alert">
-    <i class="bi bi-calendar-check-fill fs-5"></i>
-    <div class="fw-medium fs-sm">
-        Laporan penjualan hari ini sudah dibuat. Satu hari hanya bisa satu laporan.
-        Untuk menambah item penjualan, gunakan tombol <strong>Edit ✏️</strong> pada laporan hari ini.
-    </div>
-    <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
-</div>
-@endif
-
 {{-- DESKTOP TABLE --}}
 <div class="card-box px-3 border rounded-3 overflow-hidden shadow-sm bg-white mb-4 reports-desktop-card">
 
@@ -84,11 +73,12 @@
                     <span class="visually-hidden">Filter Aktif</span>
                 </span>
             </button>
-            @if (!($todayReport ?? false) )
-                <a href="{{ route('reports.create') }}" class="btn btn-sm btn-success rounded-2 text-white fw-semibold d-inline-flex align-items-center gap-2 px-3">
-                    <i class="bi bi-plus-lg"></i> Tambah
-                </a>
-            @endif
+            {{-- Tombol Tambah selalu tampil — validasi dilakukan via modal date picker --}}
+            <button type="button"
+                    class="btn btn-sm btn-success rounded-2 text-white fw-semibold d-inline-flex align-items-center gap-2 px-3"
+                    onclick="openReportDatePickerModal()">
+                <i class="bi bi-plus-lg"></i> Tambah
+            </button>
         </div>
     </div>
 
@@ -183,11 +173,12 @@
                         <span class="visually-hidden">Filter Aktif</span>
                     </span>
                 </button>
-                @if (!($todayReport ?? false))
-                    <a href="{{ route('reports.create') }}" class="btn btn-sm btn-success rounded-2 text-white fw-semibold d-inline-flex align-items-center justify-content-center gap-1 px-3">
-                        <i class="bi bi-plus-lg"></i> Tambah
-                    </a>
-                @endif
+                {{-- Tombol Tambah mobile — selalu tampil --}}
+                <button type="button"
+                        class="btn btn-sm btn-success rounded-2 text-white fw-semibold d-inline-flex align-items-center justify-content-center gap-1 px-3"
+                        onclick="openReportDatePickerModal()">
+                    <i class="bi bi-plus-lg"></i> Tambah
+                </button>
             </div>
         </div>
 
@@ -274,6 +265,70 @@
 </div>
 
 
+<!-- ══════════════════════════════════════════════════════════════
+     MODAL: Pilih Tanggal Laporan (validasi sebelum masuk create)
+     ══════════════════════════════════════════════════════════════ -->
+<div class="modal fade" id="modalDatePickerReport" tabindex="-1" aria-labelledby="modalDatePickerReportLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="max-width:420px;">
+        <div class="modal-content rounded-3 border-0 shadow">
+            <div class="modal-header border-bottom py-3">
+                <h6 class="modal-title fw-bold text-dark d-flex align-items-center gap-2" id="modalDatePickerReportLabel">
+                    <i class="bi bi-calendar-plus fs-5 text-success"></i> Pilih Tanggal Laporan
+                </h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <p class="text-muted small mb-3">
+                    Pilih tanggal penjualan yang ingin dibuat laporan. Sistem akan memeriksa apakah laporan untuk tanggal tersebut sudah ada.
+                </p>
+                <div class="mb-3">
+                    <label for="reportDatePickerInput" class="form-label small fw-semibold text-dark">
+                        Tanggal Penjualan <span class="text-danger">*</span>
+                    </label>
+                    <input type="datetime-local"
+                        id="reportDatePickerInput"
+                        class="form-control rounded-2"
+                        value="{{ now()->format('Y-m-d\TH:i') }}"
+                        max="{{ now()->format('Y-m-d\T23:59') }}">
+                </div>
+
+                {{-- Alert: tanggal sudah ada --}}
+                <div id="datePickerAlertExists" class="alert alert-danger border-danger border-opacity-25 rounded-2 p-3 mb-0 d-none" role="alert">
+                    <div class="d-flex align-items-start gap-2">
+                        <i class="bi bi-exclamation-octagon-fill text-danger mt-1 flex-shrink-0"></i>
+                        <div>
+                            <div class="fw-bold mb-1">Laporan sudah dibuat!</div>
+                            <div class="small" id="datePickerAlertExistsMsg">
+                                Laporan penjualan untuk tanggal ini sudah ada. Satu hari hanya bisa satu laporan.
+                                Gunakan tombol <strong>Edit ✏️</strong> untuk mengubah laporan tersebut.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Alert: error jaringan / server --}}
+                <div id="datePickerAlertError" class="alert alert-warning border-warning border-opacity-25 rounded-2 p-3 mb-0 d-none" role="alert">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-wifi-off text-warning flex-shrink-0"></i>
+                        <div class="small">Gagal memeriksa tanggal. Periksa koneksi internet dan coba lagi.</div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-top py-2 px-4 d-flex justify-content-between">
+                <button type="button" class="btn btn-sm btn-light border rounded-2 px-3" data-bs-dismiss="modal">Batal</button>
+                <button type="button"
+                        class="btn btn-sm btn-success text-white fw-semibold rounded-2 px-4 d-inline-flex align-items-center gap-2"
+                        id="btnDatePickerLanjutkan"
+                        onclick="validateAndProceedToCreate()">
+                    <span id="btnDatePickerSpinner" class="spinner-border spinner-border-sm d-none" role="status"></span>
+                    <span id="btnDatePickerText"><i class="bi bi-arrow-right me-1"></i> Lanjutkan</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
 <!-- Modal Filter -->
 <div class="modal fade" id="modalFilterReport" tabindex="-1" aria-labelledby="modalFilterReportLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
@@ -302,41 +357,6 @@
     </div>
 </div>
 
-<!-- Modal Peringatan Laporan Hari Ini Sudah Ada -->
-<div class="modal fade" id="modalTodayReportAlert" tabindex="-1" aria-labelledby="modalTodayReportAlertLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content rounded-3 border-0 shadow">
-            <div class="modal-header border-bottom py-3">
-                <h6 class="modal-title fw-bold text-warning d-flex align-items-center gap-2" id="modalTodayReportAlertLabel">
-                    <i class="bi bi-calendar-check-fill fs-5"></i> Laporan Hari Ini Sudah Dibuat
-                </h6>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body py-4">
-                <p class="text-secondary mb-3">
-                    Satu hari hanya bisa <strong>satu laporan penjualan</strong>.
-                    Laporan penjualan hari ini sudah dibuat.
-                </p>
-                <div class="alert alert-info border-info border-opacity-25 rounded-2 p-3 mb-0 small">
-                    <div class="fw-bold mb-1"><i class="bi bi-lightbulb me-1"></i> Informasi:</div>
-                    <ul class="mb-0 ps-3">
-                        <li>Untuk menambah item penjualan hari ini, gunakan tombol <strong>Edit ✏️</strong> pada baris laporan hari ini.</li>
-                        <li>Untuk membuat laporan baru, tunggu hingga hari berikutnya.</li>
-                    </ul>
-                </div>
-            </div>
-            <div class="modal-footer border-top py-2">
-                <button type="button" class="btn btn-sm btn-secondary rounded-2 px-4" data-bs-dismiss="modal">Tutup</button>
-                @if ($todayReport ?? false)
-                <a href="{{ route('reports.edit', $todayReport->id) }}" class="btn btn-sm btn-warning text-white rounded-2 px-4">
-                    <i class="bi bi-pencil me-1"></i> Edit Laporan Hari Ini
-                </a>
-                @endif
-            </div>
-        </div>
-    </div>
-</div>
-
 @endsection
 
 @push('scripts')
@@ -345,5 +365,12 @@
 <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
 <script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
 <script src="https://cdn.datatables.net/responsive/2.5.0/js/responsive.bootstrap5.min.js"></script>
+<script>
+    /* Oper data dari Blade ke JS — HARUS sebelum reports.js dimuat */
+    window._reportCheckDateUrl = '{{ route("reports.check_date") }}';
+    window._reportCreateUrl    = '{{ route("reports.create") }}';
+    window._todayDate          = '{{ now()->format("Y-m-d\TH:i") }}';
+    window._todayMax           = '{{ now()->format("Y-m-d\T23:59") }}';
+</script>
 <script src="{{ asset('js/reports.js') }}"></script>
 @endpush
