@@ -39,6 +39,25 @@ function _isGorenganProduct(productId) {
     );
 }
 
+function _getQtyUsedByOtherRows(currentRow, productId) {
+    if (!productId) return 0;
+    let total = 0;
+    document
+        .querySelectorAll("#reportItemRows .report-item-row")
+        .forEach((row) => {
+            if (row === currentRow) return;
+            const pSel = row.querySelector(".product-select");
+            if (!pSel || parseInt(pSel.value, 10) !== parseInt(productId, 10))
+                return;
+            if (_isGorenganProduct(pSel.value)) return;
+            const qtyInput = row.querySelector(".item-qty");
+            const qty = qtyInput ? parseInt(qtyInput.value.trim(), 10) || 0 : 0;
+            const origQty = parseInt(row.dataset.originalQty || 0, 10);
+            total += qty - origQty;
+        });
+    return total;
+}
+
 /* ════════════════════════════════════════════════════════════
    BUILD HELPERS
    ════════════════════════════════════════════════════════════ */
@@ -476,13 +495,12 @@ function _updateItemCalculations(container) {
         const qtyRaw = qtyInput ? qtyInput.value.trim() : "";
         const qty = qtyRaw !== "" ? parseInt(qtyRaw, 10) || 0 : 0;
 
+        const originalQty = parseInt(container.dataset.originalQty || 0, 10);
+        const qtyOtherRows = _getQtyUsedByOtherRows(container, productId);
+        const effectiveStock = currentStock + originalQty - qtyOtherRows;
+
         const stockFinalInput = container.querySelector(".item-stock-final");
         if (stockFinalInput) {
-            const originalQty = parseInt(
-                container.dataset.originalQty || 0,
-                10,
-            );
-            const effectiveStock = currentStock + originalQty;
             stockFinalInput.value = effectiveStock - qty;
         }
 
@@ -513,6 +531,70 @@ function _updateItemCalculations(container) {
 
     _syncPairContainer(container);
     recalculateReportTotals();
+    _revalidateRelatedRows(container, productId);
+}
+
+function _revalidateRelatedRows(currentRow, productId) {
+    if (!productId) return;
+    document
+        .querySelectorAll("#reportItemRows .report-item-row")
+        .forEach((row) => {
+            if (row === currentRow) return;
+            const pSel = row.querySelector(".product-select");
+            if (!pSel || parseInt(pSel.value, 10) !== parseInt(productId, 10))
+                return;
+            if (_isGorenganProduct(pSel.value)) return;
+
+            const qtyInput = row.querySelector(".item-qty");
+            const qty = qtyInput ? parseInt(qtyInput.value.trim(), 10) || 0 : 0;
+            const originalQty = parseInt(row.dataset.originalQty || 0, 10);
+
+            const product = window.reportProductsList.find(
+                (p) => parseInt(p.id, 10) === parseInt(productId, 10),
+            );
+            if (!product) return;
+            const currentStock = parseInt(product.current_stock ?? 0, 10);
+            const qtyOtherRows = _getQtyUsedByOtherRows(row, productId);
+            const effectiveStock = currentStock + originalQty - qtyOtherRows;
+
+            const stockFinalInput = row.querySelector(".item-stock-final");
+            if (stockFinalInput) {
+                stockFinalInput.value = effectiveStock - qty;
+            }
+
+            // Update expand row sisa stok
+            const expandRow = row.nextElementSibling;
+            if (
+                expandRow &&
+                expandRow.classList.contains("report-item-expand-row")
+            ) {
+                const expandSF = expandRow.querySelector(".expand-stock-final");
+                if (expandSF) {
+                    const sfNum = effectiveStock - qty;
+                    expandSF.textContent = sfNum.toString();
+                    expandSF.classList.toggle("text-danger", sfNum < 0);
+                    expandSF.classList.toggle("fw-bold", sfNum < 0);
+                }
+            }
+
+            // Sync mobile stock final
+            const nameEl = row.querySelector("[name*='items[']");
+            if (nameEl) {
+                const nameMatch = nameEl.name.match(/items\[(\d+)\]/);
+                if (nameMatch) {
+                    const mobileRow = document.querySelector(
+                        `.report-item-row-mobile[data-mobile-idx="${nameMatch[1]}"]`,
+                    );
+                    if (mobileRow) {
+                        const mobileSF =
+                            mobileRow.querySelector(".item-stock-final");
+                        if (mobileSF && stockFinalInput)
+                            mobileSF.value = stockFinalInput.value;
+                    }
+                }
+            }
+            _validateItemQtySilent(row, effectiveStock);
+        });
 }
 
 function onProductSelectChange(selectEl) {
@@ -963,8 +1045,15 @@ function _getToastContainer() {
     return el;
 }
 
+let _toastDebounceMap = {};
 function _showStockToast(type, message) {
     if (_suppressInitToast) return;
+    const key = type + "|" + message;
+    if (_toastDebounceMap[key]) return;
+    _toastDebounceMap[key] = true;
+    setTimeout(() => {
+        delete _toastDebounceMap[key];
+    }, 3000);
     const container = _getToastContainer();
     const toast = document.createElement("div");
     toast.className = "stock-toast toast-" + type;
@@ -1005,12 +1094,7 @@ function _validateItemQty(container) {
     const qtyInput = container.querySelector(".item-qty");
     if (!qtyInput) return true;
 
-    // GORENGAN: skip validasi stok
     const _gProdSel = container.querySelector(".product-select");
-    if (_isGorenganProduct(_gProdSel ? _gProdSel.value : null)) {
-        _clearQtyValidation(container);
-        return true;
-    }
 
     const rawStock = container.dataset.currentStock;
     if (rawStock === undefined || rawStock === "" || rawStock === null) {
@@ -1024,8 +1108,26 @@ function _validateItemQty(container) {
         return true;
     }
 
+    const prodSelect = container.querySelector(".product-select");
+    const productId = prodSelect ? parseInt(prodSelect.value, 10) : null;
     const originalQty = parseInt(container.dataset.originalQty || 0, 10);
-    const effectiveStock = currentStock + originalQty;
+
+    const isGorengan = _isGorenganProduct(productId);
+
+    if (isGorengan) {
+        const effectiveStock = currentStock + originalQty;
+        return _validateItemQtyWithEffective(container, effectiveStock);
+    }
+
+    const qtyOtherRows = _getQtyUsedByOtherRows(container, productId);
+    const effectiveStock = currentStock + originalQty - qtyOtherRows;
+
+    return _validateItemQtyWithEffective(container, effectiveStock);
+}
+
+function _validateItemQtySilent(container, effectiveStock) {
+    const qtyInput = container.querySelector(".item-qty");
+    if (!qtyInput) return true;
 
     const qty = parseInt(qtyInput.value, 10) || 0;
 
@@ -1036,16 +1138,70 @@ function _validateItemQty(container) {
               (p) => parseInt(p.id, 10) === productId,
           )
         : null;
+    const currentStockRaw = parseInt(container.dataset.currentStock || 0, 10);
     const minStockRaw =
         product && product.min_stock != null
             ? parseInt(product.min_stock, 10)
             : 0;
     const effectiveMinStock =
-        minStockRaw > 0 ? minStockRaw : Math.ceil(currentStock * 0.25);
+        minStockRaw > 0 ? minStockRaw : Math.ceil(currentStockRaw * 0.25);
 
     const existingMsg = container.querySelector(".item-qty-msg");
     if (existingMsg) existingMsg.remove();
+    qtyInput.classList.remove("is-invalid");
+    qtyInput.style.borderColor = "";
+    qtyInput.style.boxShadow = "";
 
+    if (qty <= 0 || qtyInput.value === "") return true;
+
+    // Tampilkan error visual TANPA toast
+    if (qty > effectiveStock) {
+        qtyInput.classList.add("is-invalid");
+        const msg = document.createElement("div");
+        msg.className = "item-qty-msg text-danger fw-semibold";
+        msg.style.cssText = "font-size:0.72rem;margin-top:3px;";
+        msg.textContent = `Stok tidak cukup! Tersedia: ${effectiveStock}`;
+        qtyInput.parentNode.appendChild(msg);
+        return false;
+    }
+
+    const stockFinal = effectiveStock - qty;
+    if (stockFinal <= effectiveMinStock) {
+        qtyInput.style.borderColor = "#ffc107";
+        qtyInput.style.boxShadow = "0 0 0 0.2rem rgba(255,193,7,0.25)";
+        const msg = document.createElement("div");
+        msg.className = "item-qty-msg text-warning fw-semibold";
+        msg.style.cssText = "font-size:0.72rem;margin-top:3px;";
+        msg.textContent = "Stok menipis, disarankan re-stock!";
+        qtyInput.parentNode.appendChild(msg);
+    }
+
+    return true;
+}
+
+function _validateItemQtyWithEffective(container, effectiveStock) {
+    const qtyInput = container.querySelector(".item-qty");
+    if (!qtyInput) return true;
+
+    const qty = parseInt(qtyInput.value, 10) || 0;
+
+    const prodSelect = container.querySelector(".product-select");
+    const productId = prodSelect ? parseInt(prodSelect.value, 10) : null;
+    const product = productId
+        ? window.reportProductsList.find(
+              (p) => parseInt(p.id, 10) === productId,
+          )
+        : null;
+    const currentStockRaw = parseInt(container.dataset.currentStock || 0, 10);
+    const minStockRaw =
+        product && product.min_stock != null
+            ? parseInt(product.min_stock, 10)
+            : 0;
+    const effectiveMinStock =
+        minStockRaw > 0 ? minStockRaw : Math.ceil(currentStockRaw * 0.25);
+
+    const existingMsg = container.querySelector(".item-qty-msg");
+    if (existingMsg) existingMsg.remove();
     qtyInput.classList.remove("is-invalid");
     qtyInput.style.borderColor = "";
     qtyInput.style.boxShadow = "";
@@ -1082,32 +1238,37 @@ function _validateItemQty(container) {
 }
 
 function _checkFormSubmitState() {
-    const submitBtn = document.querySelector(
-        "#formCreateReport [type='submit'], #formEditReport [type='submit']",
-    );
-    if (!submitBtn) return;
+    // const submitBtn = document.querySelector(
+    //     "#formCreateReport [type='submit'], #formEditReport [type='submit']",
+    // );
+    // if (!submitBtn) return;
 
-    const rows = document.querySelectorAll("#reportItemRows .report-item-row");
-    let hasError = false;
-    rows.forEach(function (row) {
-        const _gSel = row.querySelector(".product-select");
-        if (_isGorenganProduct(_gSel ? _gSel.value : null)) return;
+    // const rows = document.querySelectorAll("#reportItemRows .report-item-row");
+    // let hasError = false;
+    // rows.forEach(function (row) {
+    //     const _gSel = row.querySelector(".product-select");
+    //     if (_isGorenganProduct(_gSel ? _gSel.value : null)) return;
 
-        const rawStock = row.dataset.currentStock;
-        if (rawStock === undefined || rawStock === "" || rawStock === null)
-            return;
-        const currentStock = parseInt(rawStock, 10);
-        if (isNaN(currentStock)) return;
-        const originalQty = parseInt(row.dataset.originalQty || 0, 10);
-        const effectiveStock = currentStock + originalQty;
-        const qtyInput = row.querySelector(".item-qty");
-        const qty = parseInt(qtyInput ? qtyInput.value : "0", 10) || 0;
-        if (qty > 0 && qty > effectiveStock) hasError = true;
-    });
+    //     const rawStock = row.dataset.currentStock;
+    //     if (rawStock === undefined || rawStock === "" || rawStock === null)
+    //         return;
+    //     const currentStock = parseInt(rawStock, 10);
+    //     if (isNaN(currentStock)) return;
 
-    submitBtn.disabled = hasError;
-    submitBtn.classList.toggle("opacity-50", hasError);
-    submitBtn.classList.toggle("pe-none", hasError);
+    //     const productId = _gSel ? parseInt(_gSel.value, 10) : null;
+    //     const originalQty = parseInt(row.dataset.originalQty || 0, 10);
+    //     const qtyOtherRows = _getQtyUsedByOtherRows(row, productId);
+    //     const effectiveStock = currentStock + originalQty - qtyOtherRows;
+
+    //     const qtyInput = row.querySelector(".item-qty");
+    //     const qty = parseInt(qtyInput ? qtyInput.value : "0", 10) || 0;
+    //     if (qty > 0 && qty > effectiveStock) hasError = true;
+    // });
+
+    // submitBtn.disabled = hasError;
+    // submitBtn.classList.toggle("opacity-50", hasError);
+    // submitBtn.classList.toggle("pe-none", hasError);
+    return;
 }
 
 function refreshReportProductOptions() {
