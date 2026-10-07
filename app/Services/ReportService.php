@@ -143,17 +143,22 @@ class ReportService
                 $product  = Products::lockForUpdate()->findOrFail($productId);
                 $oldStock = $product->current_stock;
 
-                // $stockFinal = isset($itemData['stock_final']) && $itemData['stock_final'] !== ''
-                //     ? (int) $itemData['stock_final']
-                //     : max(0, $oldStock - $quantity);
-                $stockFinal = $oldStock - $quantity;
-
                 // Look up selling_price and current_hpp from ProductHpp configuration
                 $config = ProductHpp::where('product_id', $productId)
                     ->where('selling_unit_id', $sellingUnitId)
                     ->first();
 
+
                 $isFlexible = (bool) ($config ? ($config->is_flexible_product ?? false) : false);
+
+                // $stockFinal = isset($itemData['stock_final']) && $itemData['stock_final'] !== ''
+                //     ? (int) $itemData['stock_final']
+                //     : max(0, $oldStock - $quantity);
+                $stockFinal = $oldStock - $quantity;
+
+                if ($stockFinal < 0) {
+                    throw new \Exception("Stok produk '{$product->prod_name}' melebihi stok yang tersedia. Tersedia: {$oldStock}, diminta: {$quantity}.");
+                }
 
                 if ($isFlexible) {
                     $subtotalPrice  = isset($itemData['total_sales_manual']) ? (float) $itemData['total_sales_manual'] : 0.0;
@@ -284,17 +289,21 @@ class ReportService
                 $quantity      = (int) $itemData['quantity'];
 
                 $product  = Products::lockForUpdate()->findOrFail($productId);
-                $oldStock = $product->current_stock; // sudah di-rollback, nilainya benar (stok sebelum laporan ini)
-
-                // FIX: selalu hitung stock_final dari oldStock (setelah rollback) dikurangi quantity baru.
-                // Tidak percaya nilai form karena stock_final di form bisa stale (nilai lama sebelum user mengubah qty).
-                $stockFinal = $oldStock - $quantity;
+                $oldStock = $product->current_stock;
 
                 $config = \App\Models\ProductHpp::where('product_id', $productId)
                     ->where('selling_unit_id', $sellingUnitId)
                     ->first();
 
                 $isFlexible = (bool) ($config ? ($config->is_flexible_product ?? false) : false);
+
+                // FIX: selalu hitung stock_final dari oldStock (setelah rollback) dikurangi quantity baru.
+                // Tidak percaya nilai form karena stock_final di form bisa stale (nilai lama sebelum user mengubah qty).
+                $stockFinal = $oldStock - $quantity;
+
+                if ($stockFinal < 0) {
+                    throw new \Exception("Stok produk '{$product->prod_name}' melebihi stok yang tersedia. Tersedia: {$oldStock}, diminta: {$quantity}.");
+                }
 
                 if ($isFlexible) {
                     $subtotalPrice  = isset($itemData['total_sales_manual']) ? (float) $itemData['total_sales_manual'] : 0.0;
