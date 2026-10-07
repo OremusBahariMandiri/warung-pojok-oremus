@@ -318,4 +318,29 @@ class ReportController extends Controller
             'updated' => $updated,
         ]);
     }
+
+    public function checkDate(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $date = $request->query('date');
+
+        if (!$date) {
+            return response()->json(['exists' => false, 'report_id' => null]);
+        }
+
+        // Parse tanggal — toleransi format YYYY-MM-DD atau YYYY-MM-DDTHH:mm
+        try {
+            $parsedDate = \Carbon\Carbon::parse($date)->startOfDay();
+        } catch (\Exception $e) {
+            return response()->json(['exists' => false, 'report_id' => null]);
+        }
+
+        // Cek di tabel reports kolom report_date (date only, abaikan jam)
+        $existing = Reports::whereDate('report_date', $parsedDate->toDateString())
+            ->first();
+
+        return response()->json([
+            'exists'    => $existing !== null,
+            'report_id' => $existing?->id,
+        ]);
+    }
 }

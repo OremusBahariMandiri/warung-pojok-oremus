@@ -22,6 +22,7 @@ class StoreReportRequest extends FormRequest
             'items.*.quantity'           => 'required|integer|min:1',
             'items.*.stock_final'        => 'nullable|integer',
             'items.*.selling_price'      => 'nullable|numeric|min:0',
+            'items.*.purchase_price' => 'nullable|numeric|min:0',
             'items.*.hpp_unit'           => 'nullable|numeric|min:0',
             'items.*.total_sales_manual'     => 'nullable|numeric|min:0',
             'items.*.total_hpp_manual'       => 'nullable|numeric|min:0',

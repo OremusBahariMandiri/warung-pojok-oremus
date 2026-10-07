@@ -102,6 +102,7 @@
                                 <th class="col-product-unit" style="min-width:260px;">Produk / Satuan</th>
                                 <th class="text-center col-qty" style="width:95px;">Jumlah</th>
                                 <th class="text-center col-total-sales" style="width:130px;">Total Penjualan</th>
+                                <th class="text-end col-total-hpp" style="width:150px;" id="thTotalHpp">Total HPP</th>
                                 <th class="text-center col-margin" style="width:125px;">Margin</th>
                                 <th class="text-center no-sort col-action" style="width:45px;">Aksi</th>
                             </tr>
@@ -238,6 +239,9 @@
                                         <td class="col-total-sales text-end font-monospace fw-semibold text-dark item-total-sales-cell">
                                             <span class="item-readonly-badge item-total-sales-display">Rp {{ number_format($detail->subtotal_price, 0, ',', '.') }}</span>
                                         </td>
+                                        <td class="col-total-hpp text-end font-monospace fw-semibold text-dark item-total-hpp-cell">
+                                            <span class="item-readonly-badge item-total-hpp-display">Rp {{ number_format($detail->subtotal_hpp, 0, ',', '.') }}</span>
+                                        </td>
                                         <td class="col-margin text-end font-monospace fw-bold">
                                             <span class="item-readonly-badge item-margin-display {{ $detail->margin >= 0 ? 'text-success' : 'text-danger' }}">Rp {{ number_format($detail->margin, 0, ',', '.') }}</span>
                                         </td>
@@ -253,8 +257,10 @@
                                             <input type="text" class="item-purchase-price-display" value="Rp 0" readonly tabindex="-1">
                                             <span class="item-selling-price-display">Rp {{ number_format($detail->selling_price, 0, ',', '.') }}</span>
                                             <input type="hidden" name="items[{{ $idx }}][selling_price]" class="item-selling-price" value="{{ $detail->selling_price }}">
-                                            <span class="item-hpp-display">Rp {{ number_format($detail->hpp, 0, ',', '.') }}</span>
-                                            <input type="hidden" name="items[{{ $idx }}][hpp]" class="item-hpp-price" value="{{ $detail->hpp }}">
+                                            <span class="item-hpp-display">Rp {{ number_format($detail->hpp_unit, 0, ',', '.') }}</span>
+                                            <input type="hidden" name="items[{{ $idx }}][hpp_unit]" class="item-hpp-price" value="{{ $detail->hpp_unit }}">
+                                            {{-- FIX: purchase_price dari products.unit_price melalui relasi --}}
+                                            <input type="hidden" name="items[{{ $idx }}][purchase_price]" class="item-purchase-price-hidden" value="{{ $detail->product?->unit_price ?? 0 }}">
                                             <span class="item-total-hpp-display">Rp {{ number_format($detail->subtotal_hpp, 0, ',', '.') }}</span>
                                             <input type="hidden" name="items[{{ $idx }}][total_sales_manual]" class="item-total-sales-manual" value="{{ $detail->subtotal_price }}">
                                             <input type="hidden" name="items[{{ $idx }}][total_hpp_manual]" class="item-total-hpp-manual" value="{{ $detail->subtotal_hpp }}">
@@ -263,7 +269,7 @@
                                     </tr>
                                     {{-- Expand detail row --}}
                                     <tr class="report-item-expand-row d-none" data-expand-for="{{ $idx }}">
-                                        <td colspan="6" class="p-0">
+                                        <td colspan="7" class="p-0">
                                             <div class="report-expand-details">
                                                 <div class="row g-0">
                                                     <div class="col-4 expand-cell">
@@ -301,7 +307,7 @@
                                 @endforeach
                             @else
                                 <tr id="emptyItemRow">
-                                    <td colspan="6" class="text-center py-4 text-muted small">
+                                    <td colspan="7" class="text-center py-4 text-muted small">
                                         Belum ada produk yang ditambahkan. Klik tombol "+ Tambah" di atas untuk menambahkan item penjualan.
                                     </td>
                                 </tr>
@@ -327,6 +333,7 @@
                                 <th class="col-price text-end">Harga Beli</th>
                                 <th class="col-selling-price text-end">Harga Jual</th>
                                 <th class="col-total-sales text-end">Total Penjualan</th>
+                                <th class="col-total-hpp text-end">Total HPP</th>
                                 <th class="col-hpp text-end">HPP</th>
                                 <th class="col-total-hpp text-end">Total HPP</th>
                                 <th class="col-margin text-end">Margin</th>
@@ -385,6 +392,9 @@
                                         </td>
                                         <td class="col-total-sales text-end">
                                             <span class="item-readonly-badge item-total-sales-display">Rp 0</span>
+                                        </td>
+                                        <td class="col-total-hpp text-end font-monospace fw-semibold text-dark item-total-hpp-cell" style="display:none;">
+                                            <span class="item-readonly-badge item-total-hpp-display">Rp 0</span>
                                         </td>
                                         <td class="col-hpp text-end">
                                             <span class="item-readonly-badge item-hpp-display">Rp 0</span>
