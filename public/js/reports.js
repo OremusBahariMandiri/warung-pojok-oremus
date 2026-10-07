@@ -1187,6 +1187,7 @@ function _validateItemQtyWithEffective(container, effectiveStock) {
 
     const prodSelect = container.querySelector(".product-select");
     const productId = prodSelect ? parseInt(prodSelect.value, 10) : null;
+    const isGorengan = _isGorenganProduct(productId);
     const product = productId
         ? window.reportProductsList.find(
               (p) => parseInt(p.id, 10) === productId,
@@ -1197,8 +1198,6 @@ function _validateItemQtyWithEffective(container, effectiveStock) {
         product && product.min_stock != null
             ? parseInt(product.min_stock, 10)
             : 0;
-    const effectiveMinStock =
-        minStockRaw > 0 ? minStockRaw : Math.ceil(currentStockRaw * 0.25);
 
     const existingMsg = container.querySelector(".item-qty-msg");
     if (existingMsg) existingMsg.remove();
@@ -1222,8 +1221,23 @@ function _validateItemQtyWithEffective(container, effectiveStock) {
         return false;
     }
 
-    const stockFinal = effectiveStock - qty;
-    if (stockFinal <= effectiveMinStock) {
+    let isLowStock = false;
+    if (isGorengan) {
+        const stockFinal = effectiveStock - qty;
+        const fiftyPctStock = Math.ceil(currentStockRaw * 0.5);
+        if (minStockRaw > 0) {
+            isLowStock = stockFinal <= minStockRaw;
+        } else {
+            isLowStock = qty >= fiftyPctStock;
+        }
+    } else {
+        const effectiveMinStock =
+            minStockRaw > 0 ? minStockRaw : Math.ceil(currentStockRaw * 0.25);
+        const stockFinal = effectiveStock - qty;
+        isLowStock = stockFinal <= effectiveMinStock;
+    }
+
+    if (isLowStock) {
         qtyInput.style.borderColor = "#ffc107";
         qtyInput.style.boxShadow = "0 0 0 0.2rem rgba(255,193,7,0.25)";
         const msg = document.createElement("div");
