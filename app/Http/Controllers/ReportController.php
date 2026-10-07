@@ -101,7 +101,13 @@ class ReportController extends Controller
     public function store(StoreReportRequest $request)
     {
         $userId = Auth::id() ?? 1;
-        $report = $this->reportService->createReport($request->validated(), $userId);
+        try {
+            $report = $this->reportService->createReport($request->validated(), $userId);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return back()->withErrors(['items' => $e->validator->errors()->first('items') ?: 'Stok produk tidak mencukupi, periksa kembali jumlah yang dimasukkan.'])->withInput();
+        } catch (\Exception $e) {
+            return back()->withErrors(['items' => $e->getMessage()])->withInput();
+        }
 
         if ($request->wantsJson()) {
             return response()->json([
@@ -183,7 +189,13 @@ class ReportController extends Controller
     public function update(UpdateReportRequest $request, Reports $report)
     {
         $userId = Auth::id() ?? 1;
-        $updatedReport = $this->reportService->updateReport($report, $request->validated(), $userId);
+        try {
+            $updatedReport = $this->reportService->updateReport($report, $request->validated(), $userId);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return back()->withErrors(['items' => $e->validator->errors()->first('items') ?: 'Stok produk tidak mencukupi, periksa kembali jumlah yang dimasukkan.'])->withInput();
+        } catch (\Exception $e) {
+            return back()->withErrors(['items' => $e->getMessage()])->withInput();
+        }
 
         if ($request->wantsJson()) {
             return response()->json([
