@@ -161,8 +161,20 @@ class ReportService
                 }
 
                 if ($isFlexible) {
-                    $subtotalPrice  = isset($itemData['total_sales_manual']) ? (float) $itemData['total_sales_manual'] : 0.0;
-                    $subtotalHpp    = isset($itemData['total_hpp_manual'])   ? (float) $itemData['total_hpp_manual']   : 0.0;
+                    $subtotalPrice = 0.0;
+                    foreach (['total_sales_manual', 'subtotal_price', 'sales_manual'] as $salesKey) {
+                        if (isset($itemData[$salesKey]) && (float) $itemData[$salesKey] > 0) {
+                            $subtotalPrice = (float) $itemData[$salesKey];
+                            break;
+                        }
+                    }
+                    $subtotalHpp = 0.0;
+                    foreach (['total_hpp_manual', 'subtotal_hpp', 'hpp_manual'] as $hppKey) {
+                        if (isset($itemData[$hppKey]) && (float) $itemData[$hppKey] > 0) {
+                            $subtotalHpp = (float) $itemData[$hppKey];
+                            break;
+                        }
+                    }
                     $subtotalMargin = $subtotalPrice - $subtotalHpp;
                     $sellingPrice = isset($itemData['selling_price']) && $itemData['selling_price'] !== '' && (float)$itemData['selling_price'] > 0
                         ? (float) $itemData['selling_price']
@@ -175,6 +187,30 @@ class ReportService
 
                     $product->current_stock = $stockFinal;
                     $product->save();
+
+                    // ── Update harga master produk fleksibel (createReport) ──
+                    $newPurchasePrice = isset($itemData['purchase_price']) && (float) $itemData['purchase_price'] > 0
+                        ? (float) $itemData['purchase_price'] : null;
+                    $newSellingPrice  = isset($itemData['selling_price'])  && (float) $itemData['selling_price']  > 0
+                        ? (float) $itemData['selling_price']  : null;
+                    $newHppUnit       = isset($itemData['hpp_unit'])       && (float) $itemData['hpp_unit']       > 0
+                        ? (float) $itemData['hpp_unit']       : null;
+
+                    if ($newPurchasePrice !== null) {
+                        \App\Models\Products::where('id', $productId)
+                            ->update(['unit_price' => $newPurchasePrice]);
+                    }
+                    if ($config && ($newSellingPrice !== null || $newHppUnit !== null)) {
+                        $hppUpdateData = [];
+                        if ($newSellingPrice !== null) $hppUpdateData['selling_price'] = $newSellingPrice;
+                        if ($newHppUnit       !== null) $hppUpdateData['current_hpp']   = $newHppUnit;
+                        if (!empty($hppUpdateData)) {
+                            \App\Models\ProductHpp::where('product_id', $productId)
+                                ->where('selling_unit_id', $sellingUnitId)
+                                ->update($hppUpdateData);
+                        }
+                    }
+                    // ── Akhir update harga fleksibel ──────────────────────────
                 } else {
                     $sellingPrice = isset($itemData['selling_price']) && $itemData['selling_price'] !== '' && (float)$itemData['selling_price'] > 0
                         ? (float) $itemData['selling_price']
@@ -306,8 +342,20 @@ class ReportService
                 }
 
                 if ($isFlexible) {
-                    $subtotalPrice  = isset($itemData['total_sales_manual']) ? (float) $itemData['total_sales_manual'] : 0.0;
-                    $subtotalHpp    = isset($itemData['total_hpp_manual'])   ? (float) $itemData['total_hpp_manual']   : 0.0;
+                    $subtotalPrice = 0.0;
+                    foreach (['total_sales_manual', 'subtotal_price', 'sales_manual'] as $salesKey) {
+                        if (isset($itemData[$salesKey]) && (float) $itemData[$salesKey] > 0) {
+                            $subtotalPrice = (float) $itemData[$salesKey];
+                            break;
+                        }
+                    }
+                    $subtotalHpp = 0.0;
+                    foreach (['total_hpp_manual', 'subtotal_hpp', 'hpp_manual'] as $hppKey) {
+                        if (isset($itemData[$hppKey]) && (float) $itemData[$hppKey] > 0) {
+                            $subtotalHpp = (float) $itemData[$hppKey];
+                            break;
+                        }
+                    }
                     $subtotalMargin = $subtotalPrice - $subtotalHpp;
                     $sellingPrice = isset($itemData['selling_price']) && $itemData['selling_price'] !== '' && (float)$itemData['selling_price'] > 0
                         ? (float) $itemData['selling_price']
@@ -320,6 +368,30 @@ class ReportService
 
                     $product->current_stock = $stockFinal;
                     $product->save();
+
+                    // ── Update harga master produk fleksibel (updateReport) ──
+                    $newPurchasePrice = isset($itemData['purchase_price']) && (float) $itemData['purchase_price'] > 0
+                        ? (float) $itemData['purchase_price'] : null;
+                    $newSellingPrice  = isset($itemData['selling_price'])  && (float) $itemData['selling_price']  > 0
+                        ? (float) $itemData['selling_price']  : null;
+                    $newHppUnit       = isset($itemData['hpp_unit'])       && (float) $itemData['hpp_unit']       > 0
+                        ? (float) $itemData['hpp_unit']       : null;
+
+                    if ($newPurchasePrice !== null) {
+                        \App\Models\Products::where('id', $productId)
+                            ->update(['unit_price' => $newPurchasePrice]);
+                    }
+                    if ($config && ($newSellingPrice !== null || $newHppUnit !== null)) {
+                        $hppUpdateData = [];
+                        if ($newSellingPrice !== null) $hppUpdateData['selling_price'] = $newSellingPrice;
+                        if ($newHppUnit       !== null) $hppUpdateData['current_hpp']   = $newHppUnit;
+                        if (!empty($hppUpdateData)) {
+                            \App\Models\ProductHpp::where('product_id', $productId)
+                                ->where('selling_unit_id', $sellingUnitId)
+                                ->update($hppUpdateData);
+                        }
+                    }
+                    // ── Akhir update harga fleksibel ──────────────────────────
                 } else {
                     $sellingPrice = isset($itemData['selling_price']) && $itemData['selling_price'] !== '' && (float)$itemData['selling_price'] > 0
                         ? (float) $itemData['selling_price']

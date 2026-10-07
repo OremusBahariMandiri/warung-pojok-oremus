@@ -48,8 +48,8 @@ Route::middleware(['auth', 'remember'])->group(function () {
 
     // Master Data: Users & Hak Akses
     Route::get('users/settings/{user}/profile', [UserController::class, 'show'])
-    ->name('users.show')
-    ->middleware('user.access:users,show');
+        ->name('users.show')
+        ->middleware('user.access:users,show');
     Route::get('users/settings/{user}/access', [UserAccessController::class, 'show'])
         ->name('users.access.show')
         ->middleware('user.access:users,show');
@@ -75,6 +75,8 @@ Route::middleware(['auth', 'remember'])->group(function () {
     ])->middleware('user.access:products');
 
     // Transaksi & Monitoring: Laporan Penjualan & Margin
+    Route::get('/reports/check-date', [ReportController::class, 'checkDate'])
+        ->name('reports.check_date');
     Route::get('reports/summary', [ReportController::class, 'summary'])
         ->name('reports.summary')
         ->middleware('user.access:reports,index');
@@ -91,7 +93,7 @@ Route::middleware(['auth', 'remember'])->group(function () {
         ->name('activity_logs.show')
         ->middleware('user.access:activity_logs,show');
 
-        // Salary Calculation Submission Route
+    // Salary Calculation Submission Route
     Route::post('reports/salary-calculator', [ReportController::class, 'storeSalaryCalculation'])
-    ->name('reports.salary_calculator.store');
+        ->name('reports.salary_calculator.store');
 });

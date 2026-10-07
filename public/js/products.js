@@ -16,8 +16,11 @@ $(function () {
 
     // 3. Event listener saat Harga Bahan Utama (#unit_price) diubah di Card 1
     $(document).on("input keyup change", "#unit_price", function () {
-        syncUnitPriceToManualCards();
-        calculateAllCardsHpp();
+        // Jangan sync jika mode fleksibel aktif (unit_price selalu 0)
+        if (!_isFlexibleActive()) {
+            syncUnitPriceToManualCards();
+            calculateAllCardsHpp();
+        }
     });
 
     // 4. Inisialisasi Selling Config Cards jika berada di Halaman Create / Edit
@@ -27,6 +30,207 @@ $(function () {
 });
 
 let configCardIndex = 0;
+
+/* ════════════════════════════════════════════════════════════
+   FLEXIBLE PRODUCT HELPERS
+   ════════════════════════════════════════════════════════════ */
+
+/** Cek apakah toggle produk fleksibel sedang aktif */
+function _isFlexibleActive() {
+    const cb = document.getElementById("is_flexible_product");
+    return cb ? cb.checked : false;
+}
+
+/**
+ * Terapkan atau cabut state fleksibel ke satu kartu konfigurasi satuan jual.
+ *
+ * Ketika fleksibel ON:
+ *   - Sembunyikan "Jenis HPP" & "Harga Jual"
+ *   - Sembunyikan section HPP (manual maupun calculated)
+ *   - Set current-hpp-input → 0
+ *   - Hanya "Satuan Jual" yang terlihat
+ * Ketika fleksibel OFF:
+ *   - Tampilkan kembali semua sesuai metode HPP yang dipilih
+ */
+function _applyFlexibleStateToCard(card, isFlexible) {
+    if (!card) return;
+
+    /* ── Elemen yang dikelola ── */
+    const hppMethodCol = card
+        .querySelector(".hpp-method-select")
+        ?.closest(".col-md-6");
+    const manualSection = card.querySelector(".manual-hpp-section");
+    const calcSection = card.querySelector(".calculated-hpp-section");
+    const sellingPriceTop = card.querySelector(".selling-price-top");
+    const sellingPriceBot = card.querySelector(".selling-price-bottom");
+    const calcPreview = card
+        .querySelector(".calc-preview-card")
+        ?.closest(".col-12");
+    const currentHppInput = card.querySelector(".current-hpp-input");
+
+    if (isFlexible) {
+        /* ── Sembunyikan kolom Jenis HPP ── */
+        if (hppMethodCol) hppMethodCol.classList.add("d-none");
+
+        /* ── Sembunyikan section komponen CALCULATED saja;
+               HPP Fixed (manual) tetap tampil dengan nilai 0 ── */
+        if (calcSection) calcSection.classList.add("d-none");
+        if (manualSection) manualSection.classList.remove("d-none");
+
+        /* ── Sembunyikan Harga Jual (top & bottom) ── */
+        if (sellingPriceTop) {
+            sellingPriceTop.classList.add("d-none");
+            const input = sellingPriceTop.querySelector("input");
+            if (input) {
+                input.removeAttribute("required");
+                input.setAttribute("disabled", "disabled");
+            }
+        }
+        if (sellingPriceBot) {
+            sellingPriceBot.classList.add("d-none");
+            const input = sellingPriceBot.querySelector("input");
+            if (input) {
+                input.removeAttribute("required");
+                input.setAttribute("disabled", "disabled");
+            }
+        }
+
+        /* ── Sembunyikan preview kalkulasi margin ── */
+        if (calcPreview) calcPreview.classList.add("d-none");
+
+        /* ── Set HPP fixed = 0 (unit_price sudah di-reset ke 0) ── */
+        if (currentHppInput) {
+            const unitPriceVal =
+                parseFloat(document.getElementById("unit_price")?.value) || 0;
+            currentHppInput.value =
+                unitPriceVal > 0 ? Math.round(unitPriceVal) : 0;
+        }
+
+        /* ── Visual border + badge info ── */
+        card.classList.add("border-warning");
+        if (!card.querySelector(".flexible-badge")) {
+            const badge = document.createElement("div");
+            badge.className =
+                "flexible-badge alert alert-warning py-1 px-2 mb-2 small rounded-2 d-flex align-items-center gap-2";
+            badge.innerHTML =
+                '<i class="bi bi-info-circle-fill text-warning flex-shrink-0"></i>' +
+                "<span>Mode Fleksibel — pilih satuan jual saja. Harga & HPP diisi manual saat pencatatan penjualan.</span>";
+            card.insertBefore(badge, card.firstChild);
+        }
+    } else {
+        /* ── Restore Jenis HPP ── */
+        if (hppMethodCol) hppMethodCol.classList.remove("d-none");
+
+        /* ── Restore section & harga jual sesuai metode yang dipilih ── */
+        const method =
+            card.querySelector(".hpp-method-select")?.value || "MANUAL";
+
+        if (method === "CALCULATED") {
+            if (manualSection) manualSection.classList.add("d-none");
+            if (calcSection) calcSection.classList.remove("d-none");
+            if (sellingPriceTop) {
+                sellingPriceTop.classList.add("d-none");
+                const input = sellingPriceTop.querySelector("input");
+                if (input) {
+                    input.removeAttribute("required");
+                    input.setAttribute("disabled", "disabled");
+                }
+            }
+            if (sellingPriceBot) {
+                sellingPriceBot.classList.remove("d-none");
+                const input = sellingPriceBot.querySelector("input");
+                if (input) {
+                    input.setAttribute("required", "required");
+                    input.removeAttribute("disabled");
+                }
+            }
+        } else {
+            if (manualSection) manualSection.classList.remove("d-none");
+            if (calcSection) calcSection.classList.add("d-none");
+            if (sellingPriceTop) {
+                sellingPriceTop.classList.remove("d-none");
+                const input = sellingPriceTop.querySelector("input");
+                if (input) {
+                    input.setAttribute("required", "required");
+                    input.removeAttribute("disabled");
+                }
+            }
+            if (sellingPriceBot) {
+                sellingPriceBot.classList.add("d-none");
+                const input = sellingPriceBot.querySelector("input");
+                if (input) {
+                    input.removeAttribute("required");
+                    input.setAttribute("disabled", "disabled");
+                }
+            }
+        }
+
+        /* ── Tampilkan kembali preview ── */
+        if (calcPreview) calcPreview.classList.remove("d-none");
+
+        /* ── Sync HPP dari unit_price ── */
+        const unitPriceVal =
+            parseFloat(document.getElementById("unit_price")?.value) || 0;
+        if (currentHppInput && method === "MANUAL") {
+            currentHppInput.value =
+                unitPriceVal > 0 ? Math.round(unitPriceVal) : 0;
+        }
+
+        /* ── Hapus badge & border ── */
+        card.classList.remove("border-warning");
+        const badge = card.querySelector(".flexible-badge");
+        if (badge) badge.remove();
+    }
+
+    calculateCardTotalHpp(card);
+}
+
+/**
+ * Handle toggle Produk Fleksibel
+ * ON  : sembunyikan Jenis HPP, Harga Jual, HPP Fixed; set unit_price = 0; only Satuan Jual visible
+ * OFF : restore semua tampilan sesuai metode HPP
+ */
+function onFlexibleProductToggle(checkbox) {
+    const isFlexible = checkbox.checked;
+
+    /* ── Alert info di atas container ── */
+    const alertEl = document.getElementById("flexibleProductAlert");
+    if (alertEl) {
+        alertEl.style.setProperty(
+            "display",
+            isFlexible ? "flex" : "none",
+            "important",
+        );
+    }
+
+    /* ── Set Harga Bahan Utama = 0 saat fleksibel aktif ── */
+    const unitPriceInput = document.getElementById("unit_price");
+    if (unitPriceInput) {
+        if (isFlexible) {
+            unitPriceInput.value = 0;
+            unitPriceInput.setAttribute("readonly", "readonly");
+            unitPriceInput.classList.add("bg-light", "text-muted");
+        } else {
+            unitPriceInput.removeAttribute("readonly");
+            unitPriceInput.classList.remove("bg-light", "text-muted");
+        }
+    }
+
+    /* ── Terapkan state ke seluruh kartu ── */
+    document.querySelectorAll(".selling-config-card").forEach((card) => {
+        _applyFlexibleStateToCard(card, isFlexible);
+    });
+
+    /* ── Jika OFF, sync ulang unit_price ke kartu MANUAL ── */
+    if (!isFlexible) {
+        syncUnitPriceToManualCards();
+        calculateAllCardsHpp();
+    }
+}
+
+/* ════════════════════════════════════════════════════════════
+   INIT SELLING CONFIGS
+   ════════════════════════════════════════════════════════════ */
 
 /**
  * Inisialisasi kartu-kartu Satuan Jual (Selling Config Cards) pada halaman Form
@@ -46,10 +250,23 @@ function initSellingConfigs() {
         addSellingConfigCard();
     }
 
-    // Sync awal harga bahan utama ke kartu ber-metode MANUAL
     syncUnitPriceToManualCards();
     calculateAllCardsHpp();
+
+    /* ── Terapkan state fleksibel jika toggle sudah ON (misalnya halaman edit) ── */
+    const flexCheckbox = document.getElementById("is_flexible_product");
+    if (flexCheckbox && flexCheckbox.checked) {
+        document.querySelectorAll(".selling-config-card").forEach((card) => {
+            _applyFlexibleStateToCard(card, true);
+        });
+        const alertEl = document.getElementById("flexibleProductAlert");
+        if (alertEl) alertEl.style.setProperty("display", "flex", "important");
+    }
 }
+
+/* ════════════════════════════════════════════════════════════
+   ADD SELLING CONFIG CARD
+   ════════════════════════════════════════════════════════════ */
 
 /**
  * Tambah Kartu Konfigurasi Satuan Jual Baru (Card Repeater)
@@ -91,7 +308,7 @@ function addSellingConfigCard(configData = null) {
         </div>
 
         <div class="row g-3">
-            <!-- Satuan Jual -->
+            <!-- Satuan Jual — selalu tampil -->
             <div class="col-md-6">
                 <label class="form-label small fw-semibold text-dark">Satuan Jual <span class="text-danger">*</span></label>
                 <select name="selling_configs[${cardIdx}][selling_unit_id]" class="form-select select2-unit rounded-3 selling-unit-select" required>
@@ -99,16 +316,16 @@ function addSellingConfigCard(configData = null) {
                 </select>
             </div>
 
-            <!-- Metode Perhitungan HPP -->
+            <!-- Jenis HPP — disembunyikan saat mode fleksibel -->
             <div class="col-md-6">
                 <label class="form-label small fw-semibold text-dark">Jenis HPP <span class="text-danger">*</span></label>
                 <select name="selling_configs[${cardIdx}][hpp_method]" class="form-select rounded-3 hpp-method-select" onchange="onCardHppMethodChange(this)">
-                    <option value="MANUAL" ${hppMethod === "MANUAL" ? "selected" : ""}>Manual (Fixed Cost / dari Bahan Utama)</option>
+                    <option value="MANUAL"     ${hppMethod === "MANUAL" ? "selected" : ""}>Manual (Fixed Cost / dari Bahan Utama)</option>
                     <option value="CALCULATED" ${hppMethod === "CALCULATED" ? "selected" : ""}>Otomatis (Calculated / Plus Komponen)</option>
                 </select>
             </div>
 
-            <!-- Section: Komposisi HPP Tambahan (CALCULATED) -->
+            <!-- Rincian Komponen HPP (CALCULATED) — disembunyikan saat fleksibel -->
             <div class="col-12 calculated-hpp-section ${hppMethod === "CALCULATED" ? "" : "d-none"}">
                 <div class="p-3 bg-light rounded-3 border">
                     <div class="d-flex align-items-center justify-content-between mb-2">
@@ -117,7 +334,6 @@ function addSellingConfigCard(configData = null) {
                             <i class="bi bi-plus-lg"></i> Tambah Komponen
                         </button>
                     </div>
-
                     <div class="table-responsive mb-2">
                         <table class="table table-sm table-borderless align-middle mb-0 hpp-components-table">
                             <thead class="table-light rounded-2">
@@ -127,12 +343,9 @@ function addSellingConfigCard(configData = null) {
                                     <th style="width: 40px;"></th>
                                 </tr>
                             </thead>
-                            <tbody class="hpp-component-rows">
-                                <!-- Dynamic Component Rows -->
-                            </tbody>
+                            <tbody class="hpp-component-rows"></tbody>
                         </table>
                     </div>
-
                     <div class="d-flex align-items-center justify-content-between p-2 bg-white rounded-2 border">
                         <span class="small text-muted">Total Biaya HPP Komponen Tambahan:</span>
                         <span class="fw-bold font-monospace text-dark display-component-hpp">Rp 0</span>
@@ -140,7 +353,7 @@ function addSellingConfigCard(configData = null) {
                 </div>
             </div>
 
-            <!-- Section: Input HPP Fixed Readonly (MANUAL) -->
+            <!-- HPP Fixed Readonly (MANUAL) — disembunyikan saat fleksibel -->
             <div class="col-md-6 manual-hpp-section ${hppMethod === "MANUAL" ? "" : "d-none"}">
                 <label class="form-label small fw-semibold text-dark">HPP Fixed (Otomatis dari Bahan Utama)</label>
                 <div class="input-group">
@@ -150,7 +363,7 @@ function addSellingConfigCard(configData = null) {
                 <div class="form-text fs-xs text-muted">Nilai HPP diambil langsung dari Harga Bahan Utama.</div>
             </div>
 
-            <!-- Harga Jual Produk -->
+            <!-- Harga Jual (MANUAL, posisi atas) — disembunyikan saat fleksibel -->
             <div class="col-md-6 selling-price-top ${hppMethod === "CALCULATED" ? "d-none" : ""}">
                 <label class="form-label small fw-semibold text-dark">Harga Jual Produk (Rp) <span class="text-danger">*</span></label>
                 <div class="input-group">
@@ -159,7 +372,7 @@ function addSellingConfigCard(configData = null) {
                 </div>
             </div>
 
-            <!-- Live Margin & Profit Display Card -->
+            <!-- Preview Margin & Laba — disembunyikan saat fleksibel -->
             <div class="col-12">
                 <div class="calc-preview-card text-center border rounded-3 p-3 bg-light">
                     <div class="row g-2 align-items-center">
@@ -177,7 +390,8 @@ function addSellingConfigCard(configData = null) {
                     </div>
                 </div>
             </div>
-            <!-- Harga Jual - posisi BAWAH (full width, untuk CALCULATED) -->
+
+            <!-- Harga Jual (CALCULATED, posisi bawah) — disembunyikan saat fleksibel -->
             <div class="col-12 selling-price-bottom ${hppMethod === "CALCULATED" ? "" : "d-none"}">
                 <label class="form-label small fw-semibold text-dark">Harga Jual Produk (Rp) <span class="text-danger">*</span></label>
                 <div class="input-group">
@@ -190,10 +404,10 @@ function addSellingConfigCard(configData = null) {
 
     container.appendChild(card);
 
-    // Inisialisasi Select2 untuk dropdown di dalam card baru
+    // Inisialisasi Select2
     initSelect2Elements(card);
 
-    // Render komponen HPP lama jika ada (untuk CALCULATED)
+    // Render komponen HPP lama jika ada (CALCULATED)
     if (
         configData &&
         Array.isArray(configData.components) &&
@@ -209,11 +423,17 @@ function addSellingConfigCard(configData = null) {
 
     updateCardLabelsAndButtons();
     calculateCardTotalHpp(card);
+
+    /* ── Terapkan state fleksibel ke kartu baru jika toggle sedang ON ── */
+    if (_isFlexibleActive()) {
+        _applyFlexibleStateToCard(card, true);
+    }
 }
 
-/**
- * Hapus Kartu Konfigurasi Satuan Jual
- */
+/* ════════════════════════════════════════════════════════════
+   REMOVE / UPDATE CARDS
+   ════════════════════════════════════════════════════════════ */
+
 function removeSellingConfigCard(btn) {
     const card = btn.closest(".selling-config-card");
     const container = document.getElementById("sellingConfigsContainer");
@@ -229,9 +449,6 @@ function removeSellingConfigCard(btn) {
     updateCardLabelsAndButtons();
 }
 
-/**
- * Update Nomor Urut & Tombol Hapus pada Kartu
- */
 function updateCardLabelsAndButtons() {
     const cards = document.querySelectorAll(".selling-config-card");
     cards.forEach((card, idx) => {
@@ -239,7 +456,6 @@ function updateCardLabelsAndButtons() {
         if (label) {
             label.innerHTML = `<i class="bi bi-tag-fill text-success me-1"></i> Konfigurasi Satuan Jual #${idx + 1}`;
         }
-
         const deleteBtn = card.querySelector(".btn-remove-card");
         if (deleteBtn) {
             deleteBtn.style.display =
@@ -248,12 +464,16 @@ function updateCardLabelsAndButtons() {
     });
 }
 
-/**
- * Handle perubahan Metode Perhitungan HPP pada Kartu
- */
+/* ════════════════════════════════════════════════════════════
+   HPP METHOD CHANGE
+   ════════════════════════════════════════════════════════════ */
+
 function onCardHppMethodChange(selectEl) {
     const card = selectEl.closest(".selling-config-card");
     if (!card) return;
+
+    // Jangan proses jika mode fleksibel aktif
+    if (_isFlexibleActive()) return;
 
     const method = selectEl.value;
     const calcSection = card.querySelector(".calculated-hpp-section");
@@ -273,7 +493,6 @@ function onCardHppMethodChange(selectEl) {
         if (calcSection) calcSection.classList.add("d-none");
         if (manualSection) manualSection.classList.remove("d-none");
 
-        // Sync harga bahan utama ke HPP fixed
         const unitPriceVal =
             parseFloat(document.getElementById("unit_price")?.value) || 0;
         const currentHppInput = card.querySelector(".current-hpp-input");
@@ -284,7 +503,7 @@ function onCardHppMethodChange(selectEl) {
     }
 
     const sellingPriceTop = card.querySelector(".selling-price-top");
-    const sellingPriceBottom = card.querySelector(".selling-price-bottom");
+    const sellingPriceBot = card.querySelector(".selling-price-bottom");
 
     if (method === "CALCULATED") {
         if (sellingPriceTop) {
@@ -294,14 +513,12 @@ function onCardHppMethodChange(selectEl) {
                 .querySelector("input")
                 .setAttribute("disabled", "disabled");
         }
-        if (sellingPriceBottom) {
-            sellingPriceBottom.classList.remove("d-none");
-            sellingPriceBottom
+        if (sellingPriceBot) {
+            sellingPriceBot.classList.remove("d-none");
+            sellingPriceBot
                 .querySelector("input")
                 .setAttribute("required", "required");
-            sellingPriceBottom
-                .querySelector("input")
-                .removeAttribute("disabled");
+            sellingPriceBot.querySelector("input").removeAttribute("disabled");
         }
     } else {
         if (sellingPriceTop) {
@@ -311,12 +528,10 @@ function onCardHppMethodChange(selectEl) {
                 .setAttribute("required", "required");
             sellingPriceTop.querySelector("input").removeAttribute("disabled");
         }
-        if (sellingPriceBottom) {
-            sellingPriceBottom.classList.add("d-none");
-            sellingPriceBottom
-                .querySelector("input")
-                .removeAttribute("required");
-            sellingPriceBottom
+        if (sellingPriceBot) {
+            sellingPriceBot.classList.add("d-none");
+            sellingPriceBot.querySelector("input").removeAttribute("required");
+            sellingPriceBot
                 .querySelector("input")
                 .setAttribute("disabled", "disabled");
         }
@@ -325,9 +540,10 @@ function onCardHppMethodChange(selectEl) {
     calculateCardTotalHpp(card);
 }
 
-/**
- * Tambah Baris Komponen HPP ke Kartu
- */
+/* ════════════════════════════════════════════════════════════
+   HPP COMPONENT ROWS
+   ════════════════════════════════════════════════════════════ */
+
 let componentRowGlobalIndex = 100;
 
 function addHppComponentRowToCard(btnOrElement, compData = null) {
@@ -377,9 +593,6 @@ function addHppComponentRowToCard(btnOrElement, compData = null) {
     calculateCardTotalHpp(card);
 }
 
-/**
- * Hapus Baris Komponen HPP dari Kartu
- */
 function removeHppComponentRowFromCard(btn) {
     const card = btn.closest(".selling-config-card");
     const row = btn.closest("tr");
@@ -387,14 +600,9 @@ function removeHppComponentRowFromCard(btn) {
         $(row).find(".select2-hpp").select2("destroy");
         row.remove();
     }
-    if (card) {
-        calculateCardTotalHpp(card);
-    }
+    if (card) calculateCardTotalHpp(card);
 }
 
-/**
- * Auto-fill biaya komponen saat komponen HPP dipilih
- */
 function onCardComponentSelectChange(selectEl) {
     const selectedOption = selectEl.options[selectEl.selectedIndex];
     const defaultCost = selectedOption
@@ -410,20 +618,20 @@ function onCardComponentSelectChange(selectEl) {
     }
 
     const card = selectEl.closest(".selling-config-card");
-    if (card) {
-        calculateCardTotalHpp(card);
-    }
+    if (card) calculateCardTotalHpp(card);
 }
 
-/**
- * Sync Harga Bahan Utama dari Card 1 ke seluruh input HPP Fixed (Metode MANUAL)
- */
+/* ════════════════════════════════════════════════════════════
+   SYNC & CALCULATE HPP
+   ════════════════════════════════════════════════════════════ */
+
 function syncUnitPriceToManualCards() {
+    // Jangan sync jika mode fleksibel aktif
+    if (_isFlexibleActive()) return;
+
     const unitPriceVal =
         parseFloat(document.getElementById("unit_price")?.value) || 0;
-    const cards = document.querySelectorAll(".selling-config-card");
-
-    cards.forEach((card) => {
+    document.querySelectorAll(".selling-config-card").forEach((card) => {
         const methodSelect = card.querySelector(".hpp-method-select");
         if (methodSelect && methodSelect.value === "MANUAL") {
             const currentHppInput = card.querySelector(".current-hpp-input");
@@ -435,21 +643,25 @@ function syncUnitPriceToManualCards() {
     });
 }
 
-/**
- * Hitung Ulang Kalkulasi Total HPP, Laba, dan Margin pada Semua Kartu
- */
 function calculateAllCardsHpp() {
-    const cards = document.querySelectorAll(".selling-config-card");
-    cards.forEach((card) => {
+    document.querySelectorAll(".selling-config-card").forEach((card) => {
         calculateCardTotalHpp(card);
     });
 }
 
-/**
- * Hitung Kalkulasi Total HPP, Laba, dan Margin pada Satu Kartu
- */
 function calculateCardTotalHpp(card) {
     if (!card) return;
+
+    // Jika mode fleksibel aktif, tampilkan Rp 0 di semua display (tidak perlu hitung)
+    if (_isFlexibleActive()) {
+        const displayTotalHpp = card.querySelector(".display-total-hpp");
+        const marginPercentEl = card.querySelector(".display-margin-percent");
+        const profitAmountEl = card.querySelector(".display-profit-amount");
+        if (displayTotalHpp) displayTotalHpp.textContent = "Rp 0";
+        if (marginPercentEl) marginPercentEl.textContent = "0%";
+        if (profitAmountEl) profitAmountEl.textContent = "Rp 0";
+        return;
+    }
 
     const unitPriceVal =
         parseFloat(document.getElementById("unit_price")?.value) || 0;
@@ -460,17 +672,14 @@ function calculateCardTotalHpp(card) {
     let componentsSum = 0;
 
     if (method === "CALCULATED") {
-        const costInputs = card.querySelectorAll(".component-cost");
-        costInputs.forEach((input) => {
+        card.querySelectorAll(".component-cost").forEach((input) => {
             componentsSum += parseFloat(input.value) || 0;
         });
-
         const displayCompHpp = card.querySelector(".display-component-hpp");
         if (displayCompHpp) {
             displayCompHpp.textContent =
                 "Rp " + Math.round(componentsSum).toLocaleString("id-ID");
         }
-
         totalHpp = unitPriceVal + componentsSum;
     } else {
         totalHpp = unitPriceVal;
@@ -503,19 +712,13 @@ function calculateCardTotalHpp(card) {
     const marginPercentEl = card.querySelector(".display-margin-percent");
     if (marginPercentEl) {
         marginPercentEl.textContent = marginPercent + "%";
-        if (profit < 0 || marginPercent <= 0) {
-            marginPercentEl.className =
-                "h5 fw-bold text-danger mb-0 display-margin-percent";
-        } else if (parseFloat(marginPercent) >= 40) {
-            marginPercentEl.className =
-                "h5 fw-bold text-success mb-0 display-margin-percent";
-        } else if (parseFloat(marginPercent) >= 20) {
-            marginPercentEl.className =
-                "h5 fw-bold text-warning mb-0 display-margin-percent";
-        } else {
-            marginPercentEl.className =
-                "h5 fw-bold text-danger mb-0 display-margin-percent";
-        }
+        const pct = parseFloat(marginPercent);
+        marginPercentEl.className =
+            pct >= 40
+                ? "h5 fw-bold text-success mb-0 display-margin-percent"
+                : pct >= 20
+                  ? "h5 fw-bold text-warning mb-0 display-margin-percent"
+                  : "h5 fw-bold text-danger mb-0 display-margin-percent";
     }
 
     const profitAmountEl = card.querySelector(".display-profit-amount");
@@ -525,9 +728,10 @@ function calculateCardTotalHpp(card) {
     }
 }
 
-/**
- * Inisialisasi Select2 dengan theme Bootstrap 5
- */
+/* ════════════════════════════════════════════════════════════
+   SELECT2 INIT
+   ════════════════════════════════════════════════════════════ */
+
 function initSelect2Elements(context) {
     const $ctx = context ? $(context) : $(document);
 
@@ -554,9 +758,10 @@ function initSelect2Elements(context) {
     });
 }
 
-/**
- * Image Thumbnail Preview
- */
+/* ════════════════════════════════════════════════════════════
+   THUMBNAIL PREVIEW
+   ════════════════════════════════════════════════════════════ */
+
 function previewThumbnail(input) {
     if (input.files && input.files[0]) {
         const reader = new FileReader();
@@ -566,7 +771,6 @@ function previewThumbnail(input) {
             const containerEl = document.getElementById(
                 "thumbnailPreviewContainer",
             );
-
             if (previewEl) previewEl.src = e.target.result;
             if (nameEl) nameEl.textContent = input.files[0].name;
             if (containerEl) containerEl.classList.remove("d-none");
@@ -575,25 +779,23 @@ function previewThumbnail(input) {
     }
 }
 
-/**
- * Modal Delete Product
- */
+/* ════════════════════════════════════════════════════════════
+   MODAL DELETE PRODUCT
+   ════════════════════════════════════════════════════════════ */
+
 function openDeleteModal(id, name) {
     const nameEl = document.getElementById("deleteProductName");
     const formEl = document.getElementById("deleteProductForm");
     if (nameEl) nameEl.textContent = name;
     if (formEl) formEl.action = "/products/" + id;
-
     const modalEl = document.getElementById("modalDeleteProduct");
-    if (modalEl) {
-        const modal = new bootstrap.Modal(modalEl);
-        modal.show();
-    }
+    if (modalEl) new bootstrap.Modal(modalEl).show();
 }
 
-/**
- * Inisialisasi DataTables Products
- */
+/* ════════════════════════════════════════════════════════════
+   DATATABLES PRODUCTS
+   ════════════════════════════════════════════════════════════ */
+
 function initProductsDataTable() {
     const isMobile = window.innerWidth < 768;
 
@@ -611,17 +813,17 @@ function initProductsDataTable() {
 
         columnDefs: [
             { targets: "no-sort", orderable: false },
-            { targets: 0, responsivePriority: 1 }, // No
-            { targets: 1, responsivePriority: 5 }, // Kode Produk
-            { targets: 2, responsivePriority: 2 }, // Nama Produk
-            { targets: 3, responsivePriority: 6 }, // Satuan
-            { targets: 4, responsivePriority: 3 }, // Harga Jual
-            { targets: 5, responsivePriority: 4 }, // HPP Total
-            { targets: 6, responsivePriority: 4 }, // Margin %
-            { targets: 7, responsivePriority: 7 }, // Stok
-            { targets: 8, responsivePriority: 11 }, // Metode HPP
-            { targets: 9, responsivePriority: 12 }, // Gambar
-            { targets: 10, responsivePriority: 1 }, // Aksi
+            { targets: 0, responsivePriority: 1 },
+            { targets: 1, responsivePriority: 5 },
+            { targets: 2, responsivePriority: 2 },
+            { targets: 3, responsivePriority: 6 },
+            { targets: 4, responsivePriority: 3 },
+            { targets: 5, responsivePriority: 4 },
+            { targets: 6, responsivePriority: 4 },
+            { targets: 7, responsivePriority: 7 },
+            { targets: 8, responsivePriority: 11 },
+            { targets: 9, responsivePriority: 12 },
+            { targets: 10, responsivePriority: 1 },
         ],
 
         scrollX: false,
@@ -634,12 +836,7 @@ function initProductsDataTable() {
             info: "Menampilkan _START_–_END_ dari _TOTAL_ data",
             infoEmpty: "Tidak ada data",
             infoFiltered: "(difilter dari _MAX_ total data)",
-            paginate: {
-                first: "«",
-                previous: "‹",
-                next: "›",
-                last: "»",
-            },
+            paginate: { first: "«", previous: "‹", next: "›", last: "»" },
         },
         pagingType: "full_numbers",
         dom: '<"table-responsive-wrapper"t><"d-flex flex-column flex-sm-row align-items-center justify-content-between p-3 gap-2 bg-white"ip>',
@@ -650,8 +847,7 @@ function initProductsDataTable() {
     $(window).on("resize", function () {
         clearTimeout(resizeTimer);
         resizeTimer = setTimeout(function () {
-            const nowMobile = window.innerWidth < 768;
-            if (nowMobile !== isMobile) {
+            if (window.innerWidth < 768 !== isMobile) {
                 dataTable.destroy();
                 initProductsDataTable();
             }
@@ -662,51 +858,3 @@ function initProductsDataTable() {
         dataTable.search(this.value).draw();
     });
 }
-
-/**
- * Handle toggle Produk Fleksibel
- * Jika aktif: seluruh selling config card diberi visual "referensi saja"
- * Jika nonaktif: kembali normal
- */
-function onFlexibleProductToggle(checkbox) {
-    const isFlexible = checkbox.checked;
-    const alert = document.getElementById("flexibleProductAlert");
-
-    // Tampilkan/sembunyikan alert info
-    if (alert) {
-        alert.style.setProperty(
-            "display",
-            isFlexible ? "flex" : "none",
-            "important",
-        );
-    }
-
-    // Beri visual feedback ke semua selling config card
-    const cards = document.querySelectorAll(".selling-config-card");
-    cards.forEach((card) => {
-        if (isFlexible) {
-            card.classList.add("border-warning");
-            // Tambah badge "Referensi Saja" jika belum ada
-            if (!card.querySelector(".flexible-badge")) {
-                const badge = document.createElement("div");
-                badge.className =
-                    "flexible-badge alert alert-warning py-1 px-2 mb-2 small rounded-2";
-                badge.innerHTML =
-                    '<i class="bi bi-info-circle me-1"></i> Data di bawah hanya referensi — tidak mempengaruhi kalkulasi penjualan.';
-                card.insertBefore(badge, card.firstChild);
-            }
-        } else {
-            card.classList.remove("border-warning");
-            const badge = card.querySelector(".flexible-badge");
-            if (badge) badge.remove();
-        }
-    });
-}
-
-// Jalankan saat halaman load untuk handle kondisi edit (jika sudah checked dari DB)
-$(function () {
-    const flexCheckbox = document.getElementById("is_flexible_product");
-    if (flexCheckbox && flexCheckbox.checked) {
-        onFlexibleProductToggle(flexCheckbox);
-    }
-});

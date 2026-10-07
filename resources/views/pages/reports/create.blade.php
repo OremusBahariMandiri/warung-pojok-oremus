@@ -20,8 +20,17 @@
 
 @php
     $productsList = $products ?? collect();
-    $unitsList = $units ?? collect();
-    $oldItems = old('items', []);
+    $unitsList    = $units ?? collect();
+    $oldItems     = old('items', []);
+
+    /*
+     * Tanggal asal dari query param ?date=YYYY-MM-DDTHH:mm (dikirim modal date picker)
+     * Prioritas: old() dulu (jika validation error redirect balik), lalu query param, lalu now()
+     */
+    $dateFromQuery = request('date');
+    $defaultDate   = old('report_date',
+                        $dateFromQuery ?: now()->format('Y-m-d\TH:i')
+                    );
 @endphp
 
 <!-- Header Back Bar -->
@@ -49,17 +58,48 @@
 <form action="{{ route('reports.store') }}" method="POST" id="formCreateReport">
     @csrf
 
+    {{-- Simpan tanggal asli dari modal (tanpa waktu) sebagai hidden field
+         agar redirect balik saat validation error tetap membawa tanggal yang dipilih --}}
+    <input type="hidden" name="_date_from_modal" value="{{ $dateFromQuery }}">
+
     <div class="row g-4">
         <!-- Section 1: Informasi Laporan -->
         <div class="col-lg-12">
             <div class="card-box bg-white border rounded-3 p-4 mb-3">
                 <div class="row g-3">
                     <div class="col-md-12">
-                        <label for="report_date" class="form-label small fw-semibold text-dark">Tanggal Penjualan <span class="text-danger">*</span></label>
-                        <input type="datetime-local" class="form-control rounded-2 @error('report_date') is-invalid @enderror"
-                            id="report_date" name="report_date" value="{{ old('report_date', now()->format('Y-m-d\TH:i')) }}" required>
+                        <label for="report_date" class="form-label small fw-semibold text-dark">
+                            Tanggal Penjualan <span class="text-danger">*</span>
+                        </label>
+
+                        {{-- ── Readonly: nilai berasal dari modal date picker ──
+                             Input datetime-local dibuat readonly agar user tidak bisa mengubah
+                             tanggal yang sudah divalidasi modal. Disertai hidden input
+                             agar nilai tetap terkirim ke server. --}}
+                        <div class="position-relative">
+                            <input type="datetime-local"
+                                   class="form-control rounded-2 bg-light @error('report_date') is-invalid @enderror"
+                                   id="report_date_display"
+                                   value="{{ $defaultDate }}"
+                                   readonly
+                                   tabindex="-1"
+                                   style="pointer-events:none; cursor:default;">
+                            <input type="hidden"
+                                   name="report_date"
+                                   id="report_date"
+                                   value="{{ $defaultDate }}">
+                            <span class="position-absolute top-50 end-0 translate-middle-y me-3 text-muted"
+                                  style="pointer-events:none;">
+                                <i class="bi bi-lock-fill" style="font-size:.8rem;" title="Tanggal dikunci dari pilihan sebelumnya"></i>
+                            </span>
+                        </div>
+                        <div class="form-text text-muted" style="font-size:.75rem;">
+                            <i class="bi bi-info-circle me-1"></i>
+                            Tanggal dikunci sesuai pilihan di langkah sebelumnya.
+                            Untuk mengubah tanggal, <a href="{{ route('reports.index') }}" class="text-decoration-none">kembali</a> dan pilih ulang.
+                        </div>
                         @error('report_date')
-                            <div class="invalid-feedback">{{ $message }}</div>
+                            <div class="invalid-feedback d-block">{{ $message }}</div>
                         @enderror
                     </div>
                     <div class="col-md-12">
@@ -99,6 +139,7 @@
                                 <th class="col-product-unit" style="min-width:260px;">Produk / Satuan</th>
                                 <th class="text-center col-qty" style="width:95px;">Jumlah</th>
                                 <th class="text-center col-total-sales" style="width:130px;">Total Penjualan</th>
+                                <th class="text-end col-total-hpp" style="width:150px;" id="thTotalHpp">Total HPP</th>
                                 <th class="text-center col-margin" style="width:125px;">Margin</th>
                                 <th class="text-center no-sort col-action" style="width:45px;">Aksi</th>
                             </tr>
@@ -109,10 +150,10 @@
                                     @php
                                         $selectedUnitId = $item['selling_unit_id'] ?? null;
                                         $selectedProdId = $item['product_id'] ?? null;
-                                        $qtyVal = isset($item['quantity']) && $item['quantity'] !== '' ? $item['quantity'] : '';
-                                        $stockFinalVal = isset($item['stock_final']) && $item['stock_final'] !== '' ? $item['stock_final'] : '';
+                                        $qtyVal         = isset($item['quantity'])    && $item['quantity']    !== '' ? $item['quantity']    : '';
+                                        $stockFinalVal  = isset($item['stock_final']) && $item['stock_final'] !== '' ? $item['stock_final'] : '';
                                         $sellingPriceVal = $item['selling_price'] ?? 0;
-                                        $hppVal = $item['hpp'] ?? 0;
+                                        $hppVal          = $item['hpp'] ?? 0;
                                     @endphp
                                     {{-- Main row --}}
                                     <tr class="report-item-row align-middle">
@@ -138,11 +179,14 @@
                                                 @endforeach
                                             </select>
                                         </td>
-                                        <td class="col-qty">
-                                            <input type="number" name="items[{{ $idx }}][quantity]" class="form-control form-control-sm font-monospace text-center rounded-2 item-qty" value="{{ $qtyVal }}" min="1" placeholder="" oninput="onItemQtyOrStockFinalChange(this)" required>
+                                        <td class="col-qty item-qty-cell">
+                                            <input type="number" name="items[{{ $idx }}][quantity]" class="form-control form-control-sm font-monospace text-center rounded-2 item-qty" value="{{ $qtyVal }}" min="1" oninput="onItemQtyOrStockFinalChange(this)" required>
                                         </td>
                                         <td class="col-total-sales text-end font-monospace fw-semibold text-dark item-total-sales-cell">
                                             <span class="item-readonly-badge item-total-sales-display">Rp 0</span>
+                                        </td>
+                                        <td class="col-total-hpp text-end font-monospace fw-semibold text-dark item-total-hpp-cell">
+                                            <span class="item-readonly-badge item-total-hpp-display">Rp 0</span>
                                         </td>
                                         <td class="col-margin text-end font-monospace fw-bold">
                                             <span class="item-readonly-badge item-margin-display text-success">Rp 0</span>
@@ -169,7 +213,7 @@
                                     </tr>
                                     {{-- Expand detail row --}}
                                     <tr class="report-item-expand-row d-none" data-expand-for="{{ $idx }}">
-                                        <td colspan="6" class="p-0">
+                                        <td colspan="7" class="p-0">
                                             <div class="report-expand-details">
                                                 <div class="row g-0">
                                                     <div class="col-4 expand-cell">
@@ -207,7 +251,7 @@
                                 @endforeach
                             @else
                                 <tr id="emptyItemRow">
-                                    <td colspan="6" class="text-center py-4 text-muted small">
+                                    <td colspan="7" class="text-center py-4 text-muted small">
                                         Belum ada produk yang ditambahkan. Klik tombol "+ Tambah" di atas untuk menambahkan item penjualan.
                                     </td>
                                 </tr>
@@ -217,9 +261,7 @@
                 </div>
 
                 {{-- ══════════════════════════════════════════════════════════════
-                     MOBILE TABLE — 12-col horizontal scroll (≤767px)
-                     Kolom Total HPP dihapus dari mobile table header
-                     Input tanpa attribute name — form submit tetap dari desktop table
+                     MOBILE TABLE — 13-col horizontal scroll (≤767px)
                      ══════════════════════════════════════════════════════════════ --}}
                 <div class="reports-create-table-mobile-wrap">
                     <table class="table table-bordered align-middle mb-0" id="reportItemsTableMobile">
@@ -234,8 +276,8 @@
                                 <th class="col-price text-end">Harga Beli</th>
                                 <th class="col-selling-price text-end">Harga Jual</th>
                                 <th class="col-total-sales text-end">Total Penjualan</th>
+                                <th class="col-total-hpp text-end">TOTAL HPP</th>
                                 <th class="col-hpp text-end">HPP</th>
-                                <th class="col-total-hpp text-end">Total HPP</th>
                                 <th class="col-margin text-end">Margin</th>
                                 <th class="col-action text-center no-sort">Aksi</th>
                             </tr>
@@ -246,10 +288,10 @@
                                     @php
                                         $selectedUnitId = $item['selling_unit_id'] ?? null;
                                         $selectedProdId = $item['product_id'] ?? null;
-                                        $qtyVal = isset($item['quantity']) && $item['quantity'] !== '' ? $item['quantity'] : '';
-                                        $stockFinalVal = isset($item['stock_final']) && $item['stock_final'] !== '' ? $item['stock_final'] : '';
+                                        $qtyVal         = isset($item['quantity'])    && $item['quantity']    !== '' ? $item['quantity']    : '';
+                                        $stockFinalVal  = isset($item['stock_final']) && $item['stock_final'] !== '' ? $item['stock_final'] : '';
                                     @endphp
-                                    {{-- Mobile mirror row — NO name attributes (tidak disubmit) --}}
+                                    {{-- Mobile mirror row — NO name attributes --}}
                                     <tr class="report-item-row-mobile align-middle" data-mobile-idx="{{ $idx }}">
                                         <td class="col-no text-center text-muted fw-medium small">
                                             <span class="row-no-num">{{ $loop->iteration }}</span>
@@ -284,24 +326,12 @@
                                         <td class="col-stock-final">
                                             <input type="number" class="form-control form-control-sm font-monospace text-center rounded-2 item-stock-final bg-light text-secondary" value="{{ $stockFinalVal }}" readonly tabindex="-1">
                                         </td>
-                                        <td class="col-price text-end">
-                                            <span class="item-readonly-badge item-purchase-price-display">Rp 0</span>
-                                        </td>
-                                        <td class="col-selling-price text-end">
-                                            <span class="item-readonly-badge item-selling-price-display">Rp 0</span>
-                                        </td>
-                                        <td class="col-total-sales text-end">
-                                            <span class="item-readonly-badge item-total-sales-display">Rp 0</span>
-                                        </td>
-                                        <td class="col-hpp text-end">
-                                            <span class="item-readonly-badge item-hpp-display">Rp 0</span>
-                                        </td>
-                                        <td class="col-total-hpp text-end">
-                                            <span class="item-readonly-badge item-total-hpp-display">Rp 0</span>
-                                        </td>
-                                        <td class="col-margin text-end">
-                                            <span class="item-readonly-badge item-margin-display text-success">Rp 0</span>
-                                        </td>
+                                        <td class="col-price text-end"><span class="item-readonly-badge item-purchase-price-display">Rp 0</span></td>
+                                        <td class="col-selling-price text-end"><span class="item-readonly-badge item-selling-price-display">Rp 0</span></td>
+                                        <td class="col-total-sales text-end"><span class="item-readonly-badge item-total-sales-display">Rp 0</span></td>
+                                        <td class="col-hpp text-end"><span class="item-readonly-badge item-hpp-display">Rp 0</span></td>
+                                        <td class="col-total-hpp text-end"><span class="item-readonly-badge item-total-hpp-display">Rp 0</span></td>
+                                        <td class="col-margin text-end"><span class="item-readonly-badge item-margin-display text-success">Rp 0</span></td>
                                         <td class="col-action text-center">
                                             <button type="button" class="btn btn-sm btn-link text-danger p-0 border-0 shadow-none" onclick="removeReportItemMobileRow(this)" title="Hapus Baris">
                                                 <i class="bi bi-trash3-fill fs-6"></i>
@@ -320,7 +350,7 @@
                     </table>
                 </div>
 
-                {{-- Mobile card container — disembunyikan (d-none), tetap ada agar JS tidak error --}}
+                {{-- Mobile card container --}}
                 <div class="reports-cards-mobile d-none" id="reportCardsMobile"></div>
 
                 <!-- Live Summary Preview & Action Bar -->
@@ -368,7 +398,7 @@
 @push('scripts')
 <script>
     window.reportProductsList = @json($productsList);
-    window.reportUnitsList = @json($unitsList);
+    window.reportUnitsList    = @json($unitsList);
 </script>
 <script src="{{ asset('js/reports.js') }}"></script>
 @endpush
