@@ -49,13 +49,24 @@ class ReportController extends Controller
      * Show the form for creating a new sales report.
      * If a report already exists today, redirect back with warning.
      */
-    public function create()
+    public function create(Request $request)
     {
-        // Jika sudah ada laporan hari ini, redirect ke index dengan pesan
-        $todayReport = Reports::whereDate('report_date', today())->first();
-        if ($todayReport) {
+        $dateParam = $request->query('date');
+
+        if ($dateParam) {
+            try {
+                $targetDate = \Carbon\Carbon::parse($dateParam)->startOfDay();
+            } catch (\Exception $e) {
+                $targetDate = today();
+            }
+        } else {
+            $targetDate = today();
+        }
+
+        $existingReport = Reports::whereDate('report_date', $targetDate->toDateString())->first();
+        if ($existingReport) {
             return redirect()->route('reports.index')
-                ->with('today_report_exists', $todayReport->id);
+                ->with('today_report_exists', $existingReport->id);
         }
 
         $products = Products::with([
@@ -76,7 +87,9 @@ class ReportController extends Controller
 
         $products->each(function ($p) {
             $latestRestock = $p->restockItems->first();
-            $p->latest_purchase_price = $latestRestock ? (float) $latestRestock->purchase_price : (float) $p->unit_price;
+            $p->latest_purchase_price = $latestRestock
+                ? (float) $latestRestock->purchase_price
+                : (float) $p->unit_price;
 
             $pricesByUnit = [];
             foreach ($p->restockItems as $ri) {
@@ -92,7 +105,9 @@ class ReportController extends Controller
 
         $units = \App\Models\Unit::orderBy('unit_name', 'asc')->get();
 
-        return view('pages.reports.create', compact('products', 'units'));
+        $selectedDate = $targetDate->toDateTimeString();
+
+        return view('pages.reports.create', compact('products', 'units', 'selectedDate'));
     }
 
     /**
