@@ -2132,7 +2132,7 @@ window._syncTotalHppHeader = _syncTotalHppHeader;
     /** Validasi ke server lalu redirect jika lolos */
     function validateAndProceedToCreate() {
         const dateInput = document.getElementById("reportDatePickerInput");
-        const dateVal = dateInput ? dateInput.value : ""; // format: YYYY-MM-DDTHH:mm
+        const dateVal = dateInput ? dateInput.value : "";
 
         document
             .getElementById("datePickerAlertExists")
@@ -2148,7 +2148,6 @@ window._syncTotalHppHeader = _syncTotalHppHeader;
         }
         dateInput.classList.remove("is-invalid");
 
-        /* Ambil hanya bagian tanggal (YYYY-MM-DD) untuk dikirim ke check_date */
         const dateOnly = dateVal.split("T")[0];
 
         _setDatePickerLoading(true);
@@ -2175,7 +2174,6 @@ window._syncTotalHppHeader = _syncTotalHppHeader;
                         "datePickerAlertExistsMsg",
                     );
 
-                    /* Format tanggal untuk pesan — ambil bagian date saja */
                     const dateLabel = new Date(
                         dateOnly + "T00:00:00",
                     ).toLocaleDateString("id-ID", {
@@ -2194,11 +2192,9 @@ window._syncTotalHppHeader = _syncTotalHppHeader;
                     }
                     alertEl?.classList.remove("d-none");
                 } else {
-                    /* Lolos — tutup modal, redirect ke create dengan datetime lengkap */
                     const modalInstance = bootstrap.Modal.getInstance(modalEl);
                     if (modalInstance) modalInstance.hide();
 
-                    /* Kirim datetime lengkap (termasuk jam yang dipilih user) */
                     window.location.href =
                         CREATE_URL + "?date=" + encodeURIComponent(dateVal);
                 }
