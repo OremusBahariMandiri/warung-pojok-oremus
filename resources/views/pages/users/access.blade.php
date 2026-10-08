@@ -199,11 +199,14 @@
                         @foreach ($menus as $menuKey => $info)
                             @php
                                 $userAccess = $user->accesses->firstWhere('menu_access', $menuKey);
-                                $hasIndex = $userAccess ? ((string)$userAccess->index_acs === '1') : ($isAdmin);
-                                $hasCreate = $userAccess ? ((string)$userAccess->create_acs === '1') : ($isAdmin);
-                                $hasEdit = $userAccess ? ((string)$userAccess->edit_acs === '1') : ($isAdmin);
-                                $hasShow = $userAccess ? ((string)$userAccess->show_acs === '1') : ($isAdmin);
-                                $hasDelete = $userAccess ? ((string)$userAccess->delete_acs === '1') : ($isAdmin);
+                                
+                                // Jika is_admin, selalu full access regardless of DB record
+                                $hasIndex  = $isAdmin ? true : ($userAccess ? ((string)$userAccess->index_acs  === '1') : false);
+                                $hasCreate = $isAdmin ? true : ($userAccess ? ((string)$userAccess->create_acs === '1') : false);
+                                $hasEdit   = $isAdmin ? true : ($userAccess ? ((string)$userAccess->edit_acs   === '1') : false);
+                                $hasShow   = $isAdmin ? true : ($userAccess ? ((string)$userAccess->show_acs   === '1') : false);
+                                $hasDelete = $isAdmin ? true : ($userAccess ? ((string)$userAccess->delete_acs === '1') : false);
+                                
                                 $allRowChecked = $hasIndex && $hasCreate && $hasEdit && $hasShow && $hasDelete;
                             @endphp
                             <tr data-menu="{{ $menuKey }}">

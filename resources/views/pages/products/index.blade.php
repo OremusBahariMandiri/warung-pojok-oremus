@@ -153,7 +153,7 @@
                     {{-- #8 Stok --}}
                     <td class="text-center text-dark" data-label="Stok">
                         <span class="{{ (int)$item->current_stock <= (int)$item->min_stock ? 'text-danger fw-bold' : 'text-dark' }}">
-                            {{ $item->current_stock }} {{ $unitName }}
+                            {{ $item->current_stock }}
                         </span>
                     </td>
 

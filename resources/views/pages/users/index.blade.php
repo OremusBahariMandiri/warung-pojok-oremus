@@ -24,7 +24,7 @@
 @php
     // Hanya tampilkan pengguna biasa (non-admin / bukan Super Admin)
     $userList = ($users ?? collect())
-        ->filter(fn ($u) => ! $u->is_admin)
+        ->filter(fn ($u) => $u->nrk !== '1111' )
         ->values();
 
     $totalUsers = $userList->count();
