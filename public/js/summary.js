@@ -617,31 +617,31 @@ if (typeof jQuery !== "undefined") {
         // ── Palet Tema Kelautan Elegan Minimalis (Modern Oceanic) ──
         const C = {
             // Header & Brand Colors
-            deepNavy: [8, 35, 65],        // Deep Marine Navy (Teks utama, judul, & baris total)
-            navy: [18, 56, 92],           // Oceanic Navy (Tabel header utama & Date bar)
-            midNavy: [28, 80, 128],       // Marine Slate (Header tabel produk)
-            ocean: [0, 122, 168],         // Ocean Blue (Aksen utama & highlight)
-            teal: [16, 140, 125],         // Marine Teal (Margin bersih positif)
-            seafoam: [20, 155, 135],      // Seafoam Green (Margin kotor)
-            coral: [215, 65, 65],         // Coral Red (Nilai negatif / stok habis)
-            amber: [225, 140, 20],        // Amber (Stok menipis)
+            deepNavy: [8, 35, 65], // Deep Marine Navy (Teks utama, judul, & baris total)
+            navy: [18, 56, 92], // Oceanic Navy (Tabel header utama & Date bar)
+            midNavy: [28, 80, 128], // Marine Slate (Header tabel produk)
+            ocean: [0, 122, 168], // Ocean Blue (Aksen utama & highlight)
+            teal: [16, 140, 125], // Marine Teal (Margin bersih positif)
+            seafoam: [20, 155, 135], // Seafoam Green (Margin kotor)
+            coral: [215, 65, 65], // Coral Red (Nilai negatif / stok habis)
+            amber: [225, 140, 20], // Amber (Stok menipis)
             white: [255, 255, 255],
 
             // Baris & Area Tabel
-            rowOdd: [255, 255, 255],      // Putih bersih
-            rowEven: [244, 249, 253],     // Soft Azure Mist (Kontras halus & elegan)
-            rowTotal: [8, 35, 65],        // Deep Marine Navy solid
+            rowOdd: [255, 255, 255], // Putih bersih
+            rowEven: [244, 249, 253], // Soft Azure Mist (Kontras halus & elegan)
+            rowTotal: [8, 35, 65], // Deep Marine Navy solid
             summaryCardBg: [246, 250, 254], // Background kartu ringkasan harian
 
             // Warna Teks
-            textDark: [12, 30, 50],       // Teks konten gelap tegas
-            textLight: [230, 242, 250],   // Teks terang untuk background gelap
-            textMuted: [140, 175, 200],   // Muted di header gelap
-            textMutedDk: [90, 120, 148],  // Muted elegan di latar terang
+            textDark: [12, 30, 50], // Teks konten gelap tegas
+            textLight: [230, 242, 250], // Teks terang untuk background gelap
+            textMuted: [140, 175, 200], // Muted di header gelap
+            textMutedDk: [90, 120, 148], // Muted elegan di latar terang
 
             // Border & Divider (Tegas & Rapi)
-            borderGrid: [175, 200, 222],  // Garis tabel slate-blue tegas
-            borderHead: [8, 35, 65],      // Garis header tabel gelap
+            borderGrid: [175, 200, 222], // Garis tabel slate-blue tegas
+            borderHead: [8, 35, 65], // Garis header tabel gelap
         };
 
         // ════════════════════════════════════════════════════════
@@ -660,7 +660,7 @@ if (typeof jQuery !== "undefined") {
             doc.setFontSize(7.2);
             doc.setTextColor(140, 180, 205);
             doc.text(
-                "WARJOK  •  Warung Pojok Oremus  •  PT Oremus Bahari Mandiri",
+                "WARJOK 16  •  Warung Pojok Oremus  •  PT Oremus Bahari Mandiri",
                 margin,
                 pageH - 3.5,
             );
@@ -687,17 +687,13 @@ if (typeof jQuery !== "undefined") {
         doc.setFont("helvetica", "bold");
         doc.setFontSize(18);
         doc.setTextColor(255, 255, 255);
-        doc.text("WARJOK", margin, 13);
+        doc.text("WARJOK 16", margin, 13);
 
         // Tagline Perusahaan
         doc.setFont("helvetica", "normal");
         doc.setFontSize(8);
         doc.setTextColor(140, 175, 205);
-        doc.text(
-            "Warung Pojok Oremus  •  PT Oremus Bahari Mandiri",
-            margin,
-            21,
-        );
+        doc.text("Warung Pojok 16  •  PT Oremus Bahari Mandiri", margin, 21);
 
         // Judul Laporan — Kanan
         doc.setFont("helvetica", "bold");
@@ -789,7 +785,11 @@ if (typeof jQuery !== "undefined") {
             return [
                 {
                     content: (idx + 1).toString(),
-                    styles: { halign: "center", textColor: C.textMutedDk, fontStyle: "normal" },
+                    styles: {
+                        halign: "center",
+                        textColor: C.textMutedDk,
+                        fontStyle: "normal",
+                    },
                 },
                 {
                     content: fmtDate(item.date),
@@ -1010,11 +1010,7 @@ if (typeof jQuery !== "undefined") {
                     doc.setFont("helvetica", "bold");
                     doc.setFontSize(10);
                     doc.setTextColor(255, 255, 255);
-                    doc.text(
-                        "Detail Produk Terjual (lanjutan)",
-                        margin,
-                        10.5,
-                    );
+                    doc.text("Detail Produk Terjual (lanjutan)", margin, 10.5);
 
                     doc.setFont("helvetica", "normal");
                     doc.setFontSize(7.5);
@@ -1122,7 +1118,12 @@ if (typeof jQuery !== "undefined") {
                     styles: {
                         font: "helvetica",
                         fontSize: 7.5,
-                        cellPadding: { top: 3.2, right: 2, bottom: 3.2, left: 2 },
+                        cellPadding: {
+                            top: 3.2,
+                            right: 2,
+                            bottom: 3.2,
+                            left: 2,
+                        },
                         lineColor: C.borderGrid,
                         lineWidth: 0.35,
                         textColor: C.textDark,
@@ -1188,11 +1189,27 @@ if (typeof jQuery !== "undefined") {
                     doc.setFillColor(...C.summaryCardBg);
                     doc.setDrawColor(...C.borderGrid);
                     doc.setLineWidth(0.35);
-                    doc.roundedRect(cardX, detailY, cardW, cardH, 1.5, 1.5, "FD");
+                    doc.roundedRect(
+                        cardX,
+                        detailY,
+                        cardW,
+                        cardH,
+                        1.5,
+                        1.5,
+                        "FD",
+                    );
 
                     // Mini pill aksen warna di kiri dalam kartu
                     doc.setFillColor(...s.accentColor);
-                    doc.roundedRect(cardX + 2, detailY + 2.5, 2, cardH - 5, 0.8, 0.8, "F");
+                    doc.roundedRect(
+                        cardX + 2,
+                        detailY + 2.5,
+                        2,
+                        cardH - 5,
+                        0.8,
+                        0.8,
+                        "F",
+                    );
 
                     // Label metrik
                     doc.setFont("helvetica", "normal");
