@@ -4,6 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>403 Forbidden Warjok</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" sizes="64x64"
+        href="{{ asset('assets/favicon-logo.png') }}?v=3">
+
+    <link rel="shortcut icon"
+        href="{{ asset('assets/favicon-logo.png') }}?v=3">
+
+    <link rel="apple-touch-icon"
+        href="{{ asset('assets/favicon-logo.png') }}?v=3">
+
     <style>
         * {
             margin: 0;

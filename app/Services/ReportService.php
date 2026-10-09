@@ -80,6 +80,7 @@ class ReportService
                     'total_sales'         => 0.0,
                     'total_hpp'           => 0.0,
                     'total_gross_margin'  => 0.0,
+                    'products'            => [],
                 ];
             }
 
@@ -88,10 +89,33 @@ class ReportService
             $dailyRecap[$dateStr]['total_hpp']          += (float) $report->total_hpp;
             $dailyRecap[$dateStr]['total_gross_margin'] += (float) $report->total_gross_margin;
 
+            foreach ($report->details as $detail) {
+                $productId = $detail->product_id;
+
+                if (!isset($dailyRecap[$dateStr]['products'][$productId])) {
+                    $dailyRecap[$dateStr]['products'][$productId] = [
+                        'product_id'    => $productId,
+                        'product_name'  => $detail->product->prod_name ?? '-',
+                        'product_code'  => $detail->product->prod_code ?? '-',
+                        'selling_unit'  => $detail->sellingUnit->unit_name ?? '-',
+                        'quantity'      => 0,
+                        'stock_final'   => $detail->stock_final,
+                    ];
+                }
+
+                $dailyRecap[$dateStr]['products'][$productId]['quantity']    += $detail->quantity;
+                $dailyRecap[$dateStr]['products'][$productId]['stock_final']  = $detail->stock_final;
+            }
+
             $overallQuantity += $report->total_quantity;
             $overallSales    += (float) $report->total_sales;
             $overallHpp      += (float) $report->total_hpp;
             $overallMargin   += (float) $report->total_gross_margin;
+        }
+
+        // Reindex products array dari associative ke indexed
+        foreach ($dailyRecap as $dateKey => $dayData) {
+            $dailyRecap[$dateKey]['products'] = array_values($dayData['products']);
         }
 
         return [
