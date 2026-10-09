@@ -91,10 +91,10 @@
                 <th style="width:140px;" class="text-center">Produk Terjual</th>
                 <th style="width:160px;" class="text-end">Total Penjualan</th>
                 <th style="width:150px;" class="text-end">Total HPP</th>
-                <th style="width:110px;" class="text-center no-sort">Aksi</th>
                 <th style="width:155px;" class="text-end">Total Margin Kotor</th>
                 <th style="width:150px;" class="text-end">Margin Bersih</th>
                 <th style="width:140px;" class="text-center">Dibuat Oleh</th>
+                <th style="width:110px;" class="text-center no-sort">Aksi</th>
             </tr>
         </thead>
         <tbody>
@@ -121,35 +121,35 @@
                 <td class="text-end font-monospace text-dark fw-semibold">Rp {{ number_format($totalSales, 0, ',', '.') }}</td>
                 {{-- 5: Total HPP --}}
                 <td class="text-end font-monospace text-muted">Rp {{ number_format($totalHpp, 0, ',', '.') }}</td>
-                {{-- 6: Aksi --}}
+                {{-- 6: Total Margin Kotor --}}
+                <td class="text-end font-monospace fw-bold text-success">Rp {{ number_format($totalMargin, 0, ',', '.') }}</td>
+                {{-- 7: Margin Bersih --}}
+                <td class="text-end font-monospace fw-bold text-primary">Rp {{ number_format($netMarginDesktop, 0, ',', '.') }}</td>
+                {{-- 8: Dibuat Oleh --}}
+                <td class="text-center text-muted small">{{ $creatorName }}</td>
+                {{-- 9: Aksi — sekarang paling kanan --}}
                 <td class="text-center">
                     <div class="d-inline-flex align-items-center gap-1">
                         <a href="{{ route('reports.show', $r->id) }}"
-                           class="btn btn-sm btn-info text-white px-2 py-1 rounded-2 shadow-none"
-                           title="Detail" style="background-color:#0ea5e9;border-color:#0ea5e9;">
+                        class="btn btn-sm btn-info text-white px-2 py-1 rounded-2 shadow-none"
+                        title="Detail" style="background-color:#0ea5e9;border-color:#0ea5e9;">
                             <i class="bi bi-eye"></i>
                         </a>
                         <a href="{{ route('reports.edit', $r->id) }}"
-                           class="btn btn-sm btn-warning text-white px-2 py-1 rounded-2 shadow-none"
-                           title="Edit Laporan" style="background-color:#f59e0b;border-color:#f59e0b;">
+                        class="btn btn-sm btn-warning text-white px-2 py-1 rounded-2 shadow-none"
+                        title="Edit Laporan" style="background-color:#f59e0b;border-color:#f59e0b;">
                             <i class="bi bi-pencil"></i>
                         </a>
                         <a href="{{ route('reports.salary_calculator', [
-                               'start_date' => $r->report_date->toDateString(),
-                               'end_date'   => $r->report_date->toDateString(),
-                           ]) }}"
-                           class="btn btn-sm btn-primary px-2 py-1 rounded-2 shadow-none"
-                           title="Kalkulator Gaji">
+                            'start_date' => $r->report_date->toDateString(),
+                            'end_date'   => $r->report_date->toDateString(),
+                        ]) }}"
+                        class="btn btn-sm btn-primary px-2 py-1 rounded-2 shadow-none"
+                        title="Kalkulator Gaji">
                             <i class="bi bi-calculator"></i>
                         </a>
                     </div>
                 </td>
-                {{-- 7: Total Margin Kotor → expand --}}
-                <td class="text-end font-monospace fw-bold text-success">Rp {{ number_format($totalMargin, 0, ',', '.') }}</td>
-                {{-- 8: Margin Bersih → expand --}}
-                <td class="text-end font-monospace fw-bold text-primary">Rp {{ number_format($netMarginDesktop, 0, ',', '.') }}</td>
-                {{-- 9: Dibuat Oleh → expand --}}
-                <td class="text-center text-muted small">{{ $creatorName }}</td>
             </tr>
             @endforeach
         </tbody>
