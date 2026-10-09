@@ -776,8 +776,20 @@ function _resetContainerData(container) {
         marginEl.classList.add("text-success");
     }
 
-    // FIX: Tidak lagi menyembunyikan total-hpp-cell — selalu tampil
-    // (sebelumnya: totalHppCell.style.display = "none" — dihapus)
+    const totalHppCell = container.querySelector(".item-total-hpp-cell");
+    if (totalHppCell) {
+        totalHppCell.style.display = "";
+        totalHppCell.style.visibility = "";
+        if (
+            totalHppCell.querySelector(".item-total-hpp-manual-input") ||
+            !totalHppCell.querySelector(".item-total-hpp-display")
+        ) {
+            totalHppCell.innerHTML = `<span class="item-readonly-badge item-total-hpp-display text-muted">Rp 0</span>`;
+        } else {
+            const badge = totalHppCell.querySelector(".item-total-hpp-display");
+            if (badge) badge.textContent = "Rp 0";
+        }
+    }
 
     _clearQtyValidation(container);
     _syncExpandRow(container);
@@ -1581,8 +1593,8 @@ function addReportItemRow() {
             <td class="col-total-sales text-end font-monospace fw-semibold text-dark item-total-sales-cell">
                 <span class="item-readonly-badge item-total-sales-display">Rp 0</span>
             </td>
-            <td class="col-total-hpp text-end font-monospace fw-semibold text-dark item-total-hpp-cell" style="display:none;">
-                <span class="item-readonly-badge item-total-hpp-display">Rp 0</span>
+            <td class="col-total-hpp text-end font-monospace fw-semibold text-dark item-total-hpp-cell">
+                <span class="item-readonly-badge item-total-hpp-display text-muted">Rp 0</span>
             </td>
             <td class="col-margin text-end font-monospace fw-bold">
                 <span class="item-readonly-badge item-margin-display text-success">Rp 0</span>
@@ -1648,8 +1660,6 @@ function addReportItemRow() {
             </td>`;
         tbody.appendChild(expandTr);
 
-        // ← INI YANG KURANG: panggil _syncExpandRow setelah keduanya masuk DOM
-        // agar expand-total-hpp-wrap langsung disembunyikan sebelum user klik expand
         _syncExpandRow(tr);
     }
 
@@ -2040,7 +2050,6 @@ function _syncTotalHppHeader() {
     const thHpp = document.getElementById("thTotalHpp");
     if (!thHpp) return;
 
-    // Tampilkan header jika ada minimal 1 baris produk yang dipilih
     const hasAnyProduct = Array.from(
         document.querySelectorAll("#reportItemRows .report-item-row"),
     ).some((row) => {
@@ -2050,17 +2059,12 @@ function _syncTotalHppHeader() {
 
     thHpp.style.display = hasAnyProduct ? "" : "none";
 
-    // Semua td kolom Total HPP ditampilkan jika ada produk
     document
         .querySelectorAll("#reportItemRows .report-item-row")
         .forEach((row) => {
             const totalHppCell = row.querySelector(".item-total-hpp-cell");
             if (!totalHppCell) return;
-
-            const pSel = row.querySelector(".product-select");
-            const hasValue = pSel && pSel.value;
-
-            totalHppCell.style.display = hasValue ? "" : "none";
+            totalHppCell.style.display = "";
             totalHppCell.style.visibility = "";
         });
 }

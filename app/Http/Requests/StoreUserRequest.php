@@ -16,7 +16,7 @@ class StoreUserRequest extends FormRequest
         return [
             'nrk' => 'required|string|max:50',
             'employee_name' => 'required|string|max:255',
-            'email' => 'required|email|max:255|unique:users,email',
+            'email' => 'nullable|email|max:255|unique:users,email',
             'password' => 'required|string|min:6',
             'is_admin' => 'nullable|boolean',
             'accesses' => 'nullable|array',
