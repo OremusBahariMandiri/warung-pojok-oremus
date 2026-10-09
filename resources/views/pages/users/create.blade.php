@@ -26,17 +26,20 @@
         ],
         'MASTER DATA' => [
             'products' => ['label' => 'Master – Manajemen Produk', 'icon' => 'bi-box-seam'],
-            'units' => ['label' => 'Master – Manajemen Satuan', 'icon' => 'bi-tag'],
-            'hpp' => ['label' => 'Master – Manajemen Komponen HPP', 'icon' => 'bi-calculator'],
+            'units'    => ['label' => 'Master – Manajemen Satuan', 'icon' => 'bi-tag'],
+            'hpp'      => ['label' => 'Master – Manajemen Komponen HPP', 'icon' => 'bi-calculator'],
         ],
         'INVENTORI' => [
             'restock' => ['label' => 'Inventori – Restock Barang', 'icon' => 'bi-arrow-repeat'],
         ],
         'LAPORAN & ANALITIK' => [
-            'reports' => ['label' => 'Laporan – Laporan Penjualan & Margin', 'icon' => 'bi-bar-chart-line'],
+            'reports'         => ['label' => 'Laporan – Laporan Penjualan & Margin', 'icon' => 'bi-bar-chart-line'],
+            'reports_summary' => ['label' => 'Laporan – Ringkasan Penjualan', 'icon' => 'bi-graph-up'],
+            'stock_opname'    => ['label' => 'Laporan – Stok Opname', 'icon' => 'bi-clipboard-check'],
         ],
         'PENGATURAN SISTEM' => [
-            'users' => ['label' => 'Manajemen – Kelola Pengguna & Akses', 'icon' => 'bi-people'],
+            'profile'       => ['label' => 'Pengaturan – Profil Pengguna', 'icon' => 'bi-person-circle'],
+            'users'         => ['label' => 'Manajemen – Kelola Pengguna & Akses', 'icon' => 'bi-people'],
             'activity_logs' => ['label' => 'Manajemen – Log Aktivitas Sistem', 'icon' => 'bi-clock-history'],
         ],
     ];
@@ -111,9 +114,9 @@
                         <!-- Email -->
                         <div class="mb-3">
                             <label for="email" class="form-label small fw-semibold text-dark">
-                                Email <span class="text-danger">*</span>
+                                Email
                             </label>
-                            <input type="email" name="email" id="email" class="form-control rounded-2 @error('email') is-invalid @enderror" value="{{ old('email') }}" required>
+                            <input type="email" name="email" id="email" class="form-control rounded-2 @error('email') is-invalid @enderror" value="{{ old('email') }}">
                             @error('email')
                                 <div class="invalid-feedback small">{{ $message }}</div>
                             @enderror

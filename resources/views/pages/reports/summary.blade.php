@@ -42,12 +42,22 @@
     $endDateVal   = request('end_date', now()->toDateString());
 @endphp
 
+<input type="hidden" id="exportStartDate" value="{{ $startDateVal }}">
+<input type="hidden" id="exportEndDate" value="{{ $endDateVal }}">
 <!-- Header Title -->
 <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3 mb-4">
     <div>
         <h4 class="fw-bold text-dark mb-1">Ringkasan & Margin Penjualan</h4>
     </div>
     <div class="d-flex align-items-center gap-2">
+        {{-- ← TOMBOL BARU EXPORT PDF --}}
+        <button
+            type="button"
+            id="btnExportPdf"
+            class="btn btn-sm btn-danger rounded-2 px-3 d-inline-flex align-items-center gap-2"
+            title="Export laporan ke PDF">
+            <i class="bi bi-file-earmark-pdf-fill"></i> Export PDF
+        </button>
         <a href="{{ route('reports.index') }}" class="btn btn-sm btn-outline-secondary rounded-2 px-3 d-inline-flex align-items-center gap-2">
             <i class="bi bi-receipt"></i> Kelola Laporan Penjualan
         </a>
@@ -188,7 +198,7 @@
                         <div class="rounded-circle d-flex align-items-center justify-content-center bg-warning bg-opacity-10" style="width:32px;height:32px;flex-shrink:0;">
                             <i class="bi bi-person-heart text-warning" style="font-size:.85rem;"></i>
                         </div>
-                        <span class="small fw-semibold text-muted">Estimasi Gaji Karyawan</span>
+                        <span class="small fw-semibold text-muted">Gaji Karyawan</span>
                     </div>
                     <div class="fw-bold font-monospace fs-5 text-warning">
                         Rp {{ number_format($overallGaji, 0, ',', '.') }}
@@ -249,6 +259,7 @@
 </div>
 
 <!-- DataTables Rekapitulasi Harian -->
+<!-- DataTables Rekapitulasi Harian -->
 <div class="card-box px-3 border rounded-3 overflow-hidden shadow-sm bg-white mb-4">
     <div class="py-3 border-bottom d-flex align-items-center justify-content-between">
         <div>
@@ -267,12 +278,13 @@
                     <th style="width: 50px;" class="text-center">No</th>
                     <th class="text-center" style="width: 150px;">Tanggal</th>
                     <th class="text-center" style="width: 120px;">Total Terjual</th>
+                    <th class="text-center" style="width: 120px;">Sisa Stok</th>
                     <th class="text-end" style="width: 160px;">Total Penjualan</th>
                     <th class="text-end" style="width: 150px;">Total HPP</th>
                     <th class="text-end" style="width: 150px;">Margin Kotor</th>
-                    <th class="text-end" style="width: 145px;">Est. Gaji Karyawan</th>
+                    <th class="text-end" style="width: 145px;">Gaji Karyawan</th>
                     <th class="text-end" style="width: 145px;">Margin Bersih</th>
-                    <th class="text-center" style="width: 100px;">% Margin</th>
+                    <th class="text-center no-sort" style="width: 90px;">Detail</th>
                 </tr>
             </thead>
             <tbody>
@@ -283,24 +295,52 @@
                         $dayGross      = (float)($item['total_gross_margin'] ?? ($daySales - $dayHpp));
                         $dayGaji       = $dayGross * 0.5;
                         $dayNet        = $dayGross - $dayGaji;
-                        $dayMarginPct  = $daySales > 0 ? ($dayGross / $daySales) * 100 : 0;
                         $formattedDate = \Carbon\Carbon::parse($item['date'])->format('d M Y');
+                        $dayProducts   = $item['products'] ?? [];
+                        $totalSisaStok = collect($dayProducts)->sum(fn($p) => (int)($p['stock_final'] ?? 0));
+                        $minSisaStok   = collect($dayProducts)->min(fn($p) => (int)($p['stock_final'] ?? 0));
                     @endphp
+
                     <tr>
-                        <td class="text-center text-muted fw-medium small">{{ $loop->iteration }}</td>
-                        <td class="text-center text-dark fw-semibold">{{ $formattedDate }}</td>
-                        <td class="text-center font-monospace fw-semibold">{{ (int)($item['total_quantity'] ?? 0) }} Unit</td>
-                        <td class="text-end font-monospace text-dark fw-semibold">Rp {{ number_format($daySales, 0, ',', '.') }}</td>
-                        <td class="text-end font-monospace text-muted">Rp {{ number_format($dayHpp, 0, ',', '.') }}</td>
-                        <td class="text-end font-monospace fw-bold text-success">Rp {{ number_format($dayGross, 0, ',', '.') }}</td>
-                        <td class="text-end font-monospace text-warning fw-semibold">Rp {{ number_format($dayGaji, 0, ',', '.') }}</td>
-                        <td class="text-end font-monospace fw-bold {{ $dayNet < 0 ? 'text-danger' : 'text-primary' }}">
+                        <td data-label="No" class="text-center text-muted fw-medium small">{{ $loop->iteration }}</td>
+                        <td data-label="Tanggal" class="text-center text-dark fw-semibold">{{ $formattedDate }}</td>
+                        <td data-label="Total Terjual" class="text-center font-monospace fw-semibold">{{ (int)($item['total_quantity'] ?? 0) }} Unit</td>
+                        <td data-label="Sisa Stok" class="text-center font-monospace fw-semibold">
+                            @if(count($dayProducts) > 0)
+                                @if($minSisaStok <= 0)
+                                    <span class="text-danger fw-bold">{{ $minSisaStok }} Unit</span>
+                                @elseif($minSisaStok <= 5)
+                                    <span class="text-warning fw-bold">{{ $minSisaStok }} Unit</span>
+                                @else
+                                    <span class="text-success fw-semibold">{{ $minSisaStok }} Unit</span>
+                                @endif
+                            @else
+                                <span class="text-muted small">—</span>
+                            @endif
+                        </td>
+                        <td data-label="Total Penjualan" class="text-end font-monospace text-dark fw-semibold">Rp {{ number_format($daySales, 0, ',', '.') }}</td>
+                        <td data-label="Total HPP" class="text-end font-monospace text-muted">Rp {{ number_format($dayHpp, 0, ',', '.') }}</td>
+                        <td data-label="Margin Kotor" class="text-end font-monospace fw-bold text-success">Rp {{ number_format($dayGross, 0, ',', '.') }}</td>
+                        <td data-label="Est. Gaji" class="text-end font-monospace text-warning fw-semibold">Rp {{ number_format($dayGaji, 0, ',', '.') }}</td>
+                        <td data-label="Margin Bersih" class="text-end font-monospace fw-bold {{ $dayNet < 0 ? 'text-danger' : 'text-primary' }}">
                             Rp {{ number_format($dayNet, 0, ',', '.') }}
                         </td>
-                        <td class="text-center font-monospace">
-                            <span class="badge bg-success bg-opacity-10 text-success py-1 px-2 rounded-2">
-                                {{ number_format($dayMarginPct, 1, ',', '.') }}%
-                            </span>
+                        <td data-label="Detail" class="text-center">
+                            @if(count($dayProducts) > 0)
+                                <button
+                                    type="button"
+                                    class="btn btn-sm btn-outline-primary rounded-2 px-2 py-1 btn-detail-produk"
+                                    style="font-size:.75rem;"
+                                    data-date="{{ $formattedDate }}"
+                                    data-products="{{ json_encode($dayProducts) }}"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#modalDetailProduk"
+                                    title="Lihat detail produk terjual pada {{ $formattedDate }}">
+                                    <i class="bi bi-eye"></i>
+                                </button>
+                            @else
+                                <span class="text-muted small">—</span>
+                            @endif
                         </td>
                     </tr>
                 @endforeach
@@ -309,15 +349,97 @@
                 <tr class="fw-bold align-middle">
                     <td colspan="2" class="text-end text-dark">Total Keseluruhan:</td>
                     <td class="text-center font-monospace">{{ $overallQty }} Unit</td>
+                    <td class="text-center font-monospace text-muted">—</td>
                     <td class="text-end font-monospace text-dark">Rp {{ number_format($overallSales, 0, ',', '.') }}</td>
                     <td class="text-end font-monospace text-muted">Rp {{ number_format($overallHpp, 0, ',', '.') }}</td>
                     <td class="text-end font-monospace text-success">Rp {{ number_format($overallGrossMargin, 0, ',', '.') }}</td>
                     <td class="text-end font-monospace text-warning">Rp {{ number_format($overallGaji, 0, ',', '.') }}</td>
                     <td class="text-end font-monospace {{ $overallNetMargin < 0 ? 'text-danger' : 'text-primary' }}">Rp {{ number_format($overallNetMargin, 0, ',', '.') }}</td>
-                    <td class="text-center font-monospace text-primary">{{ number_format($marginPercentage, 1, ',', '.') }}%</td>
+                    <td></td>
                 </tr>
             </tfoot>
         </table>
+    </div>
+</div>
+
+{{-- ════════════ MODAL DETAIL PRODUK ════════════ --}}
+<div class="modal fade" id="modalDetailProduk" tabindex="-1" aria-labelledby="modalDetailProdukLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+
+            {{-- Header --}}
+            <div class="modal-header px-4 py-3 border-0" style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="d-flex align-items-center justify-content-center rounded-3 bg-white bg-opacity-10"
+                         style="width:38px;height:38px;">
+                        <i class="bi bi-box-seam text-white" style="font-size:.95rem;"></i>
+                    </div>
+                    <div>
+                        <h6 class="modal-title fw-bold text-white mb-0" id="modalDetailProdukLabel">Detail Produk Terjual</h6>
+                        <span class="text-white opacity-60 small" id="modalDetailProdukDate" style="font-size:.78rem;">—</span>
+                    </div>
+                </div>
+                <button type="button" class="btn-close btn-close-white opacity-75" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            {{-- Search + Info Bar --}}
+            <div class="px-4 py-3 bg-white d-flex align-items-center justify-content-between gap-3 flex-wrap">
+                <div class="position-relative" style="width:220px;">
+                    <i class="bi bi-search position-absolute text-muted" style="left:10px;top:50%;transform:translateY(-50%);font-size:.8rem;pointer-events:none;"></i>
+                    <input
+                        type="text"
+                        id="modalProductSearch"
+                        class="form-control form-control-sm rounded-2 ps-4"
+                        placeholder="Cari produk..."
+                        style="font-size:.82rem;border:1.5px solid #cbd5e1;background:#f8fafc;">
+                </div>
+                <span class="text-muted" id="modalDetailProdukCount" style="font-size:.78rem;"></span>
+            </div>
+
+            {{-- Body: Table --}}
+            <div class="modal-body p-0">
+                <div class="px-3 pt-3 pb-0">
+                    <table class="table table-hover table-bordered align-middle mb-0 w-100" style="font-size:.83rem;" id="modalDetailProdukTable">
+                        <thead>
+                            <tr style="background:#f8fafc;">
+                                <th class="text-center text-uppercase px-3 py-2"
+                                    style="width:46px;font-size:.72rem;letter-spacing:.04em;font-weight:600;color:#64748b;">No</th>
+                                <th class="text-uppercase px-3 py-2"
+                                    style="width:130px;font-size:.72rem;letter-spacing:.04em;font-weight:600;color:#64748b;">Kode</th>
+                                <th class="text-uppercase px-3 py-2"
+                                    style="font-size:.72rem;letter-spacing:.04em;font-weight:600;color:#64748b;">Nama Produk</th>
+                                <th class="text-center text-uppercase px-3 py-2"
+                                    style="width:120px;font-size:.72rem;letter-spacing:.04em;font-weight:600;color:#64748b;">Qty Terjual</th>
+                                <th class="text-center text-uppercase px-3 py-2"
+                                    style="width:120px;font-size:.72rem;letter-spacing:.04em;font-weight:600;color:#64748b;">Sisa Stok</th>
+                            </tr>
+                        </thead>
+                        <tbody id="modalDetailProdukBody">
+                            {{-- Diisi via JS --}}
+                        </tbody>
+                    </table>
+                </div>
+
+                {{-- DataTables footer (info + pagination) dirender di sini oleh JS --}}
+                <div id="modalDtFooter" class="d-flex flex-column flex-sm-row align-items-center justify-content-between px-3 py-2 gap-2 bg-white border-top mt-0" style="font-size:.78rem;">
+                    <span class="text-muted" id="modalDtInfo"></span>
+                    <div class="d-flex align-items-center gap-1" id="modalDtPaginate"></div>
+                </div>
+
+                {{-- Empty state --}}
+                <div id="modalEmptyState" class="d-none text-center py-5 px-3">
+                    <i class="bi bi-inbox text-muted" style="font-size:2rem;opacity:.4;"></i>
+                    <p class="text-muted mt-2 mb-0 small">Tidak ada produk ditemukan.</p>
+                </div>
+            </div>
+
+            {{-- Footer --}}
+            <div class="modal-footer bg-light border-0 px-4 py-2 justify-content-end">
+                <button type="button" class="btn btn-sm btn-secondary rounded-2" data-bs-dismiss="modal">
+                    <i class="bi bi-x-lg me-1"></i> Tutup
+                </button>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -329,8 +451,26 @@
 <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+{{-- jsPDF + AutoTable untuk Export PDF --}}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+
 <script>
     window.summaryRecapData = @json($recapData);
+    window.summaryOverall = {
+        qty:         {{ $overallQty }},
+        sales:       {{ $overallSales }},
+        hpp:         {{ $overallHpp }},
+        grossMargin: {{ $overallGrossMargin }},
+        gaji:        {{ $overallGaji }},
+        netMargin:   {{ $overallNetMargin }},
+        marginPct:   {{ $marginPercentage }},
+    };
+    window.summaryPeriod = {
+        startDate: document.getElementById('exportStartDate')?.value || '',
+        endDate:   document.getElementById('exportEndDate')?.value || '',
+    };
 </script>
 <script src="{{ asset('js/summary.js') }}"></script>
 @endpush
