@@ -164,7 +164,7 @@
                                 <a href="{{ route('users.edit', $u->id) }}" class="btn btn-sm btn-outline-warning rounded-2 px-2 py-1 text-dark" title="Edit">
                                     <i class="bi bi-pencil"></i>
                                 </a>
-                                @if (auth()->id() !== $u->id)
+                                @if (auth()->user()->is_admin && auth()->id() !== $u->id)
                                     <button type="button" class="btn btn-sm btn-outline-danger rounded-2 px-2 py-1" title="Hapus"
                                             onclick="openDeleteUserModal({{ $u->id }}, '{{ addslashes($name) }}', '{{ addslashes($u->email) }}')">
                                         <i class="bi bi-trash"></i>
@@ -266,7 +266,7 @@
                         <a href="{{ route('users.edit', $u->id) }}" class="btn btn-sm btn-outline-warning rounded-2 px-3 text-dark">
                             <i class="bi bi-pencil"></i>
                         </a>
-                        @if (auth()->id() !== $u->id)
+                        @if (auth()->user()->is_admin && auth()->id() !== $u->id)
                             <button type="button" class="btn btn-sm btn-outline-danger rounded-2 px-3"
                                     onclick="openDeleteUserModal({{ $u->id }}, '{{ addslashes($name) }}', '{{ addslashes($u->email) }}')">
                                 <i class="bi bi-trash"></i>

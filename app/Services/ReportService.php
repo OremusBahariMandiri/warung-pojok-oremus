@@ -8,6 +8,7 @@ use App\Models\ReportDetails;
 use App\Models\Reports;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 
 class ReportService
 {
@@ -543,6 +544,65 @@ class ReportService
             return $deleted;
         });
     }
+
+    /**
+     * Permanent hard delete sales report khusus untuk Super Admin (is_admin = 1):
+     *   - Kembalikan stok produk yang terjual
+     *   - Hapus relasi detail di report_details
+     *   - Hapus baris di tabel reports secara permanen (DELETE FROM reports WHERE id = ?)
+     */
+    public function permanentDeleteReport(Reports $report): bool
+    {
+        return DB::transaction(function () use ($report) {
+            $report->load('details.product');
+            $oldValues = $report->toArray();
+            $rollbackSummary = [];
+
+            foreach ($report->details as $detail) {
+                $product = Products::lockForUpdate()->find($detail->product_id);
+                if ($product) {
+                    $oldStock = $product->current_stock;
+                    $newStock = $oldStock + $detail->quantity;
+                    $product->current_stock = $newStock;
+                    $product->save();
+
+                    $rollbackSummary[] = [
+                        'product_id'        => $product->id,
+                        'product_name'      => $product->prod_name,
+                        'restored_quantity' => $detail->quantity,
+                        'old_stock'         => $oldStock,
+                        'new_stock'         => $newStock,
+                    ];
+                }
+            }
+
+            $id = $report->id;
+            $reportDate = $report->report_date;
+
+            // Hapus detail secara permanen
+            ReportDetails::where('report_id', $id)->delete();
+
+            // Hapus record report secara permanen dari database
+            $deleted = $report->delete();
+
+            ActivityLogService::log(
+                action: 'DELETE',
+                module: 'REPORT',
+                entityType: Reports::class,
+                entityId: $id,
+                description: "Super Admin permanently deleted sales report ID {$id} (" . Carbon::parse($reportDate)->format('Y-m-d') . ")",
+                oldValues: [
+                    'report'         => $oldValues,
+                    'stock_rollback' => $rollbackSummary,
+                ],
+                newValues: null,
+                userId: Auth::id() ?? 1
+            );
+
+            return $deleted;
+        });
+    }
+
     /**
      * Simpan hasil kalkulasi gaji ke kolom komisi pada semua laporan di rentang tanggal.
      * Mengembalikan jumlah baris yang diperbarui.

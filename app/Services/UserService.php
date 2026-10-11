@@ -48,12 +48,17 @@ class UserService
     public function createUser(array $data): User
     {
         return DB::transaction(function () use ($data) {
+            $isAdmin = false;
+            if (auth()->guard()->check() && auth()->guard()->user()->is_admin) {
+                $isAdmin = (bool)($data['is_admin'] ?? false);
+            }
+
             $user = User::create([
                 'nrk' => $data['nrk'],
                 'email' => $data['email'],
                 'employee_name' => $data['employee_name'],
                 'password' => Hash::make($data['password']),
-                'is_admin' => (bool)($data['is_admin'] ?? false),
+                'is_admin' => $isAdmin,
             ]);
 
             // Assign access rights
@@ -82,11 +87,16 @@ class UserService
         return DB::transaction(function () use ($user, $data) {
             $oldValues = $user->load('accesses')->toArray();
 
+            $isAdmin = $user->is_admin;
+            if (auth()->guard()->check() && auth()->guard()->user()->is_admin && isset($data['is_admin'])) {
+                $isAdmin = (bool)$data['is_admin'];
+            }
+
             $updateData = [
                 'nrk' => $data['nrk'] ?? $user->nrk,
                 'email' => $data['email'] ?? $user->email,
                 'employee_name' => $data['employee_name'] ?? $user->employee_name,
-                'is_admin' => isset($data['is_admin']) ? (bool)$data['is_admin'] : $user->is_admin,
+                'is_admin' => $isAdmin,
             ];
 
             if (!empty($data['password'])) {

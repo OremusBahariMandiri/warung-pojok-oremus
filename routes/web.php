@@ -61,18 +61,24 @@ Route::middleware(['auth', 'remember'])->group(function () {
     ])->middleware('user.access:users');
 
     // Transaksi: Restock
+    Route::post('restock/{restock}/rollback', [RestockController::class, 'rollback'])
+        ->name('restock.rollback')
+        ->middleware('user.access:restock,edit');
     Route::patch('restock/{restock}/status', [RestockController::class, 'updateStatus'])
         ->name('restock.update_status')
         ->middleware('user.access:restock,edit');
     Route::resource('restock', RestockController::class)->middleware('user.access:restock');
 
     // Transaksi & Audit: Stock Opname
+    Route::post('stock-opname/{stock_opname}/rollback', [StockOpnameController::class, 'rollback'])
+        ->name('stock-opname.rollback')
+        ->middleware('user.access:stock_opname,edit');
     Route::patch('stock-opname/{stock_opname}/status', [StockOpnameController::class, 'updateStatus'])
         ->name('stock-opname.update_status')
-        ->middleware('user.access:products,edit');
+        ->middleware('user.access:stock_opname,edit');
     Route::resource('stock-opname', StockOpnameController::class, [
         'parameters' => ['stock-opname' => 'stockOpname']
-    ])->middleware('user.access:products');
+    ])->middleware('user.access:stock_opname');
 
     // Transaksi & Monitoring: Laporan Penjualan & Margin
     Route::get('/reports/check-date', [ReportController::class, 'checkDate'])

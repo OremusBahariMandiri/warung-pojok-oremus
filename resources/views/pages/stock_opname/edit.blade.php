@@ -544,9 +544,9 @@
                     data-bs-dismiss="modal">
                     Batal
                 </button>
-                <form action="{{ route('stock-opname.destroy', $stockOpname->id) }}" method="POST" class="d-inline">
+                <form action="{{ route('stock-opname.rollback', $stockOpname->id) }}" method="POST" class="d-inline">
                     @csrf
-                    @method('DELETE')
+                    <input type="hidden" name="action_type" value="rollback">
                     <button type="submit" class="btn btn-danger rounded-2 px-4 d-inline-flex align-items-center gap-2">
                         <i class="bi bi-arrow-counterclockwise"></i> Ya, Rollback Sekarang
                     </button>

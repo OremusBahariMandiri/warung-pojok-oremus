@@ -45,7 +45,7 @@ class CheckUserAccess
             return $next($request);
         }
 
-        // 4. Forbidden response if permission not granted
+        // 5. Forbidden response if permission not granted
         if ($request->wantsJson()) {
             return response()->json([
                 'status' => 'forbidden',

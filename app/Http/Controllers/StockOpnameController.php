@@ -155,14 +155,10 @@ class StockOpnameController extends Controller
      *  1. initial_stock produk dikembalikan ke nilai sebelum opname.
      *  2. Status opname dikembalikan ke DRAFT.
      *
-     * Setelah rollback admin/user bisa membuka edit form dan memperbaiki data.
-     *
-     * Endpoint: DELETE /stock-opname/{stockOpname}
-     * (Dipakai oleh tombol "Rollback Opname" di blade — dalam window 3 jam)
+     * Dapat dilakukan oleh Super Admin maupun Non-Admin yang memiliki hak akses.
      */
-    public function destroy(Request $request, StockOpname $stockOpname)
+    public function rollback(Request $request, StockOpname $stockOpname)
     {
-        // Cek apakah masih dalam window 3 jam sejak updated_at / opname_date
         $completedAt      = $stockOpname->updated_at ?? $stockOpname->opname_date;
         $rollbackDeadline = $completedAt ? $completedAt->copy()->addHours(3) : null;
 
@@ -191,8 +187,44 @@ class StockOpnameController extends Controller
                 ]);
             }
 
-            return redirect()->route('stock-opname.index', $stockOpname->id)
-                ->with('success', 'Stock Opname berhasil di-rollback. Silakan periksa dan perbaiki data sebelum menyelesaikannya kembali.');
+            return redirect()->route('stock-opname.index')
+                ->with('success', 'Stock Opname berhasil di-rollback. Status kembali ke DRAFT dan stok produk telah dipulihkan.');
+        }
+
+        if ($request->wantsJson()) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Hanya transaksi berstatus COMPLETED yang dapat di-rollback.',
+            ], 422);
+        }
+
+        return redirect()->route('stock-opname.edit', $stockOpname->id)
+            ->with('error', 'Hanya transaksi berstatus COMPLETED yang dapat di-rollback.');
+    }
+
+    /**
+     * Remove the specified stock opname from storage.
+     * Jika aksi rollback dikirimkan, jalankan alur rollback.
+     * Jika dari tombol Trash Index oleh Super Admin (is_admin = 1), hapus data stock opname secara permanen.
+     */
+    public function destroy(Request $request, StockOpname $stockOpname)
+    {
+        if ($request->input('action_type') === 'rollback') {
+            return $this->rollback($request, $stockOpname);
+        }
+
+        if (Auth::check() && (int) Auth::user()->is_admin === 1) {
+            $this->opnameService->permanentDeleteStockOpname($stockOpname, Auth::id() ?? 1);
+
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'status'  => 'success',
+                    'message' => 'Transaksi Stock Opname berhasil dihapus permanen oleh Super Admin.',
+                ]);
+            }
+
+            return redirect()->route('stock-opname.index')
+                ->with('success', 'Transaksi Stock Opname berhasil dihapus permanen.');
         }
 
         // Jika bukan COMPLETED (masih DRAFT) — hard delete diizinkan

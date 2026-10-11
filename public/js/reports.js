@@ -2580,3 +2580,20 @@ function onFlexibleManualInput(inputEl) {
     recalculateReportTotals();
 }
 window.onFlexibleManualInput = onFlexibleManualInput;
+
+function openDeleteModal(id, date, qty, sales) {
+    const dateEl = document.getElementById("deleteReportDate");
+    const qtyEl = document.getElementById("deleteReportQty");
+    const salesEl = document.getElementById("deleteReportSales");
+    const form = document.getElementById("deleteReportForm");
+    if (dateEl) dateEl.textContent = date;
+    if (qtyEl) qtyEl.textContent = qty + " Unit";
+    if (salesEl) salesEl.textContent = "Rp " + Number(sales).toLocaleString("id-ID");
+    if (form) form.action = "/reports/" + id;
+    const modalEl = document.getElementById("modalDeleteReport");
+    if (modalEl && typeof bootstrap !== "undefined") {
+        new bootstrap.Modal(modalEl).show();
+    }
+}
+window.openDeleteModal = openDeleteModal;
+
