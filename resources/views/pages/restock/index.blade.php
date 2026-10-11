@@ -1,4 +1,4 @@
-﻿@extends('layouts.admin')
+@extends('layouts.admin')
 
 @section('title', 'Riwayat Pembelian — Warung Pojok Oremus')
 
@@ -156,18 +156,15 @@
                                 <a href="{{ route('restock.show', $item->id) }}" class="btn btn-sm btn-info text-white px-2 py-1 rounded-2 shadow-none" title="Detail" style="background-color: #0ea5e9; border-color: #0ea5e9;">
                                     <i class="bi bi-eye"></i>
                                 </a>
-                                @if ($isDraft)
-                                    <a href="{{ route('restock.edit', $item->id) }}" class="btn btn-sm btn-warning text-white px-2 py-1 rounded-2 shadow-none" title="Edit Draft" style="background-color: #f59e0b; border-color: #f59e0b;">
-                                        <i class="bi bi-pencil"></i>
-                                    </a>
-                                    {{-- <button type="button" class="btn btn-sm btn-danger text-white px-2 py-1 rounded-2 shadow-none" title="Hapus Draft"
-                                        onclick="openDeleteModal({{ $item->id }}, '{{ addslashes($item->restock_code) }}', {{ $totalQty }}, {{ $totalPrice }})">
-                                        <i class="bi bi-trash"></i>
-                                    </button> --}}
-                                @else
-                                    <a href="{{ route('restock.edit', $item->id) }}" class="btn btn-sm btn-warning text-white px-2 py-1 rounded-2 shadow-none" title="Edit Transaksi" style="background-color: #f59e0b; border-color: #f59e0b;">
-                                        <i class="bi bi-pencil"></i>
-                                    </a>
+                                <a href="{{ route('restock.edit', $item->id) }}" class="btn btn-sm btn-warning text-white px-2 py-1 rounded-2 shadow-none" title="Edit" style="background-color: #f59e0b; border-color: #f59e0b;">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                @if (auth()->user()->is_admin)
+                                <button type="button" class="btn btn-sm btn-danger text-white px-2 py-1 rounded-2 shadow-none" title="Hapus"
+                                    style="background-color: #ef4444; border-color: #ef4444;"
+                                    onclick="openDeleteModal({{ $item->id }}, '{{ addslashes($item->restock_code) }}', {{ $totalQty }}, {{ $totalPrice }})">
+                                    <i class="bi bi-trash"></i>
+                                </button>
                                 @endif
                             </div>
                         </td>
@@ -235,19 +232,15 @@
                     <a href="{{ route('restock.show', $item->id) }}" class="rlc-btn-detail flex-fill text-center">
                         <i class="bi bi-eye"></i> Detail
                     </a>
-                    @if ($isDraft)
-                        <a href="{{ route('restock.edit', $item->id) }}" class="btn btn-sm btn-warning text-white rounded-2 px-3 d-inline-flex align-items-center gap-1" style="background-color: #f59e0b; border-color: #f59e0b;">
-                            <i class="bi bi-pencil"></i> Edit
-                        </a>
-                        {{-- <button type="button" class="rlc-btn-delete"
-                            onclick="openDeleteModal({{ $item->id }}, '{{ addslashes($item->restock_code) }}', {{ $totalQty }}, {{ $totalPrice }})"
-                            title="Hapus Draft">
-                            <i class="bi bi-trash"></i>
-                        </button> --}}
-                    @else
-                        <a href="{{ route('restock.edit', $item->id) }}" class="btn btn-sm btn-warning text-white rounded-2 px-3 d-inline-flex align-items-center gap-1" style="background-color: #f59e0b; border-color: #f59e0b;">
-                            <i class="bi bi-pencil"></i> Edit
-                        </a>
+                    <a href="{{ route('restock.edit', $item->id) }}" class="btn btn-sm btn-warning text-white rounded-2 px-3 d-inline-flex align-items-center gap-1" style="background-color: #f59e0b; border-color: #f59e0b;">
+                        <i class="bi bi-pencil"></i> Edit
+                    </a>
+                    @if (auth()->user()->is_admin)
+                    <button type="button" class="rlc-btn-delete"
+                        onclick="openDeleteModal({{ $item->id }}, '{{ addslashes($item->restock_code) }}', {{ $totalQty }}, {{ $totalPrice }})"
+                        title="Hapus Transaksi">
+                        <i class="bi bi-trash"></i>
+                    </button>
                     @endif
                 </div>
             </div>
@@ -310,8 +303,8 @@
                 <div class="avatar-circle mx-auto mb-3 bg-danger bg-opacity-10 text-danger d-flex align-items-center justify-content-center rounded-circle" style="width: 54px; height: 54px; font-size: 1.5rem;">
                     <i class="bi bi-trash"></i>
                 </div>
-                <h6 class="fw-bold text-dark mb-1">Hapus Draft Restock?</h6>
-                <p class="text-muted small mb-2">Draft transaksi "<span id="deleteRestockCode" class="fw-semibold text-dark"></span>" akan dihapus permanen.</p>
+                <h6 class="fw-bold text-dark mb-1">Hapus Transaksi Restock?</h6>
+                <p class="text-muted small mb-2">Transaksi "<span id="deleteRestockCode" class="fw-semibold text-dark"></span>" akan dihapus permanen.</p>
                 <form id="deleteRestockForm" method="POST" action="">
                     @csrf
                     @method('DELETE')

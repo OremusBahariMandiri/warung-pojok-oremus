@@ -133,7 +133,8 @@
                             @enderror
                         </div>
 
-                        <!-- Role: Super Admin Switch -->
+                        <!-- Role: Super Admin Switch (Hanya tampil untuk Super Admin) -->
+                        @if (auth()->user()->is_admin)
                         <div class="p-3 bg-light rounded-3 border mt-4">
                             <div class="form-check form-switch d-flex align-items-center justify-content-between p-0 mb-0">
                                 <div>
@@ -147,6 +148,7 @@
                                 <input class="form-check-input ms-3" type="checkbox" role="switch" name="is_admin" id="is_admin" value="1" {{ old('is_admin') ? 'checked' : '' }} style="width: 2.5em; height: 1.25em;">
                             </div>
                         </div>
+                        @endif
                     </div>
                 </div>
 

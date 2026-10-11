@@ -65,12 +65,6 @@
             <i class="bi bi-printer"></i> Cetak
         </button>
 
-        @if ($status === 'DRAFT')
-            <a href="{{ route('stock-opname.edit', $detailedOpname->id) }}" class="btn btn-sm btn-outline-warning rounded-2 px-3 text-warning-emphasis d-inline-flex align-items-center gap-2">
-                <i class="bi bi-pencil"></i> Edit Draft
-            </a>
-        @endif
-
         <a href="{{ route('stock-opname.index') }}" class="btn btn-sm btn-outline-secondary rounded-2 px-3 d-inline-flex align-items-center gap-2">
             <i class="bi bi-arrow-left"></i> Kembali
         </a>

@@ -245,9 +245,23 @@ class ReportController extends Controller
 
     /**
      * Remove / Rollback the specified sales report.
+     * Jika Super Admin (is_admin = 1), hapus data laporan secara permanen.
      */
     public function destroy(Request $request, Reports $report)
     {
+        if (Auth::check() && (int) Auth::user()->is_admin === 1) {
+            $this->reportService->permanentDeleteReport($report);
+
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'status'  => 'success',
+                    'message' => 'Laporan penjualan berhasil dihapus permanen oleh Super Admin.',
+                ]);
+            }
+
+            return redirect()->route('reports.index')->with('success', 'Laporan penjualan berhasil dihapus permanen.');
+        }
+
         $this->reportService->deleteReport($report);
 
         if ($request->wantsJson()) {

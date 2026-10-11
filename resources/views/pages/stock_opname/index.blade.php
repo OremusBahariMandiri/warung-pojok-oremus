@@ -146,7 +146,6 @@
                             @endif
                         </td>
                         <td class="text-center">
-                            {{-- PERUBAHAN: hapus tombol rollback, ganti dengan tombol edit untuk semua status --}}
                             <div class="d-inline-flex gap-1">
                                 <a href="{{ route('stock-opname.show', $opname->id) }}"
                                    class="btn btn-sm btn-outline-info rounded-2 py-1 px-2"
@@ -158,6 +157,14 @@
                                    title="{{ ($status === 'COMPLETED' || $status === 'CONFIRMED') ? 'Periksa Opname' : 'Edit Opname' }}">
                                     <i class="bi bi-pencil"></i>
                                 </a>
+                                @if (auth()->user()->is_admin)
+                                <button type="button"
+                                        class="btn btn-sm btn-outline-danger rounded-2 py-1 px-2"
+                                        title="Hapus Opname"
+                                        onclick="openDeleteOpnameModal({{ $opname->id }}, '{{ addslashes($opname->opname_code) }}', '{{ $status }}')">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                                @endif
                             </div>
                         </td>
                     </tr>
@@ -220,7 +227,6 @@
                 </div>
 
                 <!-- Card Actions -->
-                {{-- PERUBAHAN: hapus tombol rollback, ganti dengan tombol edit untuk semua status --}}
                 <div class="d-flex gap-2">
                     <a href="{{ route('stock-opname.show', $opname->id) }}" class="btn btn-sm btn-outline-info rounded-2 flex-fill">
                         <i class="bi bi-eye me-1"></i> Detail
@@ -229,6 +235,14 @@
                        class="btn btn-sm btn-outline-warning rounded-2 flex-fill text-warning-emphasis">
                         <i class="bi bi-pencil me-1"></i> {{ ($status === 'COMPLETED' || $status === 'CONFIRMED') ? 'Lihat' : 'Edit' }}
                     </a>
+                    @if (auth()->user()->is_admin)
+                    <button type="button"
+                            class="btn btn-sm btn-outline-danger rounded-2 px-3"
+                            title="Hapus"
+                            onclick="openDeleteOpnameModal({{ $opname->id }}, '{{ addslashes($opname->opname_code) }}', '{{ $status }}')">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                    @endif
                 </div>
             </div>
         @empty
@@ -300,6 +314,30 @@
         </div>
     </div>
 </div>
+
+<!-- MODAL CONFIRM DELETE STOCK OPNAME -->
+<div class="modal fade" id="modalDeleteOpname" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content modal-content-minimal">
+            <div class="modal-body modal-body-minimal text-center py-4">
+                <div class="avatar-circle mx-auto mb-3 bg-danger bg-opacity-10 text-danger d-flex align-items-center justify-content-center rounded-circle" style="width: 54px; height: 54px; font-size: 1.5rem;">
+                    <i class="bi bi-trash"></i>
+                </div>
+                <h6 class="fw-bold text-dark mb-1">Hapus Stock Opname?</h6>
+                <p class="text-muted small mb-2">Transaksi "<span id="deleteOpnameCode" class="fw-semibold text-dark"></span>" akan dihapus permanen.</p>
+                <form id="deleteOpnameForm" method="POST" action="">
+                    @csrf
+                    @method('DELETE')
+                    <div class="d-flex gap-2 justify-content-center">
+                        <button type="button" class="btn btn-sm btn-light border px-3 rounded-2" data-bs-dismiss="modal">Batal</button>
+                        <button type="submit" class="btn btn-sm btn-danger px-3 rounded-2">Ya, Hapus</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
 @endsection
 
 @push('scripts')
@@ -311,4 +349,15 @@
 <script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
 <script src="https://cdn.datatables.net/responsive/2.5.0/js/responsive.bootstrap5.min.js"></script>
 <script src="{{ asset('js/stock_opname.js') }}"></script>
+<script>
+function openDeleteOpnameModal(id, code, status) {
+    document.getElementById("deleteOpnameCode").textContent = code;
+    var form = document.getElementById("deleteOpnameForm");
+    if (form) form.action = "/stock-opname/" + id;
+    var modalEl = document.getElementById("modalDeleteOpname");
+    if (modalEl && typeof bootstrap !== "undefined") {
+        new bootstrap.Modal(modalEl).show();
+    }
+}
+</script>
 @endpush

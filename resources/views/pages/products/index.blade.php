@@ -192,6 +192,7 @@
                                style="background-color: #f59e0b; border-color: #f59e0b;">
                                 <i class="bi bi-pencil"></i>
                             </a>
+                            @if (auth()->user()->is_admin)
                             <button type="button"
                                     class="btn btn-sm btn-danger text-white px-2 py-1 rounded-2 shadow-none"
                                     title="Hapus"
@@ -199,6 +200,7 @@
                                     onclick="openDeleteModal('{{ $item->id }}', '{{ addslashes($item->prod_name) }}')">
                                 <i class="bi bi-trash"></i>
                             </button>
+                            @endif
                         </div>
 
                         <!-- Mobile Action Dropdown -->
@@ -221,6 +223,7 @@
                                             <i class="bi bi-pencil text-warning"></i> Edit Produk
                                         </a>
                                     </li>
+                                    @if (auth()->user()->is_admin)
                                     <li><hr class="dropdown-divider my-1"></li>
                                     <li>
                                         <button class="dropdown-item d-flex align-items-center gap-2 text-danger"
@@ -228,6 +231,7 @@
                                             <i class="bi bi-trash"></i> Hapus Produk
                                         </button>
                                     </li>
+                                    @endif
                                 </ul>
                             </div>
                         </div>

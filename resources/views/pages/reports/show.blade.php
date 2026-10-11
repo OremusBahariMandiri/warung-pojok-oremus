@@ -216,43 +216,6 @@
         </div>
     </div>
 </div>
-
-<!-- Modal Konfirmasi Hapus & Rollback Laporan -->
-<div class="modal fade" id="modalDeleteReport" tabindex="-1" aria-labelledby="modalDeleteReportLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content rounded-3 border-0 shadow">
-            <div class="modal-header border-bottom py-3">
-                <h6 class="modal-title fw-bold text-danger" id="modalDeleteReportLabel">
-                    <i class="bi bi-exclamation-triangle-fill me-1"></i>Hapus
-                </h6>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body p-4">
-                <p class="text-dark mb-2">
-                    Apakah Anda yakin ingin menghapus laporan penjualan tanggal <strong id="deleteReportDate" class="text-dark"></strong>?
-                </p>
-                <div class="alert alert-warning py-2 px-3 small rounded-2 mb-3">
-                    <i class="bi bi-info-circle-fill me-1"></i>
-                    <strong>Perhatian:</strong> Menghapus laporan ini akan secara otomatis <strong>mengembalikan stok</strong> seluruh produk yang terjual (<span id="deleteReportQty" class="fw-bold"></span>) ke saldo persediaan inventori.
-                </div>
-                <div class="bg-light p-2 rounded-2 border text-muted small">
-                    Total Nilai Penjualan: <span id="deleteReportSales" class="fw-bold text-dark font-monospace"></span>
-                </div>
-            </div>
-            <div class="modal-footer border-top py-2 px-4 d-flex justify-content-between">
-                <button type="button" class="btn btn-sm btn-light border rounded-2 px-3" data-bs-dismiss="modal">Batal</button>
-                <form id="deleteReportForm" action="" method="POST" class="d-inline">
-                    @csrf
-                    @method('DELETE')
-                    <button type="submit" class="btn btn-sm btn-danger text-white fw-bold rounded-2 px-3">
-                        <i class="bi bi-trash-fill"></i> Ya, Hapus & Rollback Stok
-                    </button>
-                </form>
-            </div>
-        </div>
-    </div>
-</div>
-
 @endsection
 
 @push('scripts')
