@@ -1,4 +1,4 @@
-﻿@extends('layouts.admin')
+@extends('layouts.admin')
 
 @section('title', 'Detail Restock — Warung Pojok Oremus')
 
@@ -270,29 +270,6 @@
             </div>
             {{-- /Mobile Card List --}}
 
-        </div>
-    </div>
-</div>
-
-<!-- MODAL CONFIRM DELETE DRAFT RESTOCK -->
-<div class="modal fade" id="modalDeleteRestock" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-sm">
-        <div class="modal-content modal-content-minimal">
-            <div class="modal-body modal-body-minimal text-center py-4">
-                <div class="avatar-circle mx-auto mb-3 bg-danger bg-opacity-10 text-danger d-flex align-items-center justify-content-center rounded-circle" style="width: 54px; height: 54px; font-size: 1.5rem;">
-                    <i class="bi bi-trash"></i>
-                </div>
-                <h6 class="fw-bold text-dark mb-1">Hapus Draft Restock?</h6>
-                <p class="text-muted small mb-2">Draft transaksi "<span id="deleteRestockCode" class="fw-semibold text-dark">{{ $restockObj->restock_code }}</span>" akan dihapus permanen.</p>
-                <form id="deleteRestockForm" method="POST" action="{{ route('restock.destroy', $restockObj->id) }}">
-                    @csrf
-                    @method('DELETE')
-                    <div class="d-flex gap-2 justify-content-center">
-                        <button type="button" class="btn btn-sm btn-light border px-3 rounded-2" data-bs-dismiss="modal">Batal</button>
-                        <button type="submit" class="btn btn-sm btn-danger px-3 rounded-2">Ya, Hapus</button>
-                    </div>
-                </form>
-            </div>
         </div>
     </div>
 </div>

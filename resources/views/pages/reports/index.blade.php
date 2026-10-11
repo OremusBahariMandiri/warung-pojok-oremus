@@ -148,6 +148,15 @@
                         title="Kalkulator Gaji">
                             <i class="bi bi-calculator"></i>
                         </a>
+                        @if (auth()->user()->is_admin)
+                        <button type="button"
+                                class="btn btn-sm btn-danger text-white px-2 py-1 rounded-2 shadow-none"
+                                title="Hapus Laporan"
+                                style="background-color:#ef4444;border-color:#ef4444;"
+                                onclick="openDeleteModal({{ $r->id }}, '{{ $formattedDate }}', {{ (int)($r->total_quantity ?? 0) }}, {{ (float)$totalSales }})">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                        @endif
                     </div>
                 </td>
             </tr>
@@ -248,6 +257,13 @@
                            title="Kalkulator Gaji">
                             <i class="bi bi-calculator"></i>
                         </a>
+                        @if (auth()->user()->is_admin)
+                        <button type="button" class="btn btn-sm btn-outline-danger rounded-2 px-3"
+                                title="Hapus"
+                                onclick="openDeleteModal({{ $r->id }}, '{{ $formattedDate }}', {{ (int)($r->total_quantity ?? 0) }}, {{ (float)$totalSales }})">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                        @endif
                     </div>
                 </div>
             @empty
@@ -357,6 +373,42 @@
     </div>
 </div>
 
+<!-- Modal Konfirmasi Hapus Laporan -->
+<div class="modal fade" id="modalDeleteReport" tabindex="-1" aria-labelledby="modalDeleteReportLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-3 border-0 shadow">
+            <div class="modal-header border-bottom py-3">
+                <h6 class="modal-title fw-bold text-danger" id="modalDeleteReportLabel">
+                    <i class="bi bi-exclamation-triangle-fill me-1"></i>Hapus Laporan Penjualan
+                </h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <p class="text-dark mb-2">
+                    Apakah Anda yakin ingin menghapus laporan penjualan tanggal <strong id="deleteReportDate" class="text-dark"></strong>?
+                </p>
+                <div class="alert alert-warning py-2 px-3 small rounded-2 mb-3">
+                    <i class="bi bi-info-circle-fill me-1"></i>
+                    <strong>Perhatian:</strong> Menghapus laporan ini akan secara otomatis <strong>mengembalikan stok</strong> seluruh produk yang terjual (<span id="deleteReportQty" class="fw-bold"></span>) ke saldo persediaan inventori dan menghapus data secara permanen.
+                </div>
+                <div class="bg-light p-2 rounded-2 border text-muted small">
+                    Total Nilai Penjualan: <span id="deleteReportSales" class="fw-bold text-dark font-monospace"></span>
+                </div>
+            </div>
+            <div class="modal-footer border-top py-2 px-4 d-flex justify-content-between">
+                <button type="button" class="btn btn-sm btn-light border rounded-2 px-3" data-bs-dismiss="modal">Batal</button>
+                <form id="deleteReportForm" action="" method="POST" class="d-inline">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit" class="btn btn-sm btn-danger text-white fw-bold rounded-2 px-3">
+                        <i class="bi bi-trash-fill"></i> Ya, Hapus Permanen
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
 @endsection
 
 @push('scripts')
@@ -371,6 +423,19 @@
     window._reportCreateUrl    = '{{ route("reports.create") }}';
     window._todayDate          = '{{ now()->format("Y-m-d\TH:i") }}';
     window._todayMax           = '{{ now()->format("Y-m-d\T23:59") }}';
+
+    function openDeleteModal(id, date, qty, sales) {
+        document.getElementById("deleteReportDate").textContent = date;
+        document.getElementById("deleteReportQty").textContent = qty + " Unit";
+        document.getElementById("deleteReportSales").textContent = "Rp " + Number(sales).toLocaleString("id-ID");
+        var form = document.getElementById("deleteReportForm");
+        if (form) form.action = "/reports/" + id;
+        var modalEl = document.getElementById("modalDeleteReport");
+        if (modalEl && typeof bootstrap !== "undefined") {
+            new bootstrap.Modal(modalEl).show();
+        }
+    }
+    window.openDeleteModal = openDeleteModal;
 </script>
 <script src="{{ asset('js/reports.js') }}"></script>
 @endpush

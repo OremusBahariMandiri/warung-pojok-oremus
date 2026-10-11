@@ -539,9 +539,9 @@
             </div>
             <div class="modal-footer border-top py-2">
                 <button type="button" class="btn btn-outline-secondary rounded-2 px-3" data-bs-dismiss="modal">Batal</button>
-                <form method="POST" action="{{ route('restock.destroy', $restock->id) }}" style="display:inline;">
+                <form method="POST" action="{{ route('restock.rollback', $restock->id) }}" style="display:inline;">
                     @csrf
-                    @method('DELETE')
+                    <input type="hidden" name="action_type" value="rollback">
                     <button type="submit" class="btn btn-danger rounded-2 px-4">
                         <i class="bi bi-arrow-counterclockwise me-1"></i> Ya, Rollback Sekarang
                     </button>

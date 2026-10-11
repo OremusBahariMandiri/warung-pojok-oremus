@@ -34,7 +34,7 @@ class StockOpnameService
             $search = $filters['search'];
             $query->where(function ($q) use ($search) {
                 $q->where('opname_code', 'like', "%{$search}%")
-                  ->orWhere('notes', 'like', "%{$search}%");
+                    ->orWhere('notes', 'like', "%{$search}%");
             });
         }
 
@@ -115,17 +115,17 @@ class StockOpnameService
             }
 
             ActivityLogService::log(
-                action:      'CREATE',
-                module:      'STOCK_OPNAME',
-                entityType:  StockOpname::class,
-                entityId:    $opname->id,
+                action: 'CREATE',
+                module: 'STOCK_OPNAME',
+                entityType: StockOpname::class,
+                entityId: $opname->id,
                 description: "Created Stock Opname {$opname->opname_code} (Status: {$status}, Items: " . count($itemsSummary) . ")",
-                oldValues:   null,
-                newValues:   [
+                oldValues: null,
+                newValues: [
                     'opname' => $opname->toArray(),
                     'items'  => $itemsSummary,
                 ],
-                userId:      $userId
+                userId: $userId
             );
 
             return $opname->load(['creator', 'items.product.unit']);
@@ -186,14 +186,14 @@ class StockOpnameService
             }
 
             ActivityLogService::log(
-                action:      'UPDATE',
-                module:      'STOCK_OPNAME',
-                entityType:  StockOpname::class,
-                entityId:    $opname->id,
+                action: 'UPDATE',
+                module: 'STOCK_OPNAME',
+                entityType: StockOpname::class,
+                entityId: $opname->id,
                 description: "Updated Stock Opname {$opname->opname_code} (Status: {$newStatus})",
-                oldValues:   $oldValues,
-                newValues:   $opname->fresh()->load('items')->toArray(),
-                userId:      $userId
+                oldValues: $oldValues,
+                newValues: $opname->fresh()->load('items')->toArray(),
+                userId: $userId
             );
 
             return $opname->fresh()->load(['creator', 'items.product.unit']);
@@ -229,14 +229,14 @@ class StockOpnameService
             $opname->update(['status_opname' => $newStatus]);
 
             ActivityLogService::log(
-                action:      'UPDATE_STATUS',
-                module:      'STOCK_OPNAME',
-                entityType:  StockOpname::class,
-                entityId:    $opname->id,
+                action: 'UPDATE_STATUS',
+                module: 'STOCK_OPNAME',
+                entityType: StockOpname::class,
+                entityId: $opname->id,
                 description: "Updated Stock Opname {$opname->opname_code} status from {$oldStatus} to {$newStatus}",
-                oldValues:   ['status_opname' => $oldStatus],
-                newValues:   ['status_opname' => $newStatus],
-                userId:      $userId
+                oldValues: ['status_opname' => $oldStatus],
+                newValues: ['status_opname' => $newStatus],
+                userId: $userId
             );
 
             return $opname->fresh()->load(['creator', 'items.product.unit']);
@@ -280,14 +280,14 @@ class StockOpnameService
 
             // 3. Activity log
             ActivityLogService::log(
-                action:      'ROLLBACK',
-                module:      'STOCK_OPNAME',
-                entityType:  StockOpname::class,
-                entityId:    $opname->id,
+                action: 'ROLLBACK',
+                module: 'STOCK_OPNAME',
+                entityType: StockOpname::class,
+                entityId: $opname->id,
                 description: "Rolled back Stock Opname {$opname->opname_code} from COMPLETED to DRAFT. Stock restored.",
-                oldValues:   $oldValues,
-                newValues:   $opname->fresh()->toArray(),
-                userId:      $userId
+                oldValues: $oldValues,
+                newValues: $opname->fresh()->toArray(),
+                userId: $userId
             );
 
             return $opname->fresh()->load(['creator', 'items.product.unit']);
@@ -312,13 +312,46 @@ class StockOpnameService
             $deleted = $opname->delete();
 
             ActivityLogService::log(
-                action:      'DELETE',
-                module:      'STOCK_OPNAME',
-                entityType:  StockOpname::class,
-                entityId:    $opname->id,
+                action: 'DELETE',
+                module: 'STOCK_OPNAME',
+                entityType: StockOpname::class,
+                entityId: $opname->id,
                 description: "Deleted DRAFT Stock Opname: {$code}",
-                oldValues:   $oldValues,
-                newValues:   null
+                oldValues: $oldValues,
+                newValues: null
+            );
+
+            return $deleted;
+        });
+    }
+
+    /**
+     * Permanent hard delete stock opname khusus untuk Super Admin (is_admin = 1):
+     *   - Hapus semua relasi di stock_opname_items
+     *   - Hapus record stock_opname secara permanen dari database (DELETE FROM stock_opname WHERE id = ?)
+     */
+    public function permanentDeleteStockOpname(StockOpname $opname, int $userId): bool
+    {
+        return DB::transaction(function () use ($opname, $userId) {
+            $oldValues = $opname->load('items')->toArray();
+            $code      = $opname->opname_code;
+            $id        = $opname->id;
+
+            // Hapus items relasi terlebih dahulu
+            StockOpnameItem::where('id', $id)->delete();
+
+            // Hapus record opname
+            $deleted = $opname->delete();
+
+            ActivityLogService::log(
+                action: 'DELETE',
+                module: 'STOCK_OPNAME',
+                entityType: StockOpname::class,
+                entityId: $id,
+                description: "Super Admin permanently deleted Stock Opname: {$code}",
+                oldValues: $oldValues,
+                newValues: null,
+                userId: $userId
             );
 
             return $deleted;

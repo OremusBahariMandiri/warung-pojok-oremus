@@ -143,10 +143,77 @@ class RestockController extends Controller
     }
 
     /**
+     * Rollback restock transaction (CONFIRMED -> DRAFT):
+     * Mengembalikan penambahan stok dan harga produk ke sebelum transaksi ini dikonfirmasi.
+     * Status kembali menjadi DRAFT. Data restock TIDAK dihapus.
+     * Dapat dilakukan oleh Super Admin maupun Non-Admin yang memiliki izin.
+     */
+    public function rollback(Request $request, Restock $restock)
+    {
+        $confirmedAt      = $restock->updated_at ?? $restock->restock_date;
+        $rollbackDeadline = $confirmedAt ? $confirmedAt->copy()->addHours(3) : null;
+
+        if ($restock->status_restock === 'CONFIRMED') {
+            if (!$rollbackDeadline || now()->greaterThanOrEqualTo($rollbackDeadline)) {
+                if ($request->wantsJson()) {
+                    return response()->json([
+                        'status'  => 'error',
+                        'message' => 'Batas waktu rollback (3 jam) sudah terlewat. Transaksi tidak dapat di-rollback.',
+                    ], 422);
+                }
+
+                return redirect()->route('restock.edit', $restock->id)
+                    ->with('error', 'Batas waktu rollback (3 jam) sudah terlewat. Transaksi tidak dapat di-rollback.');
+            }
+
+            $this->restockService->deleteRestock($restock);
+
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'status'  => 'success',
+                    'message' => 'Transaksi restock berhasil dibatalkan dan penambahan stok telah di-rollback.',
+                ]);
+            }
+
+            return redirect()->route('restock.index')
+                ->with('success', 'Transaksi restock berhasil di-rollback dan status kembali ke DRAFT.');
+        }
+
+        if ($request->wantsJson()) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Hanya transaksi berstatus CONFIRMED yang dapat di-rollback.',
+            ], 422);
+        }
+
+        return redirect()->route('restock.edit', $restock->id)
+            ->with('error', 'Hanya transaksi berstatus CONFIRMED yang dapat di-rollback.');
+    }
+
+    /**
      * Remove / Rollback the specified restock from storage.
+     * Jika aksi rollback dikirimkan, jalankan alur rollback.
+     * Jika dari tombol Trash Index oleh Super Admin (is_admin = 1), hapus data transaksi secara permanen.
      */
     public function destroy(Request $request, Restock $restock)
     {
+        if ($request->input('action_type') === 'rollback') {
+            return $this->rollback($request, $restock);
+        }
+
+        if (Auth::check() && (int) Auth::user()->is_admin === 1) {
+            $this->restockService->permanentDeleteRestock($restock);
+
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'status'  => 'success',
+                    'message' => 'Transaksi restock berhasil dihapus permanen oleh Super Admin.',
+                ]);
+            }
+
+            return redirect()->route('restock.index')->with('success', 'Transaksi restock berhasil dihapus permanen.');
+        }
+
         $this->restockService->deleteRestock($restock);
 
         if ($request->wantsJson()) {

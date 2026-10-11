@@ -118,7 +118,8 @@
                         @enderror
                     </div>
 
-                    <!-- Role Switch -->
+                    <!-- Role Switch (Hanya tampil untuk Super Admin) -->
+                    @if (auth()->user()->is_admin)
                     <div class="col-12 mt-3">
                         <div class="p-3 bg-light rounded-3 border">
                             <div class="form-check form-switch d-flex align-items-center justify-content-between p-0 mb-0">
@@ -134,6 +135,7 @@
                             </div>
                         </div>
                     </div>
+                    @endif
                 </div>
 
                 <!-- Action Buttons -->

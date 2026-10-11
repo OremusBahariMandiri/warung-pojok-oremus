@@ -7,6 +7,7 @@ use App\Models\Restock;
 use App\Models\RestockItems;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 
 class RestockService
 {
@@ -21,8 +22,8 @@ class RestockService
             $search = $filters['search'];
             $query->where(function ($q) use ($search) {
                 $q->where('restock_code', 'like', "%{$search}%")
-                  ->orWhere('invoice_number', 'like', "%{$search}%")
-                  ->orWhere('supplier_name', 'like', "%{$search}%");
+                    ->orWhere('invoice_number', 'like', "%{$search}%")
+                    ->orWhere('supplier_name', 'like', "%{$search}%");
             });
         }
 
@@ -103,14 +104,14 @@ class RestockService
             }
 
             ActivityLogService::log(
-                action:      'CREATE',
-                module:      'RESTOCK',
-                entityType:  Restock::class,
-                entityId:    $restock->id,
+                action: 'CREATE',
+                module: 'RESTOCK',
+                entityType: Restock::class,
+                entityId: $restock->id,
                 description: "Created Restock {$restock->restock_code} (Status: {$status})",
-                oldValues:   null,
-                newValues:   $restock->load(['creator', 'items.product', 'items.unit'])->toArray(),
-                userId:      $userId
+                oldValues: null,
+                newValues: $restock->load(['creator', 'items.product', 'items.unit'])->toArray(),
+                userId: $userId
             );
 
             return $restock->load(['creator', 'items.product', 'items.unit']);
@@ -266,14 +267,14 @@ class RestockService
             }
 
             ActivityLogService::log(
-                action:      'UPDATE',
-                module:      'RESTOCK',
-                entityType:  Restock::class,
-                entityId:    $restock->id,
+                action: 'UPDATE',
+                module: 'RESTOCK',
+                entityType: Restock::class,
+                entityId: $restock->id,
                 description: "Updated Restock {$restock->restock_code} (Status: {$newStatus})",
-                oldValues:   $oldValues,
-                newValues:   $restock->fresh()->load(['creator', 'items.product', 'items.unit'])->toArray(),
-                userId:      $userId
+                oldValues: $oldValues,
+                newValues: $restock->fresh()->load(['creator', 'items.product', 'items.unit'])->toArray(),
+                userId: $userId
             );
 
             return $restock->fresh()->load(['creator', 'items.product', 'items.unit']);
@@ -327,14 +328,14 @@ class RestockService
             $restock->update(['status_restock' => $newStatus]);
 
             ActivityLogService::log(
-                action:      'UPDATE_STATUS',
-                module:      'RESTOCK',
-                entityType:  Restock::class,
-                entityId:    $restock->id,
+                action: 'UPDATE_STATUS',
+                module: 'RESTOCK',
+                entityType: Restock::class,
+                entityId: $restock->id,
                 description: "Updated Restock {$restock->restock_code} status from {$oldStatus} to {$newStatus}",
-                oldValues:   ['status_restock' => $oldStatus],
-                newValues:   ['status_restock' => $newStatus],
-                userId:      $userId
+                oldValues: ['status_restock' => $oldStatus],
+                newValues: ['status_restock' => $newStatus],
+                userId: $userId
             );
 
             return $restock->fresh()->load(['creator', 'items.product', 'items.unit']);
@@ -376,16 +377,69 @@ class RestockService
             $restock->update(['status_restock' => 'DRAFT']);
 
             ActivityLogService::log(
-                action:      'ROLLBACK',
-                module:      'RESTOCK',
-                entityType:  Restock::class,
-                entityId:    $restock->id,
+                action: 'ROLLBACK',
+                module: 'RESTOCK',
+                entityType: Restock::class,
+                entityId: $restock->id,
                 description: "Rolled back Restock {$code}: CONFIRMED → DRAFT",
-                oldValues:   $oldValues,
-                newValues:   $restock->fresh()->toArray()
+                oldValues: $oldValues,
+                newValues: $restock->fresh()->toArray()
             );
 
             return true;
+        });
+    }
+
+    /**
+     * Permanent hard delete restock transaction khusus untuk Super Admin (is_admin = 1):
+     *   - Kembalikan stok dan harga produk jika status CONFIRMED
+     *   - Hapus relasi di restock_items
+     *   - Hapus baris di tabel restock secara permanen (DELETE FROM restock WHERE id = ?)
+     */
+    public function permanentDeleteRestock(Restock $restock): bool
+    {
+        return DB::transaction(function () use ($restock) {
+            $items     = RestockItems::where('restock_id', $restock->id)->get();
+            $oldValues = $restock->toArray();
+            $code      = $restock->restock_code;
+            $id        = $restock->id;
+
+            if ($restock->status_restock === 'CONFIRMED') {
+                foreach ($items as $item) {
+                    $product = Products::lockForUpdate()->find($item->product_id);
+                    if (!$product) continue;
+
+                    // Kembalikan stok
+                    $product->current_stock = max(0, $product->current_stock - (int) $item->quantity);
+
+                    // Kembalikan unit_price ke snapshot sebelum restock ini dikonfirmasi
+                    $prevPrice = $item->previous_unit_price;
+                    if (!is_null($prevPrice)) {
+                        $product->unit_price = (float) $prevPrice;
+                    }
+
+                    $product->save();
+                }
+            }
+
+            // Hapus semua item terkait secara permanen
+            RestockItems::where('restock_id', $id)->delete();
+
+            // Hapus record restock secara permanen dari database
+            $deleted = $restock->delete();
+
+            ActivityLogService::log(
+                action: 'DELETE',
+                module: 'RESTOCK',
+                entityType: Restock::class,
+                entityId: $id,
+                description: "Super Admin permanently deleted Restock {$code}",
+                oldValues: $oldValues,
+                newValues: null,
+                userId: Auth::id() ?? 1,
+            );
+
+            return $deleted;
         });
     }
 }
