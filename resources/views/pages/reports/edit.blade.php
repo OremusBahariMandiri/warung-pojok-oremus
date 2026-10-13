@@ -4,6 +4,8 @@
 
 @push('styles')
 <link rel="stylesheet" href="{{ asset('css/reports.css') }}">
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
 @endpush
 
 @section('breadcrumb')
@@ -125,14 +127,16 @@
                                             <span class="row-no-num">{{ $loop->iteration }}</span>
                                         </td>
                                         <td class="col-product-unit">
-                                            <select name="items[{{ $idx }}][product_id]" class="form-select form-select-sm product-select rounded-2 mb-1" onchange="onProductSelectChange(this)" required>
-                                                <option value="" disabled {{ empty($selectedProdId) ? 'selected' : '' }}>Pilih Produk...</option>
-                                                @foreach ($productsList as $p)
-                                                    <option value="{{ $p->id }}" {{ $selectedProdId == $p->id ? 'selected' : '' }}>
-                                                        {{ $p->prod_name }} ({{ $p->prod_code ?: 'PRD-' . $p->id }})
-                                                    </option>
-                                                @endforeach
-                                            </select>
+                                            <div class="mb-2">
+                                                <select name="items[{{ $idx }}][product_id]" class="form-select form-select-sm product-select rounded-2 mb-1" onchange="onProductSelectChange(this)" required>
+                                                    <option value="" disabled {{ empty($selectedProdId) ? 'selected' : '' }}>Pilih Produk...</option>
+                                                    @foreach ($productsList as $p)
+                                                        <option value="{{ $p->id }}" {{ $selectedProdId == $p->id ? 'selected' : '' }}>
+                                                            {{ $p->prod_name }} ({{ $p->prod_code ?: 'PRD-' . $p->id }})
+                                                        </option>
+                                                    @endforeach
+                                                </select>
+                                            </div>
                                             <select name="items[{{ $idx }}][selling_unit_id]" class="form-select form-select-sm selling-unit-select rounded-2" onchange="onSellingUnitChange(this)" required>
                                                 <option value="" disabled {{ empty($selectedUnitId) ? 'selected' : '' }}>Pilih Satuan...</option>
                                                 @foreach ($unitsList as $u)
@@ -216,14 +220,16 @@
                                             <span class="row-no-num">{{ $loop->iteration }}</span>
                                         </td>
                                         <td class="col-product-unit">
-                                            <select name="items[{{ $idx }}][product_id]" class="form-select form-select-sm product-select rounded-2 mb-1" onchange="onProductSelectChange(this)" required>
-                                                <option value="" disabled>Pilih Produk...</option>
-                                                @foreach ($productsList as $p)
-                                                    <option value="{{ $p->id }}" {{ $detail->product_id == $p->id ? 'selected' : '' }}>
-                                                        {{ $p->prod_name }} ({{ $p->prod_code ?: 'PRD-' . $p->id }})
-                                                    </option>
-                                                @endforeach
-                                            </select>
+                                            <div class="mb-2">
+                                                <select name="items[{{ $idx }}][product_id]" class="form-select form-select-sm product-select rounded-2 mb-1" onchange="onProductSelectChange(this)" required>
+                                                    <option value="" disabled>Pilih Produk...</option>
+                                                    @foreach ($productsList as $p)
+                                                        <option value="{{ $p->id }}" {{ $detail->product_id == $p->id ? 'selected' : '' }}>
+                                                            {{ $p->prod_name }} ({{ $p->prod_code ?: 'PRD-' . $p->id }})
+                                                        </option>
+                                                    @endforeach
+                                                </select>
+                                            </div>
                                             <select name="items[{{ $idx }}][selling_unit_id]" class="form-select form-select-sm selling-unit-select rounded-2" onchange="onSellingUnitChange(this)" required>
                                                 <option value="" disabled>Pilih Satuan...</option>
                                                 @foreach ($unitsList as $u)
@@ -531,6 +537,8 @@
 @endsection
 
 @push('scripts')
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
     window.reportProductsList = @json($productsList);
     window.reportUnitsList    = @json($unitsList);
