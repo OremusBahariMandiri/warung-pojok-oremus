@@ -1580,9 +1580,11 @@ function addReportItemRow() {
                 <span class="row-no-num"></span>
             </td>
             <td class="col-product-unit">
-                <select name="items[${idx}][product_id]" class="form-select form-select-sm product-select rounded-2 mb-1" onchange="onProductSelectChange(this)" required>
-                    ${prodOpts}
-                </select>
+                <div class="mb-2">
+                    <select name="items[${idx}][product_id]" class="form-select form-select-sm product-select rounded-2" onchange="onProductSelectChange(this)" required>
+                        ${prodOpts}
+                    </select>
+                </div>
                 <select name="items[${idx}][selling_unit_id]" class="form-select form-select-sm selling-unit-select rounded-2" onchange="onSellingUnitChange(this)" required>
                     <option value="" disabled selected>Pilih Satuan...</option>
                 </select>
@@ -2588,7 +2590,8 @@ function openDeleteModal(id, date, qty, sales) {
     const form = document.getElementById("deleteReportForm");
     if (dateEl) dateEl.textContent = date;
     if (qtyEl) qtyEl.textContent = qty + " Unit";
-    if (salesEl) salesEl.textContent = "Rp " + Number(sales).toLocaleString("id-ID");
+    if (salesEl)
+        salesEl.textContent = "Rp " + Number(sales).toLocaleString("id-ID");
     if (form) form.action = "/reports/" + id;
     const modalEl = document.getElementById("modalDeleteReport");
     if (modalEl && typeof bootstrap !== "undefined") {
@@ -2596,4 +2599,122 @@ function openDeleteModal(id, date, qty, sales) {
     }
 }
 window.openDeleteModal = openDeleteModal;
+/* ═══════════════════════════════════════════════════════════
+   SELECT2 — Init & patch untuk reports/create & edit
+   Mengikuti pola restock.js: theme bootstrap-5, event select2:select
+═══════════════════════════════════════════════════════════ */
 
+/**
+ * Init Select2 pada satu elemen <select>.
+ * Pakai theme: "bootstrap-5" agar tampilan sama dengan restock.
+ */
+function initSelect2(el, placeholder) {
+    if (!el || $(el).hasClass("select2-hidden-accessible")) return;
+    $(el).select2({
+        theme: "bootstrap-5",
+        placeholder: placeholder || "Pilih...",
+        allowClear: false,
+        width: "100%",
+        dropdownParent: $(el).closest(".card-box, .reports-card-box, form"),
+    });
+}
+
+/**
+ * Init Select2 pada semua baris yang sudah ada di DOM
+ * (baris old() hasil render Blade saat validation error redirect).
+ */
+function initAllSelect2() {
+    // ── Desktop ──
+    $("#reportItemRows .product-select").each(function () {
+        if ($(this).hasClass("select2-hidden-accessible")) return;
+        initSelect2(this, "Pilih Produk...");
+        $(this).on("select2:select", function () {
+            onProductSelectChange(this);
+        });
+    });
+
+    $("#reportItemRows .selling-unit-select").each(function () {
+        if ($(this).hasClass("select2-hidden-accessible")) return;
+        initSelect2(this, "Pilih Satuan...");
+        $(this).on("select2:select", function () {
+            onSellingUnitChange(this);
+        });
+    });
+
+    // ── Mobile ──
+    $("#reportItemRowsMobile .product-select-mobile").each(function () {
+        if ($(this).hasClass("select2-hidden-accessible")) return;
+        initSelect2(this, "Pilih Produk...");
+        $(this).on("select2:select", function () {
+            onMobileProductChange(this);
+        });
+    });
+
+    $("#reportItemRowsMobile .selling-unit-select-mobile").each(function () {
+        if ($(this).hasClass("select2-hidden-accessible")) return;
+        initSelect2(this, "Pilih Satuan...");
+        $(this).on("select2:select", function () {
+            onMobileUnitChange(this);
+        });
+    });
+}
+
+/**
+ * Patch addReportItemRow agar setiap baris baru langsung ter-init Select2.
+ * Dijalankan SETELAH reports.js selesai di-parse (setTimeout 0).
+ */
+document.addEventListener("DOMContentLoaded", function () {
+    if (typeof $ !== "undefined" && $.fn.select2) {
+        initAllSelect2();
+    }
+
+    setTimeout(function () {
+        if (typeof addReportItemRow === "function") {
+            var _origAddRow = addReportItemRow;
+            window.addReportItemRow = function () {
+                _origAddRow.apply(this, arguments);
+
+                var $lastTr = $("#reportItemRows .report-item-row:last");
+                if (!$lastTr.length) return;
+
+                var $prodSel = $lastTr.find(".product-select");
+                var $unitSel = $lastTr.find(".selling-unit-select");
+
+                if (
+                    $prodSel.length &&
+                    !$prodSel.hasClass("select2-hidden-accessible")
+                ) {
+                    $prodSel.select2({
+                        theme: "bootstrap-5",
+                        placeholder: "Pilih Produk...",
+                        allowClear: false,
+                        width: "100%",
+                        dropdownParent: $prodSel.closest(
+                            ".card-box, .reports-card-box, form",
+                        ),
+                    });
+                    $prodSel.on("select2:select", function () {
+                        onProductSelectChange(this);
+                    });
+                }
+                if (
+                    $unitSel.length &&
+                    !$unitSel.hasClass("select2-hidden-accessible")
+                ) {
+                    $unitSel.select2({
+                        theme: "bootstrap-5",
+                        placeholder: "Pilih Satuan...",
+                        allowClear: false,
+                        width: "100%",
+                        dropdownParent: $unitSel.closest(
+                            ".card-box, .reports-card-box, form",
+                        ),
+                    });
+                    $unitSel.on("select2:select", function () {
+                        onSellingUnitChange(this);
+                    });
+                }
+            };
+        }
+    }, 0);
+});
