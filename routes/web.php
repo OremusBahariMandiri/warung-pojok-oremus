@@ -4,6 +4,7 @@ use App\Http\Controllers\ActivityLogController;
 use App\Http\Controllers\AdminDashboardController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\HppController;
+use App\Http\Controllers\OperationalExpenseController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProductHppController;
 use App\Http\Controllers\ReportController;
@@ -68,6 +69,10 @@ Route::middleware(['auth', 'remember'])->group(function () {
         ->name('restock.update_status')
         ->middleware('user.access:restock,edit');
     Route::resource('restock', RestockController::class)->middleware('user.access:restock');
+
+    // Transaksi: Operasional (Pengeluaran Operasional)
+    Route::resource('operational-expenses', OperationalExpenseController::class)
+        ->middleware('user.access:operational_expenses');
 
     // Transaksi & Audit: Stock Opname
     Route::post('stock-opname/{stock_opname}/rollback', [StockOpnameController::class, 'rollback'])

@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\ProductHpp;
+use App\Models\OperationalExpense;
 use App\Models\Products;
 use App\Models\ReportDetails;
 use App\Models\Reports;
@@ -65,6 +66,18 @@ class ReportService
             ->orderBy('report_date', 'asc')
             ->get();
 
+        // Ambil data pengeluaran operasional pada periode tersebut
+        $expenses = OperationalExpense::whereBetween('date', [$start, $end])->get();
+        $dailyExpenses = [];
+        $overallOperationalExpense = 0.0;
+
+        foreach ($expenses as $expense) {
+            $expDate = Carbon::parse($expense->date)->format('Y-m-d');
+            $cost = (float)($expense->total_price ?? ($expense->quantity * $expense->price));
+            $dailyExpenses[$expDate] = ($dailyExpenses[$expDate] ?? 0.0) + $cost;
+            $overallOperationalExpense += $cost;
+        }
+
         $dailyRecap = [];
         $overallQuantity = 0;
         $overallSales    = 0.0;
@@ -76,12 +89,13 @@ class ReportService
 
             if (!isset($dailyRecap[$dateStr])) {
                 $dailyRecap[$dateStr] = [
-                    'date'                => $dateStr,
-                    'total_quantity'      => 0,
-                    'total_sales'         => 0.0,
-                    'total_hpp'           => 0.0,
-                    'total_gross_margin'  => 0.0,
-                    'products'            => [],
+                    'date'                        => $dateStr,
+                    'total_quantity'              => 0,
+                    'total_sales'                 => 0.0,
+                    'total_hpp'                   => 0.0,
+                    'total_gross_margin'          => 0.0,
+                    'total_operational_expense'   => (float)($dailyExpenses[$dateStr] ?? 0.0),
+                    'products'                    => [],
                 ];
             }
 
@@ -126,10 +140,11 @@ class ReportService
             ],
             'daily_recap' => array_values($dailyRecap),
             'overall'     => [
-                'total_quantity'     => $overallQuantity,
-                'total_sales'        => $overallSales,
-                'total_hpp'          => $overallHpp,
-                'total_gross_margin' => $overallMargin,
+                'total_quantity'            => $overallQuantity,
+                'total_sales'               => $overallSales,
+                'total_hpp'                 => $overallHpp,
+                'total_gross_margin'        => $overallMargin,
+                'total_operational_expense' => $overallOperationalExpense,
             ]
         ];
     }
