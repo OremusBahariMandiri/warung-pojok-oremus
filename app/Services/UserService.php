@@ -20,6 +20,7 @@ class UserService
         'restock',
         'reports',
         'reports_summary',
+        'operational_expenses',
         'stock_opname',
         'profile',
         'users',
