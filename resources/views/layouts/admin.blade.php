@@ -129,9 +129,10 @@
                 @php
                     $canRestock  = $currentUser->hasAccess('restock', 'index');
                     $canReports  = $currentUser->hasAccess('reports', 'index');
-                    $showTransaksi = $canRestock || $canReports;
-                    // Transaksi aktif jika membuka restock atau reports (penjualan)
-                    $isInventoryActive = request()->routeIs('restock.*') || (request()->routeIs('reports.*') && !request()->routeIs('reports.summary'));
+                    $canOperationalExpense = $currentUser->hasAccess('operational_expenses', 'index');
+                    $showTransaksi = $canRestock || $canReports || $canOperationalExpense;
+                    // Transaksi aktif jika membuka restock, reports (penjualan), atau operational-expenses
+                    $isInventoryActive = request()->routeIs('restock.*') || (request()->routeIs('reports.*') && !request()->routeIs('reports.summary')) || request()->routeIs('operational-expenses.*');
                 @endphp
                 @if ($showTransaksi)
                 <li class="nav-item nav-category">
@@ -163,6 +164,14 @@
                                 <a href="{{ Route::has('reports.index') ? route('reports.index') : '#' }}" class="submenu-link {{ (request()->routeIs('reports.index') || (request()->routeIs('reports.*') && !request()->routeIs('reports.summary'))) ? 'active' : '' }}">
                                     <span class="submenu-dot"></span>
                                     <span>Penjualan</span>
+                                </a>
+                            </li>
+                            @endif
+                            @if ($canOperationalExpense)
+                            <li class="submenu-item">
+                                <a href="{{ Route::has('operational-expenses.index') ? route('operational-expenses.index') : '#' }}" class="submenu-link {{ request()->routeIs('operational-expenses.*') ? 'active' : '' }}">
+                                    <span class="submenu-dot"></span>
+                                    <span>Operasional</span>
                                 </a>
                             </li>
                             @endif

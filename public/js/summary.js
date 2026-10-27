@@ -760,15 +760,19 @@ if (typeof jQuery !== "undefined") {
                 },
                 {
                     content: "Margin Kotor",
-                    styles: { halign: "right", cellWidth: 39 },
+                    styles: { halign: "right", cellWidth: 35 },
                 },
                 {
                     content: "Gaji Karyawan",
-                    styles: { halign: "right", cellWidth: 39 },
+                    styles: { halign: "right", cellWidth: 35 },
+                },
+                {
+                    content: "Operasional",
+                    styles: { halign: "right", cellWidth: 35 },
                 },
                 {
                     content: "Margin Bersih",
-                    styles: { halign: "right", cellWidth: 39 },
+                    styles: { halign: "right", cellWidth: 35 },
                 },
             ],
         ];
@@ -780,7 +784,8 @@ if (typeof jQuery !== "undefined") {
                 item.total_gross_margin || daySales - dayHpp,
             );
             const dayGaji = dayGross * 0.5;
-            const dayNet = dayGross - dayGaji;
+            const dayOperational = parseFloat(item.total_operational_expense || 0);
+            const dayNet = (dayGross - dayGaji) - dayOperational;
 
             return [
                 {
@@ -828,6 +833,10 @@ if (typeof jQuery !== "undefined") {
                     styles: { halign: "right", textColor: C.ocean },
                 },
                 {
+                    content: "Rp " + fmtRp(dayOperational),
+                    styles: { halign: "right", textColor: dayOperational > 0 ? C.coral : C.textMutedDk },
+                },
+                {
                     content: "Rp " + fmtRp(dayNet),
                     styles: {
                         halign: "right",
@@ -838,7 +847,7 @@ if (typeof jQuery !== "undefined") {
             ];
         });
 
-        // Baris TOTAL — Deep Ocean Navy Solid (8 Kolom)
+        // Baris TOTAL — Deep Ocean Navy Solid
         summaryBody.push([
             {
                 content: "TOTAL",
@@ -893,6 +902,15 @@ if (typeof jQuery !== "undefined") {
                     fontStyle: "bold",
                     fillColor: C.rowTotal,
                     textColor: [100, 200, 240],
+                },
+            },
+            {
+                content: "Rp " + fmtRp(overall.operational || 0),
+                styles: {
+                    halign: "right",
+                    fontStyle: "bold",
+                    fillColor: C.rowTotal,
+                    textColor: [255, 130, 110],
                 },
             },
             {

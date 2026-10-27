@@ -34,7 +34,9 @@
 
     // Gaji karyawan preview: 50% dari margin kotor (patokan excel)
     $overallGaji        = $overallGrossMargin * 0.5;
-    $overallNetMargin   = $overallGrossMargin - $overallGaji;
+    $overallOperational = (float)($overall['total_operational_expense'] ?? 0);
+    // Margin bersih final = (Margin Kotor - Gaji) - Pengeluaran Operasional
+    $overallNetMargin   = ($overallGrossMargin - $overallGaji) - $overallOperational;
 
     $marginPercentage   = $overallSales > 0 ? ($overallGrossMargin / $overallSales) * 100 : 0;
 
@@ -172,12 +174,12 @@
     </div>
 </div>
 
-{{-- ════════════ KARTU BREAKDOWN GAJI & MARGIN BERSIH ════════════ --}}
+{{-- ════════════ KARTU BREAKDOWN GAJI, OPERASIONAL & MARGIN BERSIH ════════════ --}}
 <div class="card border rounded-3 shadow-sm mb-4">
     <div class="card-body p-3 p-md-4">
         <div class="row g-3">
             <!-- Margin Kotor -->
-            <div class="col-md-4">
+            <div class="col-lg-3 col-md-6">
                 <div class="border rounded-3 p-3 h-100 bg-light">
                     <div class="d-flex align-items-center gap-2 mb-2">
                         <div class="rounded-circle d-flex align-items-center justify-content-center bg-success bg-opacity-10" style="width:32px;height:32px;flex-shrink:0;">
@@ -192,7 +194,7 @@
                 </div>
             </div>
             <!-- Gaji Karyawan -->
-            <div class="col-md-4">
+            <div class="col-lg-3 col-md-6">
                 <div class="border rounded-3 p-3 h-100 bg-light">
                     <div class="d-flex align-items-center gap-2 mb-2">
                         <div class="rounded-circle d-flex align-items-center justify-content-center bg-warning bg-opacity-10" style="width:32px;height:32px;flex-shrink:0;">
@@ -206,8 +208,23 @@
                     <div class="text-muted mt-1" style="font-size:.72rem;">Margin Kotor × 50% (patokan)</div>
                 </div>
             </div>
-            <!-- Margin Bersih -->
-            <div class="col-md-4">
+            <!-- Pengeluaran Operasional -->
+            <div class="col-lg-3 col-md-6">
+                <div class="border rounded-3 p-3 h-100 bg-light">
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                        <div class="rounded-circle d-flex align-items-center justify-content-center bg-danger bg-opacity-10" style="width:32px;height:32px;flex-shrink:0;">
+                            <i class="bi bi-wallet2 text-danger" style="font-size:.85rem;"></i>
+                        </div>
+                        <span class="small fw-semibold text-muted">Biaya Operasional</span>
+                    </div>
+                    <div class="fw-bold font-monospace fs-5 text-danger">
+                        Rp {{ number_format($overallOperational, 0, ',', '.') }}
+                    </div>
+                    <div class="text-muted mt-1" style="font-size:.72rem;">Total Biaya Operasional</div>
+                </div>
+            </div>
+            <!-- Margin Bersih Final -->
+            <div class="col-lg-3 col-md-6">
                 <div class="border rounded-3 p-3 h-100 {{ $overallNetMargin < 0 ? 'bg-danger bg-opacity-10' : 'bg-light' }}">
                     <div class="d-flex align-items-center gap-2 mb-2">
                         <div class="rounded-circle d-flex align-items-center justify-content-center {{ $overallNetMargin < 0 ? 'bg-danger bg-opacity-10' : 'bg-primary bg-opacity-10' }}" style="width:32px;height:32px;flex-shrink:0;">
@@ -218,7 +235,7 @@
                     <div class="fw-bold font-monospace fs-5 {{ $overallNetMargin < 0 ? 'text-danger' : 'text-primary' }}">
                         Rp {{ number_format($overallNetMargin, 0, ',', '.') }}
                     </div>
-                    <div class="text-muted mt-1" style="font-size:.72rem;">Margin Kotor − Gaji Karyawan</div>
+                    <div class="text-muted mt-1" style="font-size:.72rem;">Margin Kotor − Gaji − Operasional</div>
                 </div>
             </div>
         </div>
@@ -276,29 +293,31 @@
             <thead>
                 <tr>
                     <th style="width: 50px;" class="text-center">No</th>
-                    <th class="text-center" style="width: 150px;">Tanggal</th>
-                    <th class="text-center" style="width: 120px;">Total Terjual</th>
-                    <th class="text-center" style="width: 120px;">Sisa Stok</th>
-                    <th class="text-end" style="width: 160px;">Total Penjualan</th>
-                    <th class="text-end" style="width: 150px;">Total HPP</th>
-                    <th class="text-end" style="width: 150px;">Margin Kotor</th>
-                    <th class="text-end" style="width: 145px;">Gaji Karyawan</th>
-                    <th class="text-end" style="width: 145px;">Margin Bersih</th>
-                    <th class="text-center no-sort" style="width: 90px;">Detail</th>
+                    <th class="text-center" style="width: 130px;">Tanggal</th>
+                    <th class="text-center" style="width: 110px;">Total Terjual</th>
+                    <th class="text-center" style="width: 110px;">Sisa Stok</th>
+                    <th class="text-end" style="width: 140px;">Total Penjualan</th>
+                    <th class="text-end" style="width: 130px;">Total HPP</th>
+                    <th class="text-end" style="width: 130px;">Margin Kotor</th>
+                    <th class="text-end" style="width: 130px;">Gaji Karyawan</th>
+                    <th class="text-end" style="width: 130px;">Operasional</th>
+                    <th class="text-end" style="width: 140px;">Margin Bersih</th>
+                    <th class="text-center no-sort" style="width: 80px;">Detail</th>
                 </tr>
             </thead>
             <tbody>
                 @foreach ($dailyList as $item)
                     @php
-                        $daySales      = (float)($item['total_sales'] ?? 0);
-                        $dayHpp        = (float)($item['total_hpp'] ?? 0);
-                        $dayGross      = (float)($item['total_gross_margin'] ?? ($daySales - $dayHpp));
-                        $dayGaji       = $dayGross * 0.5;
-                        $dayNet        = $dayGross - $dayGaji;
-                        $formattedDate = \Carbon\Carbon::parse($item['date'])->format('d M Y');
-                        $dayProducts   = $item['products'] ?? [];
-                        $totalSisaStok = collect($dayProducts)->sum(fn($p) => (int)($p['stock_final'] ?? 0));
-                        $minSisaStok   = collect($dayProducts)->min(fn($p) => (int)($p['stock_final'] ?? 0));
+                        $daySales       = (float)($item['total_sales'] ?? 0);
+                        $dayHpp         = (float)($item['total_hpp'] ?? 0);
+                        $dayGross       = (float)($item['total_gross_margin'] ?? ($daySales - $dayHpp));
+                        $dayGaji        = $dayGross * 0.5;
+                        $dayOperational = (float)($item['total_operational_expense'] ?? 0);
+                        $dayNet         = ($dayGross - $dayGaji) - $dayOperational;
+                        $formattedDate  = \Carbon\Carbon::parse($item['date'])->format('d M Y');
+                        $dayProducts    = $item['products'] ?? [];
+                        $totalSisaStok  = collect($dayProducts)->sum(fn($p) => (int)($p['stock_final'] ?? 0));
+                        $minSisaStok    = collect($dayProducts)->min(fn($p) => (int)($p['stock_final'] ?? 0));
                     @endphp
 
                     <tr>
@@ -322,6 +341,9 @@
                         <td data-label="Total HPP" class="text-end font-monospace text-muted">Rp {{ number_format($dayHpp, 0, ',', '.') }}</td>
                         <td data-label="Margin Kotor" class="text-end font-monospace fw-bold text-success">Rp {{ number_format($dayGross, 0, ',', '.') }}</td>
                         <td data-label="Est. Gaji" class="text-end font-monospace text-warning fw-semibold">Rp {{ number_format($dayGaji, 0, ',', '.') }}</td>
+                        <td data-label="Operasional" class="text-end font-monospace fw-semibold {{ $dayOperational > 0 ? 'text-danger' : 'text-muted' }}">
+                            {{ $dayOperational > 0 ? 'Rp ' . number_format($dayOperational, 0, ',', '.') : 'Rp 0' }}
+                        </td>
                         <td data-label="Margin Bersih" class="text-end font-monospace fw-bold {{ $dayNet < 0 ? 'text-danger' : 'text-primary' }}">
                             Rp {{ number_format($dayNet, 0, ',', '.') }}
                         </td>
@@ -354,6 +376,7 @@
                     <td class="text-end font-monospace text-muted">Rp {{ number_format($overallHpp, 0, ',', '.') }}</td>
                     <td class="text-end font-monospace text-success">Rp {{ number_format($overallGrossMargin, 0, ',', '.') }}</td>
                     <td class="text-end font-monospace text-warning">Rp {{ number_format($overallGaji, 0, ',', '.') }}</td>
+                    <td class="text-end font-monospace text-danger">Rp {{ number_format($overallOperational, 0, ',', '.') }}</td>
                     <td class="text-end font-monospace {{ $overallNetMargin < 0 ? 'text-danger' : 'text-primary' }}">Rp {{ number_format($overallNetMargin, 0, ',', '.') }}</td>
                     <td></td>
                 </tr>
@@ -464,6 +487,7 @@
         hpp:         {{ $overallHpp }},
         grossMargin: {{ $overallGrossMargin }},
         gaji:        {{ $overallGaji }},
+        operational: {{ $overallOperational }},
         netMargin:   {{ $overallNetMargin }},
         marginPct:   {{ $marginPercentage }},
     };
