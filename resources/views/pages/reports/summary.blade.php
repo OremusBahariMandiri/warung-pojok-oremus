@@ -14,7 +14,7 @@
     <ol class="breadcrumb mb-0">
         <li class="breadcrumb-item"><a href="{{ route('admin.dashboard') }}" class="text-decoration-none text-muted">warjok</a></li>
         <li class="breadcrumb-item"><a href="{{ route('reports.index') }}" class="text-decoration-none text-muted">management laporan</a></li>
-        <li class="breadcrumb-item active text-dark" aria-current="page">ringkasan & margin</li>
+        <li class="breadcrumb-item active text-dark" aria-current="page">ringkasan penjualan</li>
     </ol>
 </nav>
 @endsection
@@ -30,15 +30,22 @@
     $overallQty         = (int)($overall['total_quantity'] ?? 0);
     $overallSales       = (float)($overall['total_sales'] ?? 0);
     $overallHpp         = (float)($overall['total_hpp'] ?? 0);
-    $overallGrossMargin = (float)($overall['total_gross_margin'] ?? ($overallSales - $overallHpp));
+    // Margin Penjualan (Total Penjualan - Total HPP)
+    $overallMarginPenjualan = (float)($overall['total_gross_margin'] ?? ($overallSales - $overallHpp));
+    $overallGrossMargin     = $overallMarginPenjualan; // Alias untuk tabel dan script JS
 
-    // Gaji karyawan preview: 50% dari margin kotor (patokan excel)
-    $overallGaji        = $overallGrossMargin * 0.5;
+    // Gaji Karyawan (Margin Penjualan x 50%)
+    $overallGaji        = $overallMarginPenjualan * 0.5;
+
+    // Margin Kotor (Margin Penjualan - Gaji Karyawan)
+    $overallMarginKotor = $overallMarginPenjualan - $overallGaji;
+
     $overallOperational = (float)($overall['total_operational_expense'] ?? 0);
-    // Margin bersih final = (Margin Kotor - Gaji) - Pengeluaran Operasional
-    $overallNetMargin   = ($overallGrossMargin - $overallGaji) - $overallOperational;
 
-    $marginPercentage   = $overallSales > 0 ? ($overallGrossMargin / $overallSales) * 100 : 0;
+    // Margin Bersih (Margin Kotor - Biaya Operasional)
+    $overallNetMargin   = $overallMarginKotor - $overallOperational;
+
+    $marginPercentage   = $overallSales > 0 ? ($overallMarginPenjualan / $overallSales) * 100 : 0;
 
     $startDateVal = request('start_date', now()->startOfMonth()->toDateString());
     $endDateVal   = request('end_date', now()->toDateString());
@@ -135,7 +142,7 @@
         </div>
     </div>
 
-    <!-- Card 3: Margin Kotor -->
+    <!-- Card 3: Margin Penjualan -->
     <div class="col-xl-3 col-md-6">
         <div class="summary-stat-card">
             <div class="d-flex align-items-start justify-content-between mb-3">
@@ -143,14 +150,14 @@
                     <i class="bi bi-wallet2"></i>
                 </div>
                 <span class="badge bg-success bg-opacity-10 text-success py-1 px-2 rounded-2 small fw-medium">
-                    Margin Kotor
+                    Margin Penjualan
                 </span>
             </div>
-            <div class="summary-stat-label">Margin Kotor</div>
+            <div class="summary-stat-label">MARGIN PENJUALAN</div>
             <div class="summary-stat-value text-success">
-                Rp {{ number_format($overallGrossMargin, 0, ',', '.') }}
+                Rp {{ number_format($overallMarginPenjualan, 0, ',', '.') }}
             </div>
-            <p class="summary-stat-desc">Penjualan − HPP ({{ number_format($marginPercentage, 1, ',', '.') }}% dari omset)</p>
+            <p class="summary-stat-desc">Total Penjualan − HPP</p>
         </div>
     </div>
 
@@ -174,26 +181,11 @@
     </div>
 </div>
 
-{{-- ════════════ KARTU BREAKDOWN GAJI, OPERASIONAL & MARGIN BERSIH ════════════ --}}
+{{-- ════════════ KARTU BREAKDOWN GAJI, MARGIN KOTOR, OPERASIONAL & MARGIN BERSIH ════════════ --}}
 <div class="card border rounded-3 shadow-sm mb-4">
     <div class="card-body p-3 p-md-4">
         <div class="row g-3">
-            <!-- Margin Kotor -->
-            <div class="col-lg-3 col-md-6">
-                <div class="border rounded-3 p-3 h-100 bg-light">
-                    <div class="d-flex align-items-center gap-2 mb-2">
-                        <div class="rounded-circle d-flex align-items-center justify-content-center bg-success bg-opacity-10" style="width:32px;height:32px;flex-shrink:0;">
-                            <i class="bi bi-graph-up text-success" style="font-size:.85rem;"></i>
-                        </div>
-                        <span class="small fw-semibold text-muted">Margin Kotor</span>
-                    </div>
-                    <div class="fw-bold font-monospace fs-5 text-success">
-                        Rp {{ number_format($overallGrossMargin, 0, ',', '.') }}
-                    </div>
-                    <div class="text-muted mt-1" style="font-size:.72rem;">Total Penjualan − Total HPP</div>
-                </div>
-            </div>
-            <!-- Gaji Karyawan -->
+            <!-- 1. Gaji Karyawan -->
             <div class="col-lg-3 col-md-6">
                 <div class="border rounded-3 p-3 h-100 bg-light">
                     <div class="d-flex align-items-center gap-2 mb-2">
@@ -205,17 +197,32 @@
                     <div class="fw-bold font-monospace fs-5 text-warning">
                         Rp {{ number_format($overallGaji, 0, ',', '.') }}
                     </div>
-                    <div class="text-muted mt-1" style="font-size:.72rem;">Margin Kotor × 50% (patokan)</div>
+                    <div class="text-muted mt-1" style="font-size:.72rem;">Margin penjualan × 50%</div>
                 </div>
             </div>
-            <!-- Pengeluaran Operasional -->
+            <!-- 2. Margin Kotor -->
+            <div class="col-lg-3 col-md-6">
+                <div class="border rounded-3 p-3 h-100 bg-light">
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                        <div class="rounded-circle d-flex align-items-center justify-content-center bg-success bg-opacity-10" style="width:32px;height:32px;flex-shrink:0;">
+                            <i class="bi bi-graph-up text-success" style="font-size:.85rem;"></i>
+                        </div>
+                        <span class="small fw-semibold text-muted">MARGIN KOTOR</span>
+                    </div>
+                    <div class="fw-bold font-monospace fs-5 text-success">
+                        Rp {{ number_format($overallMarginKotor, 0, ',', '.') }}
+                    </div>
+                    <div class="text-muted mt-1" style="font-size:.72rem;">Margin penjualan − gaji karyawan</div>
+                </div>
+            </div>
+            <!-- 3. Biaya Operasional -->
             <div class="col-lg-3 col-md-6">
                 <div class="border rounded-3 p-3 h-100 bg-light">
                     <div class="d-flex align-items-center gap-2 mb-2">
                         <div class="rounded-circle d-flex align-items-center justify-content-center bg-danger bg-opacity-10" style="width:32px;height:32px;flex-shrink:0;">
                             <i class="bi bi-wallet2 text-danger" style="font-size:.85rem;"></i>
                         </div>
-                        <span class="small fw-semibold text-muted">Biaya Operasional</span>
+                        <span class="small fw-semibold text-muted">BIAYA OPERASIONAL</span>
                     </div>
                     <div class="fw-bold font-monospace fs-5 text-danger">
                         Rp {{ number_format($overallOperational, 0, ',', '.') }}
@@ -223,19 +230,19 @@
                     <div class="text-muted mt-1" style="font-size:.72rem;">Total Biaya Operasional</div>
                 </div>
             </div>
-            <!-- Margin Bersih Final -->
+            <!-- 4. Margin Bersih -->
             <div class="col-lg-3 col-md-6">
                 <div class="border rounded-3 p-3 h-100 {{ $overallNetMargin < 0 ? 'bg-danger bg-opacity-10' : 'bg-light' }}">
                     <div class="d-flex align-items-center gap-2 mb-2">
                         <div class="rounded-circle d-flex align-items-center justify-content-center {{ $overallNetMargin < 0 ? 'bg-danger bg-opacity-10' : 'bg-primary bg-opacity-10' }}" style="width:32px;height:32px;flex-shrink:0;">
                             <i class="bi bi-wallet {{ $overallNetMargin < 0 ? 'text-danger' : 'text-primary' }}" style="font-size:.85rem;"></i>
                         </div>
-                        <span class="small fw-semibold text-muted">Margin Bersih</span>
+                        <span class="small fw-semibold text-muted">MARGIN BERSIH</span>
                     </div>
                     <div class="fw-bold font-monospace fs-5 {{ $overallNetMargin < 0 ? 'text-danger' : 'text-primary' }}">
                         Rp {{ number_format($overallNetMargin, 0, ',', '.') }}
                     </div>
-                    <div class="text-muted mt-1" style="font-size:.72rem;">Margin Kotor − Gaji − Operasional</div>
+                    <div class="text-muted mt-1" style="font-size:.72rem;">Margin kotor − biaya ops</div>
                 </div>
             </div>
         </div>
