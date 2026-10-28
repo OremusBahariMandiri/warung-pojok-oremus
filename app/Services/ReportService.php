@@ -109,17 +109,25 @@ class ReportService
 
                 if (!isset($dailyRecap[$dateStr]['products'][$productId])) {
                     $dailyRecap[$dateStr]['products'][$productId] = [
-                        'product_id'    => $productId,
-                        'product_name'  => $detail->product->prod_name ?? '-',
-                        'product_code'  => $detail->product->prod_code ?? '-',
-                        'selling_unit'  => $detail->sellingUnit->unit_name ?? '-',
-                        'quantity'      => 0,
-                        'stock_final'   => $detail->stock_final,
+                        'product_id'     => $productId,
+                        'product_name'   => $detail->product->prod_name ?? '-',
+                        'product_code'   => $detail->product->prod_code ?? '-',
+                        'selling_unit'   => $detail->sellingUnit->unit_name ?? '-',
+                        'selling_price'  => (float)($detail->selling_price ?? 0),
+                        'hpp_unit'       => (float)($detail->hpp_unit ?? 0),
+                        'quantity'       => 0,
+                        'subtotal_sales' => 0.0,
+                        'subtotal_hpp'   => 0.0,
+                        'subtotal_margin'=> 0.0,
+                        'stock_final'    => $detail->stock_final,
                     ];
                 }
 
-                $dailyRecap[$dateStr]['products'][$productId]['quantity']    += $detail->quantity;
-                $dailyRecap[$dateStr]['products'][$productId]['stock_final']  = $detail->stock_final;
+                $dailyRecap[$dateStr]['products'][$productId]['quantity']        += $detail->quantity;
+                $dailyRecap[$dateStr]['products'][$productId]['subtotal_sales']  += (float)($detail->subtotal_price ?? ($detail->quantity * ($detail->selling_price ?? 0)));
+                $dailyRecap[$dateStr]['products'][$productId]['subtotal_hpp']    += (float)($detail->subtotal_hpp ?? ($detail->quantity * ($detail->hpp_unit ?? 0)));
+                $dailyRecap[$dateStr]['products'][$productId]['subtotal_margin'] += (float)($detail->subtotal_margin ?? (($detail->subtotal_price ?? 0) - ($detail->subtotal_hpp ?? 0)));
+                $dailyRecap[$dateStr]['products'][$productId]['stock_final']      = $detail->stock_final;
             }
 
             $overallQuantity += $report->total_quantity;

@@ -1,6 +1,6 @@
 @extends('layouts.admin')
 
-@section('title', 'Ringkasan & Margin — Warung Pojok Oremus')
+@section('title', 'Ringkasan Penjualan — Warung Pojok Oremus')
 
 @push('styles')
 <!-- DataTables BSD & Bootstrap 5 CSS -->
@@ -59,13 +59,21 @@
         <h4 class="fw-bold text-dark mb-1">Ringkasan & Margin Penjualan</h4>
     </div>
     <div class="d-flex align-items-center gap-2">
-        {{-- ← TOMBOL BARU EXPORT PDF --}}
+        {{-- TOMBOL EXPORT PDF --}}
         <button
             type="button"
             id="btnExportPdf"
             class="btn btn-sm btn-danger rounded-2 px-3 d-inline-flex align-items-center gap-2"
             title="Export laporan ke PDF">
             <i class="bi bi-file-earmark-pdf-fill"></i> Export PDF
+        </button>
+        {{-- TOMBOL EXPORT EXCEL (di sebelah kanan Export PDF) --}}
+        <button
+            type="button"
+            id="btnExportExcel"
+            class="btn btn-sm btn-success rounded-2 px-3 d-inline-flex align-items-center gap-2 text-white fw-medium"
+            title="Export laporan ke Excel">
+            <i class="bi bi-file-earmark-excel-fill"></i> Export Excel
         </button>
         <a href="{{ route('reports.index') }}" class="btn btn-sm btn-outline-secondary rounded-2 px-3 d-inline-flex align-items-center gap-2">
             <i class="bi bi-receipt"></i> Kelola Laporan Penjualan
@@ -486,17 +494,22 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 
+{{-- SheetJS Style untuk Export Excel ber-border & ber-warna (.xlsx) --}}
+<script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+
 <script>
     window.summaryRecapData = @json($recapData);
     window.summaryOverall = {
-        qty:         {{ $overallQty }},
-        sales:       {{ $overallSales }},
-        hpp:         {{ $overallHpp }},
-        grossMargin: {{ $overallGrossMargin }},
-        gaji:        {{ $overallGaji }},
-        operational: {{ $overallOperational }},
-        netMargin:   {{ $overallNetMargin }},
-        marginPct:   {{ $marginPercentage }},
+        qty:             {{ $overallQty }},
+        sales:           {{ $overallSales }},
+        hpp:             {{ $overallHpp }},
+        marginPenjualan: {{ $overallMarginPenjualan }},
+        grossMargin:     {{ $overallGrossMargin }},
+        marginKotor:     {{ $overallMarginKotor }},
+        gaji:            {{ $overallGaji }},
+        operational:     {{ $overallOperational }},
+        netMargin:       {{ $overallNetMargin }},
+        marginPct:       {{ $marginPercentage }},
     };
     window.summaryPeriod = {
         startDate: document.getElementById('exportStartDate')?.value || '',
