@@ -1259,8 +1259,464 @@ if (typeof jQuery !== "undefined") {
         doc.save(`Ringkasan_Penjualan_${startStr}_${endStr}.pdf`);
     }
 
+    // ════════════════════════════════════════════════════════════
+    //  EXPORT EXCEL - Format Standar Tabel Penjualan (SheetJS)
+    //  Struktur: 1. Detail Produk Terjual -> 2. Rekapitulasi Harian -> 3. Ringkasan Finansial + Rumus Formula
+    // ════════════════════════════════════════════════════════════
+    function exportExcel() {
+        if (typeof XLSX === "undefined") {
+            alert("Library SheetJS belum termuat. Silakan periksa koneksi internet Anda.");
+            return;
+        }
+
+        const recapData = window.summaryRecapData || {};
+        const overall = window.summaryOverall || {};
+        const period = window.summaryPeriod || {};
+        const dailyList = recapData.daily_recap || [];
+
+        const startText = period.startDate ? fmtDate(period.startDate) : "Semua";
+        const endText   = period.endDate   ? fmtDate(period.endDate)   : "Semua";
+
+        const wb = XLSX.utils.book_new();
+
+        // Array penampung baris untuk Sheet Utama (AOA - Array of Arrays)
+        const aoa = [];
+
+        // Title Header
+        aoa.push(["WARUNG POJOK OREMUS"]);
+        aoa.push(["LAPORAN & RINGKASAN PENJUALAN"]);
+        aoa.push([`Periode: ${startText} s/d ${endText}`]);
+        aoa.push([`Waktu Export: ${new Date().toLocaleString("id-ID")}`]);
+        aoa.push([]);
+
+        // ════════════════════════════════════════════════════════════
+        // SECTION 1: DAFTAR PRODUK TERJUAL
+        // ════════════════════════════════════════════════════════════
+        aoa.push(["DAFTAR PRODUK TERJUAL"]);
+        const sec1TitleRow = aoa.length; // Row title section 1
+
+        aoa.push([
+            "No",
+            "Tanggal",
+            "Nama Produk",
+            "Harga Jual",
+            "Harga Pokok",
+            "Margin Satuan",
+            "Terjual",
+            "Total Pendapatan",
+            "Total Biaya (HPP)",
+            "Total Margin"
+        ]);
+
+        const productStartRow = aoa.length + 1; // 1-based row index untuk awal produk
+        let prodIndex = 1;
+
+        dailyList.forEach(day => {
+            const dateStr = fmtDate(day.date);
+            const prods = day.products || [];
+
+            prods.forEach(p => {
+                const curRow = aoa.length + 1; // Row Excel saat ini (1-based)
+                const qty = parseInt(p.quantity || 0);
+                const sPrice = parseFloat(p.selling_price || (qty > 0 ? (p.subtotal_sales / qty) : 0));
+                const hPrice = parseFloat(p.hpp_unit || (qty > 0 ? (p.subtotal_hpp / qty) : 0));
+
+                aoa.push([
+                    prodIndex++,
+                    dateStr,
+                    p.product_name || "-",
+                    sPrice,
+                    hPrice,
+                    { t: 'n', f: `D${curRow}-E${curRow}`, v: sPrice - hPrice },
+                    qty,
+                    { t: 'n', f: `G${curRow}*D${curRow}`, v: qty * sPrice },
+                    { t: 'n', f: `G${curRow}*E${curRow}`, v: qty * hPrice },
+                    { t: 'n', f: `H${curRow}-I${curRow}`, v: (qty * sPrice) - (qty * hPrice) }
+                ]);
+            });
+        });
+
+        const productEndRow = aoa.length; // 1-based row akhir data produk
+
+        if (productEndRow >= productStartRow) {
+            aoa.push([
+                "TOTAL PRODUK",
+                "",
+                "",
+                "",
+                "",
+                "",
+                { t: 'n', f: `SUM(G${productStartRow}:G${productEndRow})`, v: parseInt(overall.qty || 0) },
+                { t: 'n', f: `SUM(H${productStartRow}:H${productEndRow})`, v: parseFloat(overall.sales || 0) },
+                { t: 'n', f: `SUM(I${productStartRow}:I${productEndRow})`, v: parseFloat(overall.hpp || 0) },
+                { t: 'n', f: `SUM(J${productStartRow}:J${productEndRow})`, v: parseFloat(overall.marginPenjualan || (overall.sales - overall.hpp) || 0) }
+            ]);
+        } else {
+            aoa.push(["TOTAL PRODUK", "", "", 0, 0, 0, 0, 0, 0, 0]);
+        }
+
+        aoa.push([]);
+        aoa.push([]);
+
+        // ════════════════════════════════════════════════════════════
+        // SECTION 2: REKAPITULASI PENJUALAN HARIAN
+        // ════════════════════════════════════════════════════════════
+        aoa.push(["REKAPITULASI PENJUALAN HARIAN"]);
+        const sec2TitleRow = aoa.length; // Row title section 2
+
+        aoa.push([
+            "No",
+            "Tanggal",
+            "Total Terjual (Unit)",
+            "Total Penjualan (Rp)",
+            "Total HPP (Rp)",
+            "Margin Penjualan (Rp)",
+            "Gaji Karyawan (Rp)",
+            "Margin Kotor (Rp)",
+            "Biaya Operasional (Rp)",
+            "Margin Bersih (Rp)"
+        ]);
+
+        const recapStartRow = aoa.length + 1;
+
+        dailyList.forEach((day, idx) => {
+            const curRow = aoa.length + 1;
+            const dQty   = parseInt(day.total_quantity || 0);
+            const dSales = parseFloat(day.total_sales || 0);
+            const dHpp   = parseFloat(day.total_hpp || 0);
+            const dOps   = parseFloat(day.total_operational_expense || 0);
+
+            const dMarginJual = dSales - dHpp;
+            const dGaji       = dMarginJual * 0.5;
+            const dMarginKtr  = dMarginJual - dGaji;
+            const dMarginBsh  = dMarginKtr - dOps;
+
+            aoa.push([
+                idx + 1,
+                fmtDate(day.date),
+                dQty,
+                dSales,
+                dHpp,
+                { t: 'n', f: `D${curRow}-E${curRow}`, v: dMarginJual },
+                { t: 'n', f: `F${curRow}*0.5`, v: dGaji },
+                { t: 'n', f: `F${curRow}-G${curRow}`, v: dMarginKtr },
+                dOps,
+                { t: 'n', f: `H${curRow}-I${curRow}`, v: dMarginBsh }
+            ]);
+        });
+
+        const recapEndRow = aoa.length;
+        const totalRecapRow = recapEndRow + 1;
+
+        if (recapEndRow >= recapStartRow) {
+            aoa.push([
+                "TOTAL HARIAN",
+                "",
+                { t: 'n', f: `SUM(C${recapStartRow}:C${recapEndRow})`, v: parseInt(overall.qty || 0) },
+                { t: 'n', f: `SUM(D${recapStartRow}:D${recapEndRow})`, v: parseFloat(overall.sales || 0) },
+                { t: 'n', f: `SUM(E${recapStartRow}:E${recapEndRow})`, v: parseFloat(overall.hpp || 0) },
+                { t: 'n', f: `SUM(F${recapStartRow}:F${recapEndRow})`, v: parseFloat(overall.marginPenjualan || 0) },
+                { t: 'n', f: `SUM(G${recapStartRow}:G${recapEndRow})`, v: parseFloat(overall.gaji || 0) },
+                { t: 'n', f: `SUM(H${recapStartRow}:H${recapEndRow})`, v: parseFloat(overall.marginKotor || 0) },
+                { t: 'n', f: `SUM(I${recapStartRow}:I${recapEndRow})`, v: parseFloat(overall.operational || 0) },
+                { t: 'n', f: `SUM(J${recapStartRow}:J${recapEndRow})`, v: parseFloat(overall.netMargin || 0) }
+            ]);
+        } else {
+            aoa.push(["TOTAL HARIAN", "", 0, 0, 0, 0, 0, 0, 0, 0]);
+        }
+
+        aoa.push([]);
+        aoa.push([]);
+
+        // ════════════════════════════════════════════════════════════
+        // SECTION 3: RINGKASAN FINANSIAL (KPI) BESERTA RUMUS EXCEL
+        // ════════════════════════════════════════════════════════════
+        aoa.push(["RINGKASAN FINANSIAL (KPI)"]);
+        const sec3TitleRow = aoa.length; // Row title section 3
+
+        aoa.push(["Komponen Finansial", "Nilai (Rp)", "Rumus / Keterangan Formula"]);
+
+        const finRowStart = aoa.length + 1; // row 1-based
+
+        // Mengambil referensi baris TOTAL dari Rekapitulasi Harian (totalRecapRow)
+        const refSales  = recapEndRow >= recapStartRow ? `D${totalRecapRow}` : "0";
+        const refHpp    = recapEndRow >= recapStartRow ? `E${totalRecapRow}` : "0";
+        const refOps    = recapEndRow >= recapStartRow ? `I${totalRecapRow}` : "0";
+
+        const r1 = finRowStart;     // Total Penjualan
+        const r2 = finRowStart + 1; // Total HPP
+        const r3 = finRowStart + 2; // Margin Penjualan
+        const r4 = finRowStart + 3; // Gaji Karyawan
+        const r5 = finRowStart + 4; // Margin Kotor
+        const r6 = finRowStart + 5; // Biaya Operasional
+        const r7 = finRowStart + 6; // Margin Bersih
+
+        aoa.push([
+            "Total Penjualan (Omset)",
+            { t: 'n', f: `${refSales}`, v: parseFloat(overall.sales || 0) },
+            "Total seluruh pendapatan kotor penjualan"
+        ]);
+        aoa.push([
+            "Total Modal HPP",
+            { t: 'n', f: `${refHpp}`, v: parseFloat(overall.hpp || 0) },
+            "Biaya pokok persediaan produk terjual"
+        ]);
+        aoa.push([
+            "Margin Penjualan",
+            { t: 'n', f: `B${r1}-B${r2}`, v: parseFloat(overall.marginPenjualan || 0) },
+            "= Total Penjualan - Total Modal HPP (B" + r1 + " - B" + r2 + ")"
+        ]);
+        aoa.push([
+            "Gaji Karyawan",
+            { t: 'n', f: `B${r3}*0.5`, v: parseFloat(overall.gaji || 0) },
+            "= Margin Penjualan x 50% (B" + r3 + " * 0.5)"
+        ]);
+        aoa.push([
+            "Margin Kotor",
+            { t: 'n', f: `B${r3}-B${r4}`, v: parseFloat(overall.marginKotor || 0) },
+            "= Margin Penjualan - Gaji Karyawan (B" + r3 + " - B" + r4 + ")"
+        ]);
+        aoa.push([
+            "Pengeluaran Operasional",
+            { t: 'n', f: `${refOps}`, v: parseFloat(overall.operational || 0) },
+            "Total biaya pengeluaran operasional warung"
+        ]);
+        aoa.push([
+            "Margin Bersih Final",
+            { t: 'n', f: `B${r5}-B${r6}`, v: parseFloat(overall.netMargin || 0) },
+            "= Margin Kotor - Pengeluaran Operasional (B" + r5 + " - B" + r6 + ")"
+        ]);
+
+        // Buat Worksheet dari AOA
+        const ws = XLSX.utils.aoa_to_sheet(aoa);
+
+        // Styling lebar kolom ekstra lega agar tidak ada teks atau angka yang terpotong
+        // Kolom A diperlebar hingga 35 karakter agar teks Komponen Finansial dan Total tidak terpotong
+        ws["!cols"] = [
+            { wch: 35 },  // A: No / Komponen Finansial / Total Produk / Total Harian
+            { wch: 22 },  // B: Tanggal / Nilai Rp
+            { wch: 48 },  // C: Nama Produk / Rumus Keterangan / Total Terjual
+            { wch: 24 },  // D: Harga Jual / Total Penjualan
+            { wch: 24 },  // E: Harga Pokok / Total HPP
+            { wch: 24 },  // F: Margin Satuan / Margin Penjualan
+            { wch: 20 },  // G: Terjual / Gaji Karyawan
+            { wch: 26 },  // H: Total Pendapatan / Margin Kotor
+            { wch: 26 },  // I: Total Biaya HPP / Biaya Operasional
+            { wch: 26 },  // J: Total Margin / Margin Bersih
+        ];
+
+        // Format number mata uang untuk sel numeric di tabel
+        const numFormatRupiah = '#,##0';
+
+        // Definisi Palet Style Excel
+        const borderThin = {
+            top:    { style: "thin", color: { rgb: "CBD5E1" } },
+            bottom: { style: "thin", color: { rgb: "CBD5E1" } },
+            left:   { style: "thin", color: { rgb: "CBD5E1" } },
+            right:  { style: "thin", color: { rgb: "CBD5E1" } }
+        };
+
+        const borderDoubleBottom = {
+            top:    { style: "thin", color: { rgb: "0F172A" } },
+            bottom: { style: "double", color: { rgb: "0F172A" } },
+            left:   { style: "thin", color: { rgb: "CBD5E1" } },
+            right:  { style: "thin", color: { rgb: "CBD5E1" } }
+        };
+
+        // Header style hijau sesuai referensi Excel
+        const headerStyleGreen = {
+            fill: { fgColor: { rgb: "16A34A" } }, // Emerald Green
+            font: { bold: true, color: { rgb: "FFFFFF" }, sz: 10, name: "Calibri" },
+            alignment: { vertical: "center", horizontal: "center", wrapText: true },
+            border: {
+                top:    { style: "medium", color: { rgb: "15803D" } },
+                bottom: { style: "medium", color: { rgb: "15803D" } },
+                left:   { style: "thin", color: { rgb: "86EFAC" } },
+                right:  { style: "thin", color: { rgb: "86EFAC" } }
+            }
+        };
+
+        // Total row style (hijau muda / dark border)
+        const totalRowStyle = {
+            fill: { fgColor: { rgb: "DCFCE7" } }, // Light green
+            font: { bold: true, color: { rgb: "14532D" }, sz: 10, name: "Calibri" },
+            border: borderDoubleBottom
+        };
+
+        // Kategori section title style (Bold, ukuran 11, warna navy gelap)
+        const sectionTitleStyle = {
+            font: { bold: true, sz: 11, color: { rgb: "0F172A" }, name: "Calibri" }
+        };
+
+        // Data cell base style
+        const dataCellStyle = {
+            font: { sz: 10, name: "Calibri" },
+            border: borderThin,
+            alignment: { vertical: "center" }
+        };
+
+        // Helper untuk memformat range baris
+        function styleRowRange(startR, endR, startC, endC, customFn) {
+            for (let r = startR; r <= endR; r++) {
+                for (let c = startC; c <= endC; c++) {
+                    const cellRef = XLSX.utils.encode_cell({ r: r - 1, c: c - 1 });
+                    if (!ws[cellRef]) ws[cellRef] = { t: "s", v: "" };
+                    customFn(ws[cellRef], r, c);
+                }
+            }
+        }
+
+        // ════════════════════════════════════════════════════════════
+        // STYLING HEADER UTAMA (BANNER KELAUTAN / FOREST NAVY PREMIUM)
+        // ════════════════════════════════════════════════════════════
+        // Baris 1: Brand / Nama Usaha (Navy Gelap, Font 14 Bold, Teks Putih)
+        styleRowRange(1, 1, 1, 10, (cell) => {
+            cell.s = {
+                fill: { fgColor: { rgb: "064E3B" } }, // Deep Emerald Navy
+                font: { bold: true, sz: 14, color: { rgb: "FFFFFF" }, name: "Calibri" },
+                alignment: { vertical: "center", horizontal: "left", indent: 1 }
+            };
+        });
+
+        // Baris 2: Subtitle Laporan (Forest Green, Font 11 Bold, Teks Emas/Putih Lembut)
+        styleRowRange(2, 2, 1, 10, (cell) => {
+            cell.s = {
+                fill: { fgColor: { rgb: "047857" } }, // Medium Forest Green
+                font: { bold: true, sz: 11, color: { rgb: "ECFDF5" }, name: "Calibri" },
+                alignment: { vertical: "center", horizontal: "left", indent: 1 }
+            };
+        });
+
+        // Baris 3: Periode Filter (Mint Pale, Font 9.5 Italic, Teks Hijau Tua)
+        styleRowRange(3, 3, 1, 10, (cell) => {
+            cell.s = {
+                fill: { fgColor: { rgb: "D1FAE5" } }, // Soft Mint Green
+                font: { bold: true, sz: 9.5, color: { rgb: "065F46" }, name: "Calibri" },
+                alignment: { vertical: "center", horizontal: "left", indent: 1 }
+            };
+        });
+
+        // Baris 4: Waktu Ekspor (Mint Pale dengan garis batas bawah tegas)
+        styleRowRange(4, 4, 1, 10, (cell) => {
+            cell.s = {
+                fill: { fgColor: { rgb: "D1FAE5" } },
+                font: { italic: true, sz: 9, color: { rgb: "047857" }, name: "Calibri" },
+                alignment: { vertical: "center", horizontal: "left", indent: 1 },
+                border: { bottom: { style: "medium", color: { rgb: "059669" } } }
+            };
+        });
+
+        // Format Title Section (Hanya teks bold tanpa penomoran)
+        const cellSec1 = XLSX.utils.encode_cell({ r: sec1TitleRow - 1, c: 0 });
+        if (ws[cellSec1]) ws[cellSec1].s = sectionTitleStyle;
+
+        const cellSec2 = XLSX.utils.encode_cell({ r: sec2TitleRow - 1, c: 0 });
+        if (ws[cellSec2]) ws[cellSec2].s = sectionTitleStyle;
+
+        const cellSec3 = XLSX.utils.encode_cell({ r: sec3TitleRow - 1, c: 0 });
+        if (ws[cellSec3]) ws[cellSec3].s = sectionTitleStyle;
+
+        // 1. Styling Section 1: DAFTAR PRODUK TERJUAL
+        const prodHeadRow = sec1TitleRow + 1;
+        styleRowRange(prodHeadRow, prodHeadRow, 1, 10, (cell) => {
+            cell.s = headerStyleGreen;
+        });
+
+        if (productEndRow >= productStartRow) {
+            styleRowRange(productStartRow, productEndRow, 1, 10, (cell, r, c) => {
+                cell.s = { ...dataCellStyle };
+                if (c === 1 || c === 2) cell.s.alignment = { horizontal: "center", vertical: "center" };
+                else if (c === 3) cell.s.alignment = { horizontal: "left", vertical: "center" };
+                else if (c === 7) cell.s.alignment = { horizontal: "center", vertical: "center" };
+                else cell.s.alignment = { horizontal: "right", vertical: "center" };
+            });
+
+            // Total Produk Row
+            const totProdR = productEndRow + 1;
+            styleRowRange(totProdR, totProdR, 1, 10, (cell, r, c) => {
+                cell.s = { ...totalRowStyle };
+                if (c <= 3) cell.s.alignment = { horizontal: "left", vertical: "center" };
+                else if (c === 7) cell.s.alignment = { horizontal: "center", vertical: "center" };
+                else cell.s.alignment = { horizontal: "right", vertical: "center" };
+            });
+        }
+
+        // 2. Styling Section 2: Rekapitulasi Harian
+        const recapHeadRow = recapStartRow - 1;
+        styleRowRange(recapHeadRow, recapHeadRow, 1, 10, (cell) => {
+            cell.s = headerStyleGreen;
+        });
+
+        if (recapEndRow >= recapStartRow) {
+            styleRowRange(recapStartRow, recapEndRow, 1, 10, (cell, r, c) => {
+                cell.s = { ...dataCellStyle };
+                if (c === 1 || c === 2) cell.s.alignment = { horizontal: "center", vertical: "center" };
+                else if (c === 3) cell.s.alignment = { horizontal: "center", vertical: "center" };
+                else cell.s.alignment = { horizontal: "right", vertical: "center" };
+            });
+
+            // Total Harian Row
+            const totRecapR = recapEndRow + 1;
+            styleRowRange(totRecapR, totRecapR, 1, 10, (cell, r, c) => {
+                cell.s = { ...totalRowStyle };
+                if (c <= 2) cell.s.alignment = { horizontal: "left", vertical: "center" };
+                else if (c === 3) cell.s.alignment = { horizontal: "center", vertical: "center" };
+                else cell.s.alignment = { horizontal: "right", vertical: "center" };
+            });
+        }
+
+        // 3. Styling Section 3: Ringkasan Finansial
+        const finHeadRow = finRowStart - 1;
+        styleRowRange(finHeadRow, finHeadRow, 1, 3, (cell) => {
+            cell.s = headerStyleGreen;
+        });
+
+        const finEndRow = finRowStart + 6;
+        styleRowRange(finRowStart, finEndRow, 1, 3, (cell, r, c) => {
+            cell.s = { ...dataCellStyle };
+            if (c === 1) {
+                cell.s.font = { bold: true, sz: 10, name: "Calibri" };
+                cell.s.alignment = { horizontal: "left", vertical: "center" };
+            } else if (c === 2) {
+                cell.s.font = { bold: true, sz: 10, name: "Calibri" };
+                cell.s.alignment = { horizontal: "right", vertical: "center" };
+            } else {
+                cell.s.font = { italic: true, sz: 9, color: { rgb: "475569" }, name: "Calibri" };
+                cell.s.alignment = { horizontal: "left", vertical: "center" };
+            }
+
+            // Highlight khusus untuk Margin Bersih Final (baris terakhir)
+            if (r === finEndRow) {
+                cell.s.fill = { fgColor: { rgb: "FEF08A" } }; // Light yellow highlight
+                cell.s.border = borderDoubleBottom;
+                cell.s.font = { bold: true, sz: 10, color: { rgb: "854D0E" }, name: "Calibri" };
+            }
+        });
+
+        // Terapkan number format pemisah ribuan untuk semua sel angka / rumus
+        for (const cellAddress in ws) {
+            if (cellAddress[0] === '!') continue;
+            const cell = ws[cellAddress];
+            if (cell && (cell.t === 'n' || cell.f)) {
+                cell.z = numFormatRupiah;
+            }
+        }
+
+        XLSX.utils.book_append_sheet(wb, ws, "Laporan Penjualan");
+
+        // Simpan File Excel
+        const startStr = (period.startDate || "").replace(/-/g, "");
+        const endStr   = (period.endDate   || "").replace(/-/g, "");
+        const fileName = `Laporan_Penjualan_${startStr || "Semua"}_${endStr || "Semua"}.xlsx`;
+
+        XLSX.writeFile(wb, fileName);
+    }
+
     document.addEventListener("DOMContentLoaded", function () {
         const btn = document.getElementById("btnExportPdf");
         if (btn) btn.addEventListener("click", exportPdf);
+
+        const btnExcel = document.getElementById("btnExportExcel");
+        if (btnExcel) btnExcel.addEventListener("click", exportExcel);
     });
 })();
