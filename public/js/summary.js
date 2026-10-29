@@ -1273,6 +1273,7 @@ if (typeof jQuery !== "undefined") {
         const overall = window.summaryOverall || {};
         const period = window.summaryPeriod || {};
         const dailyList = recapData.daily_recap || [];
+        const expenseList = recapData.operational_expenses || [];
 
         const startText = period.startDate ? fmtDate(period.startDate) : "Semua";
         const endText   = period.endDate   ? fmtDate(period.endDate)   : "Semua";
@@ -1359,10 +1360,67 @@ if (typeof jQuery !== "undefined") {
         aoa.push([]);
 
         // ════════════════════════════════════════════════════════════
-        // SECTION 2: REKAPITULASI PENJUALAN HARIAN
+        // SECTION 2: PENGELUARAN OPERASIONAL (Sebelum Rekapitulasi)
+        // ════════════════════════════════════════════════════════════
+        aoa.push(["PENGELUARAN OPERASIONAL"]);
+        const secOpsTitleRow = aoa.length;
+
+        aoa.push([
+            "No",
+            "Tanggal",
+            "Nama Pengeluaran",
+            "Jumlah",
+            "Harga Satuan",
+            "Total Biaya",
+            "Keterangan"
+        ]);
+
+        const opsStartRow = aoa.length + 1;
+        let opsIndex = 1;
+
+        expenseList.forEach(exp => {
+            const curRow = aoa.length + 1;
+            const expDate = fmtDate(exp.date);
+            const expQty  = parseInt(exp.quantity || 1);
+            const expPrice = parseFloat(exp.price || 0);
+            const expTotal = parseFloat(exp.total_price || (expQty * expPrice));
+
+            aoa.push([
+                opsIndex++,
+                expDate,
+                exp.name || "-",
+                expQty,
+                expPrice,
+                { t: 'n', f: `D${curRow}*E${curRow}`, v: expTotal },
+                exp.notes || "-"
+            ]);
+        });
+
+        const opsEndRow = aoa.length;
+        const totalOpsRow = opsEndRow + 1;
+
+        if (opsEndRow >= opsStartRow) {
+            aoa.push([
+                "TOTAL OPERASIONAL",
+                "",
+                "",
+                "",
+                "",
+                { t: 'n', f: `SUM(F${opsStartRow}:F${opsEndRow})`, v: parseFloat(overall.operational || 0) },
+                ""
+            ]);
+        } else {
+            aoa.push(["TOTAL OPERASIONAL", "", "", "", "", 0, ""]);
+        }
+
+        aoa.push([]);
+        aoa.push([]);
+
+        // ════════════════════════════════════════════════════════════
+        // SECTION 3: REKAPITULASI PENJUALAN HARIAN
         // ════════════════════════════════════════════════════════════
         aoa.push(["REKAPITULASI PENJUALAN HARIAN"]);
-        const sec2TitleRow = aoa.length; // Row title section 2
+        const sec2TitleRow = aoa.length; // Row title section rekap
 
         aoa.push([
             "No",
@@ -1429,12 +1487,12 @@ if (typeof jQuery !== "undefined") {
         aoa.push([]);
 
         // ════════════════════════════════════════════════════════════
-        // SECTION 3: RINGKASAN FINANSIAL (KPI) BESERTA RUMUS EXCEL
+        // SECTION 4: RINGKASAN FINANSIAL (KPI)
         // ════════════════════════════════════════════════════════════
         aoa.push(["RINGKASAN FINANSIAL (KPI)"]);
-        const sec3TitleRow = aoa.length; // Row title section 3
+        const sec3TitleRow = aoa.length; // Row title section finansial
 
-        aoa.push(["Komponen Finansial", "Nilai (Rp)", "Rumus / Keterangan Formula"]);
+        aoa.push(["Komponen Finansial", "Nilai (Rp)"]);
 
         const finRowStart = aoa.length + 1; // row 1-based
 
@@ -1453,53 +1511,45 @@ if (typeof jQuery !== "undefined") {
 
         aoa.push([
             "Total Penjualan (Omset)",
-            { t: 'n', f: `${refSales}`, v: parseFloat(overall.sales || 0) },
-            "Total seluruh pendapatan kotor penjualan"
+            { t: 'n', f: `${refSales}`, v: parseFloat(overall.sales || 0) }
         ]);
         aoa.push([
             "Total Modal HPP",
-            { t: 'n', f: `${refHpp}`, v: parseFloat(overall.hpp || 0) },
-            "Biaya pokok persediaan produk terjual"
+            { t: 'n', f: `${refHpp}`, v: parseFloat(overall.hpp || 0) }
         ]);
         aoa.push([
             "Margin Penjualan",
-            { t: 'n', f: `B${r1}-B${r2}`, v: parseFloat(overall.marginPenjualan || 0) },
-            "= Total Penjualan - Total Modal HPP (B" + r1 + " - B" + r2 + ")"
+            { t: 'n', f: `B${r1}-B${r2}`, v: parseFloat(overall.marginPenjualan || 0) }
         ]);
         aoa.push([
             "Gaji Karyawan",
-            { t: 'n', f: `B${r3}*0.5`, v: parseFloat(overall.gaji || 0) },
-            "= Margin Penjualan x 50% (B" + r3 + " * 0.5)"
+            { t: 'n', f: `B${r3}*0.5`, v: parseFloat(overall.gaji || 0) }
         ]);
         aoa.push([
             "Margin Kotor",
-            { t: 'n', f: `B${r3}-B${r4}`, v: parseFloat(overall.marginKotor || 0) },
-            "= Margin Penjualan - Gaji Karyawan (B" + r3 + " - B" + r4 + ")"
+            { t: 'n', f: `B${r3}-B${r4}`, v: parseFloat(overall.marginKotor || 0) }
         ]);
         aoa.push([
             "Pengeluaran Operasional",
-            { t: 'n', f: `${refOps}`, v: parseFloat(overall.operational || 0) },
-            "Total biaya pengeluaran operasional warung"
+            { t: 'n', f: `${refOps}`, v: parseFloat(overall.operational || 0) }
         ]);
         aoa.push([
             "Margin Bersih Final",
-            { t: 'n', f: `B${r5}-B${r6}`, v: parseFloat(overall.netMargin || 0) },
-            "= Margin Kotor - Pengeluaran Operasional (B" + r5 + " - B" + r6 + ")"
+            { t: 'n', f: `B${r5}-B${r6}`, v: parseFloat(overall.netMargin || 0) }
         ]);
 
         // Buat Worksheet dari AOA
         const ws = XLSX.utils.aoa_to_sheet(aoa);
 
         // Styling lebar kolom ekstra lega agar tidak ada teks atau angka yang terpotong
-        // Kolom A diperlebar hingga 35 karakter agar teks Komponen Finansial dan Total tidak terpotong
         ws["!cols"] = [
             { wch: 35 },  // A: No / Komponen Finansial / Total Produk / Total Harian
             { wch: 22 },  // B: Tanggal / Nilai Rp
             { wch: 48 },  // C: Nama Produk / Rumus Keterangan / Total Terjual
             { wch: 24 },  // D: Harga Jual / Total Penjualan
             { wch: 24 },  // E: Harga Pokok / Total HPP
-            { wch: 24 },  // F: Margin Satuan / Margin Penjualan
-            { wch: 20 },  // G: Terjual / Gaji Karyawan
+            { wch: 24 },  // F: Margin Satuan / Margin Penjualan / Total Biaya
+            { wch: 20 },  // G: Terjual / Gaji Karyawan / Keterangan
             { wch: 26 },  // H: Total Pendapatan / Margin Kotor
             { wch: 26 },  // I: Total Biaya HPP / Biaya Operasional
             { wch: 26 },  // J: Total Margin / Margin Bersih
@@ -1610,6 +1660,9 @@ if (typeof jQuery !== "undefined") {
         const cellSec1 = XLSX.utils.encode_cell({ r: sec1TitleRow - 1, c: 0 });
         if (ws[cellSec1]) ws[cellSec1].s = sectionTitleStyle;
 
+        const cellSecOps = XLSX.utils.encode_cell({ r: secOpsTitleRow - 1, c: 0 });
+        if (ws[cellSecOps]) ws[cellSecOps].s = sectionTitleStyle;
+
         const cellSec2 = XLSX.utils.encode_cell({ r: sec2TitleRow - 1, c: 0 });
         if (ws[cellSec2]) ws[cellSec2].s = sectionTitleStyle;
 
@@ -1641,8 +1694,35 @@ if (typeof jQuery !== "undefined") {
             });
         }
 
-        // 2. Styling Section 2: Rekapitulasi Harian
-        const recapHeadRow = recapStartRow - 1;
+        // 2. Styling Section 2: PENGELUARAN OPERASIONAL
+        const opsHeadRow = secOpsTitleRow + 1;
+        styleRowRange(opsHeadRow, opsHeadRow, 1, 7, (cell) => {
+            cell.s = headerStyleGreen;
+        });
+
+        if (opsEndRow >= opsStartRow) {
+            styleRowRange(opsStartRow, opsEndRow, 1, 7, (cell, r, c) => {
+                cell.s = { ...dataCellStyle };
+                if (c === 1 || c === 2) cell.s.alignment = { horizontal: "center", vertical: "center" };
+                else if (c === 3) cell.s.alignment = { horizontal: "left", vertical: "center" };
+                else if (c === 4) cell.s.alignment = { horizontal: "center", vertical: "center" };
+                else if (c === 5 || c === 6) cell.s.alignment = { horizontal: "right", vertical: "center" };
+                else cell.s.alignment = { horizontal: "left", vertical: "center" };
+            });
+
+            // Total Operasional Row
+            const totOpsR = opsEndRow + 1;
+            styleRowRange(totOpsR, totOpsR, 1, 7, (cell, r, c) => {
+                cell.s = { ...totalRowStyle };
+                if (c <= 3) cell.s.alignment = { horizontal: "left", vertical: "center" };
+                else if (c === 4) cell.s.alignment = { horizontal: "center", vertical: "center" };
+                else if (c === 5 || c === 6) cell.s.alignment = { horizontal: "right", vertical: "center" };
+                else cell.s.alignment = { horizontal: "left", vertical: "center" };
+            });
+        }
+
+        // 3. Styling Section 3: Rekapitulasi Harian
+        const recapHeadRow = sec2TitleRow + 1;
         styleRowRange(recapHeadRow, recapHeadRow, 1, 10, (cell) => {
             cell.s = headerStyleGreen;
         });
@@ -1665,14 +1745,14 @@ if (typeof jQuery !== "undefined") {
             });
         }
 
-        // 3. Styling Section 3: Ringkasan Finansial
-        const finHeadRow = finRowStart - 1;
-        styleRowRange(finHeadRow, finHeadRow, 1, 3, (cell) => {
+        // 4. Styling Section 4: Ringkasan Finansial (KPI) - 2 Kolom
+        const finHeadRow = sec3TitleRow + 1;
+        styleRowRange(finHeadRow, finHeadRow, 1, 2, (cell) => {
             cell.s = headerStyleGreen;
         });
 
         const finEndRow = finRowStart + 6;
-        styleRowRange(finRowStart, finEndRow, 1, 3, (cell, r, c) => {
+        styleRowRange(finRowStart, finEndRow, 1, 2, (cell, r, c) => {
             cell.s = { ...dataCellStyle };
             if (c === 1) {
                 cell.s.font = { bold: true, sz: 10, name: "Calibri" };
@@ -1680,9 +1760,6 @@ if (typeof jQuery !== "undefined") {
             } else if (c === 2) {
                 cell.s.font = { bold: true, sz: 10, name: "Calibri" };
                 cell.s.alignment = { horizontal: "right", vertical: "center" };
-            } else {
-                cell.s.font = { italic: true, sz: 9, color: { rgb: "475569" }, name: "Calibri" };
-                cell.s.alignment = { horizontal: "left", vertical: "center" };
             }
 
             // Highlight khusus untuk Margin Bersih Final (baris terakhir)
