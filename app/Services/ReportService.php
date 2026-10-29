@@ -67,15 +67,26 @@ class ReportService
             ->get();
 
         // Ambil data pengeluaran operasional pada periode tersebut
-        $expenses = OperationalExpense::whereBetween('date', [$start, $end])->get();
+        $expenses = OperationalExpense::whereBetween('date', [$start, $end])->orderBy('date', 'asc')->get();
         $dailyExpenses = [];
         $overallOperationalExpense = 0.0;
+        $expensesList = [];
 
         foreach ($expenses as $expense) {
             $expDate = Carbon::parse($expense->date)->format('Y-m-d');
             $cost = (float)($expense->total_price ?? ($expense->quantity * $expense->price));
             $dailyExpenses[$expDate] = ($dailyExpenses[$expDate] ?? 0.0) + $cost;
             $overallOperationalExpense += $cost;
+
+            $expensesList[] = [
+                'id'          => $expense->id,
+                'date'        => $expense->date,
+                'name'        => $expense->name,
+                'quantity'    => (int)$expense->quantity,
+                'price'       => (float)$expense->price,
+                'total_price' => $cost,
+                'notes'       => $expense->notes ?? '',
+            ];
         }
 
         $dailyRecap = [];
@@ -146,8 +157,9 @@ class ReportService
                 'start_date' => $start->toIso8601String(),
                 'end_date'   => $end->toIso8601String(),
             ],
-            'daily_recap' => array_values($dailyRecap),
-            'overall'     => [
+            'daily_recap'          => array_values($dailyRecap),
+            'operational_expenses' => $expensesList,
+            'overall'              => [
                 'total_quantity'            => $overallQuantity,
                 'total_sales'               => $overallSales,
                 'total_hpp'                 => $overallHpp,
