@@ -177,6 +177,11 @@ function initHppDataTable($) {
                     },
                 },
 
+        order: [[1, "asc"]], // Sort by Nama Komponen HPP asc
+        rowCallback: function (row, data, displayNum, displayIndex) {
+            $("td:first", row).html(displayIndex + 1);
+        },
+
         columnDefs: [
             { targets: "no-sort", orderable: false },
             { targets: 0, responsivePriority: 1 }, // No

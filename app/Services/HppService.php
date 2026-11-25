@@ -13,7 +13,10 @@ class HppService
      */
     public function getAllHpp()
     {
-        return Hpp::withCount('productHpps')->orderBy('name', 'asc')->get();
+        return Hpp::withCount('productHpps')
+            ->orderBy('name', 'asc')
+            ->orderBy('id', 'asc')
+            ->get();
     }
 
     /**

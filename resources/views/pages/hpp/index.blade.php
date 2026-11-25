@@ -96,7 +96,7 @@
     <table class="table table-bordered table-hover align-middle mb-0 w-100 text-nowrap" id="hppDataTable">
         <thead>
             <tr>
-                <th style="width:50px;" class="text-center">No</th>
+                <th style="width:50px;" class="text-center no-sort">No</th>
                 <th>Nama Komponen HPP</th>
                 <th style="width:140px;" class="d-none">Satuan Pemakaian</th>
                 <th class="text-end" style="width:180px;">Biaya Standar (Unit Cost)</th>
@@ -125,7 +125,8 @@
                     </td>
 
                     <td class="text-end text-dark"
-                        data-label="Unit Cost">
+                        data-label="Unit Cost"
+                        data-order="{{ $item->unit_cost }}">
                         Rp {{ number_format($item->unit_cost, 0, ',', '.') }}
                     </td>
 
@@ -136,7 +137,8 @@
 
                     {{-- Kolom ini yang disembunyikan duluan saat layar sempit --}}
                     <td class="text-center text-muted small"
-                        data-label="Dibuat">
+                        data-label="Dibuat"
+                        data-order="{{ $item->created_at ? $item->created_at->format('Y-m-d H:i:s') : '' }}">
                         {{ $item->created_at ? $item->created_at->format('d M Y') : '-' }}
                     </td>
 
