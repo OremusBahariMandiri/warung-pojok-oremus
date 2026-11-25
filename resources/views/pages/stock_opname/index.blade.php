@@ -124,7 +124,7 @@
                                 <div class="text-muted small text-truncate" style="max-width:220px;" title="{{ $opname->notes }}">{{ $opname->notes }}</div>
                             @endif
                         </td>
-                        <td>
+                        <td data-order="{{ $opname->opname_date ? $opname->opname_date->format('Y-m-d H:i:s') : '' }}">
                             <span class="text-dark">{{ $opname->opname_date ? $opname->opname_date->format('d M Y') : '-' }}</span>
                             <div class="text-muted small">{{ $opname->opname_date ? $opname->opname_date->format('H:i') : '' }} WIB</div>
                         </td>
