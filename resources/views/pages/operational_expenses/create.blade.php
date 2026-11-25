@@ -146,42 +146,5 @@
 @endsection
 
 @push('scripts')
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const qtyInput = document.getElementById('quantity');
-    const priceDisplay = document.getElementById('price_display');
-    const priceHidden = document.getElementById('price');
-    const totalPreview = document.getElementById('totalPreview');
-
-    function formatNumber(num) {
-        return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-    }
-
-    function calculateTotal() {
-        const qty = parseFloat(qtyInput.value) || 0;
-        const rawPrice = priceDisplay.value.replace(/[^0-9]/g, '');
-        const price = parseFloat(rawPrice) || 0;
-        
-        priceHidden.value = price;
-
-        const total = qty * price;
-        totalPreview.textContent = 'Rp ' + formatNumber(total);
-    }
-
-    priceDisplay.addEventListener('input', function(e) {
-        let value = this.value.replace(/[^0-9]/g, '');
-        if (value) {
-            this.value = formatNumber(parseInt(value, 10));
-        } else {
-            this.value = '';
-        }
-        calculateTotal();
-    });
-
-    qtyInput.addEventListener('input', calculateTotal);
-
-    // Initial calculation on load
-    calculateTotal();
-});
-</script>
+<script src="{{ asset('js/operational_expenses.js') }}"></script>
 @endpush
