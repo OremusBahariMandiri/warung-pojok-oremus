@@ -96,7 +96,7 @@
                 @endphp
                 <tr data-date="{{ $rowDate }}">
                     <td data-label="NO" class="text-center text-muted fw-medium small">{{ $loop->iteration }}</td>
-                    <td data-label="TANGGAL" class="text-center text-dark fw-semibold font-monospace small">
+                    <td data-label="TANGGAL" class="text-center text-dark fw-semibold font-monospace small" data-order="{{ $item->date ? \Carbon\Carbon::parse($item->date)->format('Y-m-d H:i:s') : '' }}">
                         {{ \Carbon\Carbon::parse($item->date)->format('d M Y') }}
                     </td>
                     <td data-label="NAMA PENGELUARAN" class="text-dark fw-bold">
@@ -221,7 +221,10 @@ function openDeleteExpenseModal(id, name, date, total) {
 $(document).ready(function() {
     const table = $('#operationalExpensesTable').DataTable({
         responsive: true,
-        order: [[1, 'desc']],
+        order: [[1, 'asc']],
+        rowCallback: function (row, data, displayNum, displayIndex) {
+            $("td:first", row).html(displayIndex + 1);
+        },
         pageLength: 10,
         lengthMenu: [10, 25, 50, 100],
         language: {
