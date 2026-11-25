@@ -13,7 +13,7 @@ class OperationalExpenseService
      */
     public function getExpenses(?string $startDate = null, ?string $endDate = null): Collection
     {
-        $query = OperationalExpense::query()->orderBy('date', 'desc')->orderBy('id', 'desc');
+        $query = OperationalExpense::query()->orderBy('date', 'asc')->orderBy('id', 'asc');
 
         if ($startDate && $endDate) {
             $start = Carbon::parse($startDate)->startOfDay();
