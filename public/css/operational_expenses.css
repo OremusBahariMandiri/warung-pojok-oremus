@@ -113,3 +113,99 @@
         flex-shrink: 0;
     }
 }
+
+/* =============================================================
+   EXPAND ROW — DataTables Responsive (Desktop & Laptop Mode)
+   Pola sama dengan restock.css (Pembelian)
+   ============================================================= */
+@media (min-width: 768px) {
+    #operationalExpensesTable_wrapper {
+        overflow-x: visible !important;
+    }
+    .card-box .table-responsive {
+        overflow-x: visible !important;
+    }
+
+    /* ── Arrow expand/collapse — segitiga solid ▶ / ▼ ────────── */
+    #operationalExpensesTable_wrapper table.dataTable tbody td.dtr-control {
+        cursor: pointer;
+        text-align: center;
+        vertical-align: middle;
+        padding-left: 0.65rem !important;
+        padding-right: 0.5rem !important;
+        width: 32px !important;
+        min-width: 32px !important;
+    }
+
+    #operationalExpensesTable_wrapper table.dataTable tbody td.dtr-control::before {
+        display: inline-block !important;
+        width: 0 !important;
+        height: 0 !important;
+        border-radius: 0 !important;
+        background-color: transparent !important;
+        background-image: none !important;
+        border-top: 5px solid transparent !important;
+        border-bottom: 5px solid transparent !important;
+        border-left: 8px solid #94a3b8 !important;
+        border-right: none !important;
+        box-shadow: none !important;
+        content: "" !important;
+        vertical-align: middle !important;
+        transition: transform 0.18s ease, border-left-color 0.18s ease !important;
+        transform: rotate(0deg) !important;
+        transform-origin: 35% 50% !important;
+    }
+
+    #operationalExpensesTable_wrapper table.dataTable tbody tr.parent td.dtr-control::before {
+        border-left-color: #22c55e !important;
+        transform: rotate(90deg) !important;
+    }
+
+    #operationalExpensesTable_wrapper table.dataTable tbody tr:not(.parent) td.dtr-control:hover::before {
+        border-left-color: #475569 !important;
+    }
+
+    /* ── Child row (Expand Row Detail) ────────────────────────── */
+    #operationalExpensesTable tbody td.child {
+        background-color: #f8fafc !important;
+        padding: 0.55rem 1.1rem !important;
+        border-top: none !important;
+    }
+
+    #operationalExpensesTable tbody td.child ul.dtr-details {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0 2rem;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+
+    #operationalExpensesTable tbody td.child ul.dtr-details li {
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.2rem 0;
+        border: none;
+    }
+
+    #operationalExpensesTable tbody td.child ul.dtr-details li span.dtr-title {
+        font-size: 0.68rem;
+        font-weight: 700;
+        color: #94a3b8;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        white-space: nowrap;
+    }
+
+    #operationalExpensesTable tbody td.child ul.dtr-details li span.dtr-title::after {
+        content: ":";
+    }
+
+    #operationalExpensesTable tbody td.child ul.dtr-details li span.dtr-data {
+        font-size: 0.8rem;
+        color: #334155;
+        font-weight: 500;
+    }
+}
