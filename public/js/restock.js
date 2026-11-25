@@ -81,7 +81,7 @@ function initRestockDataTable() {
         pageLength: 25,
         responsive: true,
         autoWidth: false,
-        order: [[2, "desc"]], // sort by Tanggal desc
+        order: [[2, "asc"]], // sort by Tanggal asc
         language: {
             info: "Showing _START_ to _END_ of _TOTAL_ entries",
             infoFiltered: "(difilter dari _MAX_ total)",
@@ -108,6 +108,9 @@ function initRestockDataTable() {
             // No: prioritas kedua
             { targets: 0, responsivePriority: 2 },
         ],
+        rowCallback: function (row, data, displayNum, displayIndex) {
+            $("td:first", row).html(displayIndex + 1);
+        },
     });
 
     // Search box → DataTables

@@ -16,7 +16,9 @@ class RestockService
      */
     public function getAllRestocks(array $filters = [])
     {
-        $query = Restock::with(['creator', 'items.product', 'items.unit'])->orderBy('restock_date', 'desc');
+        $query = Restock::with(['creator', 'items.product', 'items.unit'])
+            ->orderBy('restock_date', 'asc')
+            ->orderBy('id', 'asc');
 
         if (!empty($filters['search'])) {
             $search = $filters['search'];
