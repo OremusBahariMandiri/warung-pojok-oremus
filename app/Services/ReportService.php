@@ -18,7 +18,9 @@ class ReportService
      */
     public function getAllReports(array $filters = [])
     {
-        $query = Reports::with(['creator', 'details.product', 'details.sellingUnit'])->orderBy('report_date', 'desc');
+        $query = Reports::with(['creator', 'details.product', 'details.sellingUnit'])
+            ->orderBy('report_date', 'asc')
+            ->orderBy('id', 'asc');
 
         if (!empty($filters['start_date']) && !empty($filters['end_date'])) {
             $query->whereBetween('report_date', [
@@ -64,10 +66,14 @@ class ReportService
         $reports = Reports::with(['details.product', 'details.sellingUnit'])
             ->whereBetween('report_date', [$start, $end])
             ->orderBy('report_date', 'asc')
+            ->orderBy('id', 'asc')
             ->get();
 
         // Ambil data pengeluaran operasional pada periode tersebut
-        $expenses = OperationalExpense::whereBetween('date', [$start, $end])->orderBy('date', 'asc')->get();
+        $expenses = OperationalExpense::whereBetween('date', [$start, $end])
+            ->orderBy('date', 'asc')
+            ->orderBy('id', 'asc')
+            ->get();
         $dailyExpenses = [];
         $overallOperationalExpense = 0.0;
         $expensesList = [];

@@ -1997,7 +1997,10 @@ if (typeof jQuery !== "undefined") {
                       },
                   },
 
-            order: [[1, "desc"]],
+            order: [[1, "asc"]],
+            rowCallback: function (row, data, displayNum, displayIndex) {
+                $("td:first", row).html(displayIndex + 1);
+            },
 
             columnDefs: [
                 { targets: "no-sort", orderable: false },

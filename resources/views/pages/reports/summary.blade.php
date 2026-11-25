@@ -337,7 +337,7 @@
 
                     <tr>
                         <td data-label="No" class="text-center text-muted fw-medium small">{{ $loop->iteration }}</td>
-                        <td data-label="Tanggal" class="text-center text-dark fw-semibold">{{ $formattedDate }}</td>
+                        <td data-label="Tanggal" class="text-center text-dark fw-semibold" data-order="{{ $item['date'] ?? '' }}">{{ $formattedDate }}</td>
                         <td data-label="Total Terjual" class="text-center font-monospace fw-semibold">{{ (int)($item['total_quantity'] ?? 0) }} Unit</td>
                         <td data-label="Sisa Stok" class="text-center font-monospace fw-semibold">
                             @if(count($dayProducts) > 0)

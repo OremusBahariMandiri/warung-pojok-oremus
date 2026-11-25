@@ -327,8 +327,11 @@ if (typeof jQuery !== "undefined") {
         if ($("#summaryRecapTable").length > 0) {
             $("#summaryRecapTable").DataTable({
                 responsive: false,
-                order: [[1, "desc"]], // Sort by date desc
+                order: [[1, "asc"]], // Sort by date asc
                 columnDefs: [{ targets: "no-sort", orderable: false }],
+                rowCallback: function (row, data, displayNum, displayIndex) {
+                    $("td:first", row).html(displayIndex + 1);
+                },
                 language: {
                     emptyTable:
                         "Tidak ada data penjualan pada periode tanggal yang dipilih.",
