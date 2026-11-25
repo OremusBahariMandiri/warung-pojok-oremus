@@ -53,7 +53,10 @@ function initOpnameDataTable() {
                     },
                 },
         autoWidth: false,
-        order: [[2, "desc"]],
+        order: [[2, "asc"]],
+        rowCallback: function (row, data, displayNum, displayIndex) {
+            $("td:first", row).html(displayIndex + 1);
+        },
         columnDefs: [
             { targets: [0, 6], orderable: false },
             { targets: 0, responsivePriority: 1 }, // No

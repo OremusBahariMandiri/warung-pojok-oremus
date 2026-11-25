@@ -28,7 +28,9 @@ class StockOpnameService
      */
     public function getAllStockOpnames(array $filters = [])
     {
-        $query = StockOpname::with(['creator', 'items.product.unit'])->orderBy('opname_date', 'desc');
+        $query = StockOpname::with(['creator', 'items.product.unit'])
+            ->orderBy('opname_date', 'asc')
+            ->orderBy('id', 'asc');
 
         if (!empty($filters['search'])) {
             $search = $filters['search'];
