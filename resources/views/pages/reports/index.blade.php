@@ -112,7 +112,7 @@
                 {{-- 0: No --}}
                 <td class="text-center text-muted fw-medium small">{{ $loop->iteration }}</td>
                 {{-- 1: Tanggal --}}
-                <td class="text-center text-dark fw-semibold">{{ $formattedDate }}</td>
+                <td class="text-center text-dark fw-semibold" data-order="{{ $r->report_date ? $r->report_date->format('Y-m-d H:i:s') : '' }}">{{ $formattedDate }}</td>
                 {{-- 2: Jumlah Produk --}}
                 <td class="text-center"><span class="text-dark">{{ $itemCount }} Produk</span></td>
                 {{-- 3: Produk Terjual --}}
