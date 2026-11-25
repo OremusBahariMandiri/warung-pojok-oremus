@@ -84,7 +84,7 @@
     <table class="table table-bordered table-hover align-middle mb-0 w-100 text-nowrap" id="unitsDataTable">
         <thead>
             <tr>
-                <th style="width: 50px;" class="text-center">No</th>
+                <th style="width: 50px;" class="text-center no-sort">No</th>
                 <th>Nama Satuan</th>
                 <th style="width: 120px;">Singkatan</th>
                 <th class="text-center" style="width: 160px;">Produk Terkait</th>
@@ -122,7 +122,8 @@
 
                     {{-- Tanggal Dibuat --}}
                     <td class="text-center text-muted small"
-                        data-label="Dibuat">
+                        data-label="Dibuat"
+                        data-order="{{ $item->created_at ? $item->created_at->format('Y-m-d H:i:s') : '' }}">
                         {{ $item->created_at ? $item->created_at->format('d M Y') : '-' }}
                     </td>
 

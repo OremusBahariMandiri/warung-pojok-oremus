@@ -12,7 +12,10 @@ class UnitService
      */
     public function getAllUnits()
     {
-        return Unit::withCount('products')->orderBy('unit_name', 'asc')->get();
+        return Unit::withCount('products')
+            ->orderBy('unit_name', 'asc')
+            ->orderBy('id', 'asc')
+            ->get();
     }
 
     /**
