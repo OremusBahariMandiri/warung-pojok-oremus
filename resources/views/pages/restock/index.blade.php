@@ -122,7 +122,7 @@
                     <tr data-date="{{ $rawDate }}">
                         <td class="text-center text-muted">{{ $loop->iteration }}</td>
                         <td class="font-monospace text-dark">{{ $item->restock_code }}</td>
-                        <td class="text-center text-secondary small">
+                        <td class="text-center text-secondary small" data-order="{{ $item->restock_date ? $item->restock_date->format('Y-m-d H:i:s') : '' }}">
                             {{ $item->restock_date ? $item->restock_date->format('d M Y, H:i') : '-' }}
                         </td>
                         <td>
